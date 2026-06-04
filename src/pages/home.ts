@@ -49,7 +49,7 @@ export function initHomePage(): void {
               <span class="text-accent">DE BOGOTÁ</span>
             </h1>
             <p class="mt-6 text-lg text-muted leading-relaxed max-w-xl">
-              LIMObog es la liga oficial de motociclismo de Bogotá. Tradición racing,
+              LIMOBOG es la liga oficial de motociclismo de Bogotá. Tradición racing,
               orgullo colombiano y competencia profesional con válidas, rankings,
               inscripciones en línea y resultados oficiales.
             </p>
@@ -75,7 +75,7 @@ export function initHomePage(): void {
           <div class="flex justify-center animate-fade-in-up order-1 lg:order-2">
             <div class="relative">
               <div class="absolute -top-3 -right-3 h-16 w-16 rounded-full bg-accent border-2 border-accent/40 flex items-center justify-center font-title text-xl text-ink shadow-glow-yellow">🏁</div>
-              <img src="./logo-limobog.png" alt="Logo LIMObog — Liga de Motociclismo de Bogotá"
+              <img src="./logo-limobog.png" alt="Logo LIMOBOG — Liga de Motociclismo de Bogotá"
                    class="max-w-xs md:max-w-md object-contain drop-shadow-2xl" />
             </div>
           </div>
@@ -86,7 +86,7 @@ export function initHomePage(): void {
     <section class="section-warm py-14">
       <div class="mx-auto max-w-7xl px-4">
         <div class="text-center mb-10">
-          <h2 class="section-title mb-3">¿Qué es LIMObog?</h2>
+          <h2 class="section-title mb-3">¿Qué es LIMOBOG?</h2>
           <p class="text-muted max-w-2xl mx-auto leading-relaxed">
             La entidad que organiza y regula las competencias oficiales de motociclismo en Bogotá.
           </p>
@@ -127,7 +127,7 @@ export function initHomePage(): void {
           <div>
             <h2 class="section-title mb-2">Categorías oficiales</h2>
             <p class="text-muted max-w-xl">
-              Copa MX — Autocolombiana · LIMObog. Elige la categoría acorde a tu edad al momento del evento.
+              Copa MX — Autocolombiana · LIMOBOG. Elige la categoría acorde a tu edad al momento del evento.
             </p>
           </div>
           <a href="./inscripcion.html" class="btn-secondary shrink-0">Registrarme</a>

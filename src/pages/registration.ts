@@ -497,7 +497,7 @@ export async function initRegistrationPage(): Promise<void> {
     <main class="mx-auto max-w-3xl px-4 py-12">
       <div class="mb-8 text-center">
         <h1 class="section-title mb-4">Inscripción de Piloto</h1>
-        <p class="text-muted">Completa el formulario para registrarte en la Liga de Motociclismo de Bogotá (LIMObog).</p>
+        <p class="text-muted">Completa el formulario para registrarte en la Liga de Motociclismo de Bogotá (LIMOBOG).</p>
       </div>
       <div class="card animate-fade-in-up" id="registration-card">
         ${renderLoadingPanel()}

@@ -260,7 +260,7 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
       <header class="border-b border-white/10 bg-surface-raised px-4 py-4 shadow-sm">
         <div class="mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 class="font-title text-3xl text-accent tracking-wider">Panel LIMObog</h1>
+            <h1 class="font-title text-3xl text-accent tracking-wider">Panel LIMOBOG</h1>
             <p class="text-sm text-muted">Gestión de inscripciones y eventos</p>
           </div>
           <button id="logout-btn" class="btn-outline text-sm py-2 px-4">Cerrar sesion</button>

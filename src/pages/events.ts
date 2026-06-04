@@ -71,7 +71,7 @@ export async function initEventsPage(): Promise<void> {
       <div class="mb-10 text-center">
         <h1 class="section-title mb-4">Eventos de la Liga</h1>
         <p class="text-muted max-w-2xl mx-auto">
-          Consulta las válidas de LIMObog, descarga el reglamento y revisa los resultados cuando estén disponibles.
+          Consulta las válidas de LIMOBOG, descarga el reglamento y revisa los resultados cuando estén disponibles.
         </p>
       </div>
       <div id="events-list" class="grid gap-6 md:grid-cols-2">

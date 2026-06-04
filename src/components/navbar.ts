@@ -28,9 +28,9 @@ export function renderNavbar(activePage: 'home' | 'eventos' | 'inscripcion' | 'r
       <nav class="sticky top-0 z-50 border-b border-white/10 bg-surface/95 backdrop-blur-md shadow-card">
         <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-6">
           <a href="./index.html" class="flex items-center gap-3">
-            <img src="./logo-limobog.png" alt="Logo LIMObog — Liga de Motociclismo de Bogotá" class="h-12 w-auto object-contain md:h-14" />
+            <img src="./logo-limobog.png" alt="Logo LIMOBOG — Liga de Motociclismo de Bogotá" class="h-12 w-auto object-contain md:h-14" />
             <div class="hidden sm:block">
-              <p class="font-title text-xl tracking-wider text-red leading-none">LIMObog</p>
+              <p class="font-title text-xl tracking-wider text-red leading-none">LIMOBOG</p>
               <p class="text-xs text-muted font-medium">Liga de Motociclismo de Bogotá</p>
             </div>
           </a>

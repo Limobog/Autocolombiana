@@ -8,7 +8,7 @@ export interface Category {
   maxAge: number;
 }
 
-/** IDs legacy (Minicross / rangos antiguos) → IDs actuales LIMObog. */
+/** IDs legacy (Minicross / rangos antiguos) → IDs actuales LIMOBOG. */
 const LEGACY_CATEGORY_IDS: Record<string, string> = {
   '50cc-a': '50cc-4-6',
   '50cc-b': '50cc-6-8',
