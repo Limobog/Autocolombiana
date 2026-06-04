@@ -17,7 +17,7 @@ function renderParagraphs(texts: string[]): string {
   return texts
     .map(
       (p) =>
-        `<p class="text-gray-light leading-relaxed mt-4 first:mt-0">${escapeHtml(p)}</p>`
+        `<p class="text-muted leading-relaxed mt-4 first:mt-0">${escapeHtml(p)}</p>`
     )
     .join('');
 }
@@ -29,27 +29,27 @@ function renderTable(section: ReglamentoSection): string {
   const head = table.headers
     .map(
       (h) =>
-        `<th class="px-4 py-3 text-left text-sm font-semibold text-secondary uppercase tracking-wide">${escapeHtml(h)}</th>`
+        `<th class="px-4 py-3 text-left text-sm font-semibold text-red uppercase tracking-wide">${escapeHtml(h)}</th>`
     )
     .join('');
 
   const body = table.rows
     .map(
       (row) =>
-        `<tr class="border-t border-secondary/15 hover:bg-secondary/5 transition-colors">${row
+        `<tr class="border-t border-primary/10 hover:bg-surface-warm transition-colors">${row
           .map(
             (cell) =>
-              `<td class="px-4 py-3 text-gray-light">${escapeHtml(cell)}</td>`
+              `<td class="px-4 py-3 text-muted">${escapeHtml(cell)}</td>`
           )
           .join('')}</tr>`
     )
     .join('');
 
   return `
-    <div class="my-6 overflow-x-auto rounded-xl border border-secondary/25">
+    <div class="my-6 overflow-x-auto rounded-xl border border-primary/10">
       <table class="w-full min-w-[280px] text-sm">
-        <thead class="bg-primary/80"><tr>${head}</tr></thead>
-        <tbody class="bg-blue-dark/40">${body}</tbody>
+        <thead class="bg-surface-warm"><tr>${head}</tr></thead>
+        <tbody class="bg-white">${body}</tbody>
       </table>
     </div>`;
 }
@@ -57,7 +57,7 @@ function renderTable(section: ReglamentoSection): string {
 function renderBullets(items: string[]): string {
   if (!items.length) return '';
   return `
-    <ul class="mt-4 space-y-2 text-gray-light leading-relaxed list-disc pl-5 marker:text-secondary">
+    <ul class="mt-4 space-y-2 text-muted leading-relaxed list-disc pl-5 marker:text-red">
       ${items.map((b) => `<li>${escapeHtml(b)}</li>`).join('')}
     </ul>`;
 }
@@ -66,10 +66,10 @@ function renderSection(section: ReglamentoSection): string {
   let body = '';
 
   if (section.id === 'puntuacion' && section.paragraphs?.length) {
-    body += `<p class="text-gray-light leading-relaxed">${escapeHtml(section.paragraphs[0])}</p>`;
+    body += `<p class="text-muted leading-relaxed">${escapeHtml(section.paragraphs[0])}</p>`;
     body += renderTable(section);
     if (section.paragraphs[1]) {
-      body += `<p class="text-gray-light leading-relaxed mt-4">${escapeHtml(section.paragraphs[1])}</p>`;
+      body += `<p class="text-muted leading-relaxed mt-4">${escapeHtml(section.paragraphs[1])}</p>`;
     }
   } else {
     body += renderParagraphs(section.paragraphs ?? []);
@@ -79,7 +79,7 @@ function renderSection(section: ReglamentoSection): string {
       .map(
         (sub) => `
       <div class="mt-6">
-        <h3 class="font-title text-xl tracking-wide text-accent">${escapeHtml(sub.title)}</h3>
+        <h3 class="font-title text-xl tracking-wide text-red">${escapeHtml(sub.title)}</h3>
         ${renderBullets(sub.bullets)}
       </div>`
       )
@@ -97,7 +97,7 @@ function renderSection(section: ReglamentoSection): string {
 function renderToc(): string {
   return REGLAMENTO_SECTIONS.map(
     (s) =>
-      `<a href="#${s.id}" class="block py-1.5 text-sm text-gray-light hover:text-secondary transition-colors border-l-2 border-transparent hover:border-secondary pl-3">${escapeHtml(s.title)}</a>`
+      `<a href="#${s.id}" class="block py-1.5 text-sm text-muted hover:text-red transition-colors border-l-2 border-transparent hover:border-red pl-3">${escapeHtml(s.title)}</a>`
   ).join('');
 }
 
@@ -111,9 +111,9 @@ export function initReglamentoPage(): void {
     ${renderNavbar('reglamento')}
     <main class="mx-auto max-w-7xl px-4 py-10 md:py-14 md:px-6">
       <header class="text-center mb-10 md:mb-14">
-        <p class="text-secondary font-semibold tracking-widest uppercase text-sm mb-2">Liga de Motociclismo de Bogotá</p>
+        <p class="text-red font-semibold tracking-widest uppercase text-sm mb-2">Liga de Motociclismo de Bogotá</p>
         <h1 class="section-title text-4xl md:text-5xl lg:text-6xl">Reglamento oficial</h1>
-        <p class="mt-4 max-w-2xl mx-auto text-gray-light leading-relaxed">
+        <p class="mt-4 max-w-2xl mx-auto text-muted leading-relaxed">
           Normas oficiales del campeonato. Al inscribirte aceptas este reglamento en su totalidad.
         </p>
         <a href="./reglamento-oficial-minicross.pdf" target="_blank" rel="noopener noreferrer"
@@ -128,8 +128,8 @@ export function initReglamentoPage(): void {
 
       <div class="lg:grid lg:grid-cols-[240px_1fr] lg:gap-10 xl:gap-14">
         <aside class="hidden lg:block">
-          <nav class="sticky top-24 rounded-xl border border-gray-metal/40 bg-blue-dark/50 p-4 backdrop-blur-sm" aria-label="Índice del reglamento">
-            <p class="font-title text-lg text-accent tracking-wide mb-3">Índice</p>
+          <nav class="sticky top-24 rounded-xl border border-primary/10 bg-surface-warm p-4" aria-label="Índice del reglamento">
+            <p class="font-title text-lg text-red tracking-wide mb-3">Índice</p>
             ${renderToc()}
           </nav>
         </aside>

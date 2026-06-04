@@ -23,10 +23,10 @@ function renderCategoryCards(): string {
   return CATEGORIES.map((cat) => {
     const { name, engine } = splitCategoryLabel(cat);
     return `
-      <div class="card flex flex-col gap-2">
-        <span class="font-title text-2xl tracking-wide text-secondary">${name}</span>
-        <span class="text-accent font-semibold">${formatCategoryAge(cat)}</span>
-        ${engine ? `<span class="text-gray-light text-sm leading-snug">${engine}</span>` : ''}
+      <div class="card border-l-4 border-l-accent hover:border-l-red">
+        <span class="font-title text-2xl tracking-wide text-red">${name}</span>
+        <span class="mt-1 block text-sm font-bold text-primary">${formatCategoryAge(cat)}</span>
+        ${engine ? `<span class="mt-2 block text-muted text-xs leading-snug">${engine}</span>` : ''}
       </div>`;
   }).join('');
 }
@@ -38,88 +38,140 @@ export function initHomePage(): void {
   app.innerHTML = `
     ${renderNavbar('home')}
 
-    <section class="relative overflow-hidden dirt-texture">
-      <div class="mx-auto max-w-7xl px-4 py-16 md:py-24">
-        <div class="grid items-center gap-12 md:grid-cols-2">
-          <div class="animate-fade-in-up">
-            <span class="shield-badge mb-4">Liga Oficial · Bogotá</span>
-            <h1 class="font-title text-5xl leading-tight tracking-wider md:text-7xl">
+    <section class="hero-pattern relative overflow-hidden">
+      <div class="mx-auto max-w-7xl px-4 py-14 md:py-20">
+        <div class="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+          <div class="animate-fade-in-up order-2 lg:order-1">
+            <span class="shield-badge mb-5">Copa MX · Autocolombiana</span>
+            <h1 class="font-title text-5xl leading-none tracking-wider text-primary md:text-7xl">
               LIGA DE<br/>
-              <span class="text-accent">MOTOCICLISMO</span><br/>
-              DE BOGOTÁ
+              <span class="text-red">MOTOCICLISMO</span><br/>
+              <span class="text-accent" style="-webkit-text-stroke: 1px #0A0A0A;">DE BOGOTÁ</span>
             </h1>
-            <p class="mt-6 text-lg text-gray-light leading-relaxed">
-              LIMObog es la liga oficial de motociclismo de Bogotá. Promovemos la tradición
-              motociclística, el orgullo colombiano y la competencia profesional con válidas,
-              rankings, inscripciones y un entorno institucional moderno para pilotos,
-              equipos y aficionados.
+            <p class="mt-6 text-lg text-muted leading-relaxed max-w-xl">
+              LIMObog es la liga oficial de motociclismo de Bogotá. Tradición racing,
+              orgullo colombiano y competencia profesional con válidas, rankings,
+              inscripciones en línea y resultados oficiales.
             </p>
             <div class="mt-8 flex flex-wrap gap-4">
-              <a href="./inscripcion.html" class="btn-primary">Inscríbete ahora</a>
-              <a href="./eventos.html" class="btn-outline">Ver eventos</a>
+              <a href="./inscripcion.html" class="btn-primary text-base px-8">Inscríbete ahora</a>
+              <a href="./eventos.html" class="btn-outline text-base px-8">Ver eventos</a>
+            </div>
+            <div class="mt-10 flex flex-wrap gap-3">
+              <div class="stat-pill">
+                <span class="font-title text-3xl text-red leading-none">${CATEGORIES.length}</span>
+                <span class="text-xs font-semibold text-muted mt-1">Categorías</span>
+              </div>
+              <div class="stat-pill">
+                <span class="font-title text-3xl text-red leading-none">MX</span>
+                <span class="text-xs font-semibold text-muted mt-1">Autocolombiana</span>
+              </div>
+              <div class="stat-pill">
+                <span class="font-title text-3xl text-red leading-none">2026</span>
+                <span class="text-xs font-semibold text-muted mt-1">Temporada</span>
+              </div>
             </div>
           </div>
-          <div class="flex justify-center animate-fade-in-up">
-            <img src="./logo-limobog.jpeg" alt="Logo LIMObog — Liga de Motociclismo de Bogotá"
-                 class="max-w-sm md:max-w-md object-contain" />
+          <div class="flex justify-center animate-fade-in-up order-1 lg:order-2">
+            <div class="relative rounded-2xl border border-primary/10 bg-white p-6 shadow-card-hover">
+              <div class="absolute -top-3 -right-3 h-16 w-16 rounded-full bg-accent border-2 border-primary/10 flex items-center justify-center font-title text-xl text-primary">🏁</div>
+              <img src="./logo-limobog.jpeg" alt="Logo LIMObog — Liga de Motociclismo de Bogotá"
+                   class="max-w-xs md:max-w-sm object-contain" />
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="border-y border-gray-metal/30 bg-dark/50 py-16">
+    <section class="section-warm py-14">
       <div class="mx-auto max-w-7xl px-4">
-        <h2 class="section-title text-center mb-12">¿Qué es LIMObog?</h2>
-        <div class="mx-auto max-w-3xl text-center text-gray-light leading-relaxed space-y-4 mb-12">
-          <p>
-            La Liga de Motociclismo de Bogotá (LIMObog) es la entidad que organiza y regula
-            las competencias oficiales de motociclismo en la capital. Nuestra misión es
-            fortalecer el deporte con estándares técnicos, seguridad y una identidad que
-            honra la tradición racing y el espíritu competitivo colombiano.
-          </p>
-          <p>
-            Desde calendarios de válidas y resultados en vivo hasta el registro de pilotos
-            y la difusión del motociclismo bogotano, LIMObog conecta a la comunidad
-            motociclista con eventos de alto nivel y una plataforma moderna de gestión.
+        <div class="text-center mb-10">
+          <h2 class="section-title mb-3">¿Qué es LIMObog?</h2>
+          <p class="text-muted max-w-2xl mx-auto leading-relaxed">
+            La entidad que organiza y regula las competencias oficiales de motociclismo en Bogotá.
           </p>
         </div>
-        <div class="grid gap-8 md:grid-cols-3">
-          <div class="card text-center">
-            <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-secondary/20 text-3xl">🏁</div>
-            <h3 class="font-title text-2xl tracking-wide text-accent mb-3">Tradición Racing</h3>
-            <p class="text-gray-light">Estética vintage racing, escudos clásicos y motociclismo profesional con identidad institucional moderna.</p>
+        <div class="mx-auto max-w-3xl text-center text-muted leading-relaxed space-y-4 mb-12">
+          <p>
+            Nuestra misión es fortalecer el deporte con estándares técnicos, seguridad y una
+            identidad que honra la tradición racing y el espíritu competitivo colombiano.
+          </p>
+          <p>
+            Calendarios de válidas, resultados, registro de pilotos y difusión del motociclismo
+            bogotano — todo en una plataforma moderna y accesible.
+          </p>
+        </div>
+        <div class="grid gap-6 md:grid-cols-3">
+          <div class="card-featured text-center">
+            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-2xl border border-primary/10">🏁</div>
+            <h3 class="font-title text-2xl tracking-wide text-red mb-2">Tradición Racing</h3>
+            <p class="text-muted text-sm">Escudos clásicos, estética vintage y motociclismo profesional con identidad institucional moderna.</p>
           </div>
           <div class="card text-center">
-            <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-secondary/20 text-3xl">🇨🇴</div>
-            <h3 class="font-title text-2xl tracking-wide text-accent mb-3">Orgullo Colombiano</h3>
-            <p class="text-gray-light">Colores patrios, competencia de alto nivel y una liga que representa con elegancia deportiva a Bogotá y Colombia.</p>
+            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red/10 text-2xl">🇨🇴</div>
+            <h3 class="font-title text-2xl tracking-wide text-red mb-2">Orgullo Colombiano</h3>
+            <p class="text-muted text-sm">Amarillo, rojo y blanco en cada válida. Competencia de alto nivel con elegancia deportiva.</p>
           </div>
           <div class="card text-center">
-            <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-secondary/20 text-3xl">⚡</div>
-            <h3 class="font-title text-2xl tracking-wide text-accent mb-3">Velocidad y Competencia</h3>
-            <p class="text-gray-light">Válidas oficiales, rankings de pilotos, categorías por disciplina y resultados en tiempo real.</p>
+            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent/60 text-2xl border border-primary/10">⚡</div>
+            <h3 class="font-title text-2xl tracking-wide text-red mb-2">Velocidad y Competencia</h3>
+            <p class="text-muted text-sm">Rankings, categorías por disciplina, inscripciones en línea y resultados oficiales.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="py-16 dirt-texture">
+    <section class="py-14 bg-white">
       <div class="mx-auto max-w-7xl px-4">
-        <h2 class="section-title text-center mb-4">Categorías oficiales</h2>
-        <p class="text-center text-gray-light mb-10 max-w-2xl mx-auto">
-          Copa MX — Autocolombiana · LIMObog. Compite en la categoría acorde a tu edad al momento del evento.
-        </p>
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10">
+          <div>
+            <h2 class="section-title mb-2">Categorías oficiales</h2>
+            <p class="text-muted max-w-xl">
+              Copa MX — Autocolombiana · LIMObog. Elige la categoría acorde a tu edad al momento del evento.
+            </p>
+          </div>
+          <a href="./inscripcion.html" class="btn-secondary shrink-0">Registrarme</a>
+        </div>
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           ${renderCategoryCards()}
         </div>
       </div>
     </section>
 
-    <section class="border-t border-gray-metal/30 bg-blue-dark/30 py-16">
+    <section class="section-soft py-14">
+      <div class="mx-auto max-w-7xl px-4">
+        <h2 class="section-title text-center mb-10">Acceso rápido</h2>
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          ${[
+            ['📅', 'Eventos', 'Calendario de válidas', './eventos.html'],
+            ['📝', 'Inscripción', 'Registro de pilotos', './inscripcion.html'],
+            ['📋', 'Reglamento', 'Normas oficiales', './reglamento.html'],
+            ['🏆', 'Resultados', 'Clasificaciones', './resultados.html'],
+          ]
+            .map(
+              ([icon, title, desc, href]) => `
+            <a href="${href}" class="card group flex items-start gap-4 hover:bg-surface-warm">
+              <span class="text-3xl">${icon}</span>
+              <div>
+                <h3 class="font-title text-xl tracking-wide text-red group-hover:text-red-dark">${title}</h3>
+                <p class="text-sm text-muted mt-1">${desc}</p>
+              </div>
+            </a>`
+            )
+            .join('')}
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-red py-16">
       <div class="mx-auto max-w-4xl px-4 text-center">
-        <h2 class="section-title mb-4">¿Listo para competir?</h2>
-        <p class="text-gray-light mb-8 text-lg">Inscríbete en la próxima válida y forma parte de la Liga de Motociclismo de Bogotá.</p>
-        <a href="./inscripcion.html" class="btn-primary text-lg px-10 py-4">Registrarme como piloto</a>
+        <h2 class="font-title text-4xl md:text-5xl tracking-wider text-white mb-4">¿Listo para competir?</h2>
+        <p class="text-white/90 mb-8 text-lg max-w-xl mx-auto">
+          Inscríbete en la próxima válida y forma parte de la Liga de Motociclismo de Bogotá.
+        </p>
+        <a href="./inscripcion.html" class="inline-flex items-center justify-center rounded-xl bg-accent px-10 py-4 text-lg font-bold text-primary border-2 border-primary/10 transition-all duration-300 hover:bg-white hover:shadow-glow-yellow">
+          Registrarme como piloto
+        </a>
       </div>
     </section>
 

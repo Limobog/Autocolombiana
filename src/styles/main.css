@@ -8,10 +8,8 @@
   --color-black: #0A0A0A;
   --color-yellow: #F4D000;
   --color-red: #D91E18;
-  --color-blue: #0038A8;
   --color-white: #FFFFFF;
-  --color-gray: #BFC3C7;
-
+  --color-muted: #5C5C5C;
   --font-title: 'Bebas Neue', sans-serif;
   --font-body: 'Montserrat', sans-serif;
 }
@@ -22,46 +20,71 @@
   }
 
   body {
-    @apply font-body text-white antialiased;
-    background: linear-gradient(135deg, #0A0A0A 0%, #2B2B2B 100%);
+    @apply font-body text-primary antialiased bg-surface;
     min-height: 100vh;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-xl bg-accent px-6 py-3 font-bold text-primary transition-all duration-300 hover:bg-red hover:text-white hover:shadow-glow-yellow;
+    @apply inline-flex items-center justify-center rounded-xl bg-accent px-6 py-3 font-bold text-primary border border-primary/10 transition-all duration-300 hover:bg-red hover:text-white hover:border-red hover:shadow-glow-red;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-xl bg-secondary px-6 py-3 font-semibold text-white transition-all duration-300 hover:bg-blue-dark hover:shadow-glow;
+    @apply inline-flex items-center justify-center rounded-xl bg-red px-6 py-3 font-semibold text-white border border-red-dark transition-all duration-300 hover:bg-red-dark hover:shadow-glow-red;
   }
 
   .btn-outline {
-    @apply inline-flex items-center justify-center rounded-xl border border-gray-metal px-6 py-3 font-semibold text-gray-light transition-all duration-300 hover:border-secondary hover:text-secondary hover:shadow-glow;
+    @apply inline-flex items-center justify-center rounded-xl border-2 border-primary bg-white px-6 py-3 font-semibold text-primary transition-all duration-300 hover:border-red hover:text-red hover:shadow-card;
   }
 
   .card {
-    @apply rounded-card border border-gray-metal bg-dark/80 p-6 shadow-sm transition-all duration-300 hover:border-accent/40 hover:shadow-glow-yellow;
+    @apply rounded-card border border-primary/10 bg-white p-6 shadow-card transition-all duration-300 hover:border-red/30 hover:shadow-card-hover;
+  }
+
+  .card-featured {
+    @apply rounded-card border-2 border-accent bg-surface-warm p-6 shadow-card transition-all duration-300 hover:border-red hover:shadow-card-hover;
   }
 
   .input-field {
-    @apply w-full rounded-xl border border-gray-metal/50 bg-primary/80 px-4 py-3 text-white placeholder-gray-metal/60 outline-none transition-all duration-300 focus:border-secondary focus:shadow-glow;
+    @apply w-full rounded-xl border border-primary/15 bg-white px-4 py-3 text-primary placeholder-gray-metal outline-none transition-all duration-300 focus:border-red focus:ring-2 focus:ring-red/15;
   }
 
   .section-title {
-    @apply font-title text-4xl tracking-wider text-white md:text-5xl;
+    @apply font-title text-4xl tracking-wider text-primary md:text-5xl;
+  }
+
+  .section-title-accent {
+    @apply section-title text-red;
   }
 
   .shield-badge {
-    @apply inline-block skew-x-[-6deg] rounded-lg bg-accent px-4 py-1 font-title text-lg tracking-wider text-primary;
+    @apply inline-block skew-x-[-6deg] rounded-lg bg-accent px-4 py-1 font-title text-lg tracking-wider text-primary border border-primary/10;
+  }
+
+  .colombia-stripe {
+    @apply h-1.5 w-full;
+    background: linear-gradient(90deg, #F4D000 0%, #F4D000 50%, #D91E18 50%, #D91E18 100%);
+  }
+
+  .stat-pill {
+    @apply inline-flex flex-col items-center rounded-xl border border-primary/10 bg-white px-5 py-3 shadow-card min-w-[7rem];
   }
 }
 
-.dirt-texture {
-  background-image: radial-gradient(circle at 20% 80%, rgba(244, 208, 0, 0.06) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(217, 30, 24, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, rgba(0, 56, 168, 0.04) 0%, transparent 60%);
+.hero-pattern {
+  background-color: #ffffff;
+  background-image:
+    radial-gradient(circle at 100% 0%, rgba(244, 208, 0, 0.18) 0%, transparent 42%),
+    radial-gradient(circle at 0% 100%, rgba(217, 30, 24, 0.08) 0%, transparent 38%);
+}
+
+.section-warm {
+  @apply bg-surface-warm border-y border-primary/5;
+}
+
+.section-soft {
+  @apply bg-surface-soft border-y border-red/10;
 }
 
 @keyframes fadeInUp {
