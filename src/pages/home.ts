@@ -73,10 +73,10 @@ export function initHomePage(): void {
             </div>
           </div>
           <div class="flex justify-center animate-fade-in-up order-1 lg:order-2">
-            <div class="relative rounded-2xl border border-white/10 bg-surface-raised p-6 shadow-card-hover">
-              <div class="absolute -top-3 -right-3 h-16 w-16 rounded-full bg-accent border-2 border-accent/40 flex items-center justify-center font-title text-xl text-ink">🏁</div>
-              <img src="./logo-limobog.jpeg" alt="Logo LIMObog — Liga de Motociclismo de Bogotá"
-                   class="max-w-xs md:max-w-sm object-contain" />
+            <div class="relative">
+              <div class="absolute -top-3 -right-3 h-16 w-16 rounded-full bg-accent border-2 border-accent/40 flex items-center justify-center font-title text-xl text-ink shadow-glow-yellow">🏁</div>
+              <img src="./logo-limobog.png" alt="Logo LIMObog — Liga de Motociclismo de Bogotá"
+                   class="max-w-xs md:max-w-md object-contain drop-shadow-2xl" />
             </div>
           </div>
         </div>
