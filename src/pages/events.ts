@@ -26,7 +26,7 @@ function renderLoadingPanel(): string {
 
 function renderStatusBadge(event: Event): string {
   if (event.active) {
-    return '<span class="inline-block rounded-full bg-accent/50 px-3 py-1 text-xs font-semibold text-primary border border-primary/10">Habilitado para inscripciones</span>';
+    return '<span class="inline-block rounded-full bg-accent/50 px-3 py-1 text-xs font-semibold text-ink border border-accent/30">Habilitado para inscripciones</span>';
   }
   return '<span class="inline-block rounded-full bg-gray-metal/30 px-3 py-1 text-xs font-semibold text-muted">No habilitado para inscripciones</span>';
 }
@@ -49,7 +49,7 @@ function renderEventCard(event: Event): string {
       <div class="flex items-start justify-between gap-4 mb-4">
         <div>
           ${renderStatusBadge(event)}
-          <h3 class="font-title text-2xl tracking-wide text-primary group-hover:text-red transition-colors mt-2">${event.name}</h3>
+          <h3 class="font-title text-2xl tracking-wide text-foreground group-hover:text-red transition-colors mt-2">${event.name}</h3>
         </div>
         <div class="text-right shrink-0">
           <p class="font-title text-xl text-red">${formatDate(event.date)}</p>

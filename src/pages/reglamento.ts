@@ -36,7 +36,7 @@ function renderTable(section: ReglamentoSection): string {
   const body = table.rows
     .map(
       (row) =>
-        `<tr class="border-t border-primary/10 hover:bg-surface-warm transition-colors">${row
+        `<tr class="border-t border-white/10 hover:bg-surface-warm transition-colors">${row
           .map(
             (cell) =>
               `<td class="px-4 py-3 text-muted">${escapeHtml(cell)}</td>`
@@ -46,10 +46,10 @@ function renderTable(section: ReglamentoSection): string {
     .join('');
 
   return `
-    <div class="my-6 overflow-x-auto rounded-xl border border-primary/10">
+    <div class="my-6 overflow-x-auto rounded-xl border border-white/10">
       <table class="w-full min-w-[280px] text-sm">
         <thead class="bg-surface-warm"><tr>${head}</tr></thead>
-        <tbody class="bg-white">${body}</tbody>
+        <tbody class="bg-surface-raised">${body}</tbody>
       </table>
     </div>`;
 }
@@ -128,7 +128,7 @@ export function initReglamentoPage(): void {
 
       <div class="lg:grid lg:grid-cols-[240px_1fr] lg:gap-10 xl:gap-14">
         <aside class="hidden lg:block">
-          <nav class="sticky top-24 rounded-xl border border-primary/10 bg-surface-warm p-4" aria-label="Índice del reglamento">
+          <nav class="sticky top-24 rounded-xl border border-white/10 bg-surface-warm p-4" aria-label="Índice del reglamento">
             <p class="font-title text-lg text-red tracking-wide mb-3">Índice</p>
             ${renderToc()}
           </nav>

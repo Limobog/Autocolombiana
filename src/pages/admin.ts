@@ -206,7 +206,7 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
     .map(
       (e) =>
         `<button class="event-tab px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-          e.active ? 'bg-accent/40 text-primary' : 'bg-surface-warm text-muted'
+          e.active ? 'bg-accent/40 text-ink' : 'bg-surface-raised text-muted'
         }" data-event-id="${e.id}">${e.name}</button>`
     )
     .join('');
@@ -257,7 +257,7 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
 
   return `
     <div class="min-h-screen">
-      <header class="border-b border-primary/10 bg-white px-4 py-4 shadow-sm">
+      <header class="border-b border-white/10 bg-surface-raised px-4 py-4 shadow-sm">
         <div class="mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 class="font-title text-3xl text-accent tracking-wider">Panel LIMObog</h1>
@@ -326,7 +326,7 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
             <div>
               <label class="block text-sm text-secondary mb-2" for="event-reglamento">Reglamento (PDF)</label>
               <input type="file" id="event-reglamento" accept=".pdf,application/pdf"
-                class="w-full rounded-xl border border-dashed border-red/40 bg-surface-warm px-4 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-accent file:px-4 file:py-2 file:font-semibold file:text-primary" />
+                class="w-full rounded-xl border border-dashed border-red/40 bg-surface-warm px-4 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-accent file:px-4 file:py-2 file:font-semibold file:text-ink" />
               <p id="event-reglamento-preview" class="mt-2 text-xs text-muted hidden"></p>
               <p id="event-reglamento-current" class="mt-2 text-xs text-secondary hidden"></p>
             </div>

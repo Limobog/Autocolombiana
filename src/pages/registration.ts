@@ -101,7 +101,7 @@ function renderForm(events: Event[], selectedEventId: string | null, pilotNumber
         <input type="text" id="identificacion" name="identificacion" required class="input-field mb-3" placeholder="Ej: 1234567890" />
         <label class="block text-sm font-medium text-red mb-2" for="idFile">Documento de identidad (foto o PDF, max. ${CONFIG.maxFileSizeMB} MB) *</label>
         <input type="file" id="idFile" accept="image/*,.pdf" required
-               class="w-full rounded-xl border border-dashed border-red/40 bg-surface-warm px-4 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-accent file:px-4 file:py-2 file:font-semibold file:text-primary" />
+               class="w-full rounded-xl border border-dashed border-red/40 bg-surface-warm px-4 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-accent file:px-4 file:py-2 file:font-semibold file:text-ink" />
         <p id="file-preview" class="mt-2 text-sm text-muted hidden"></p>
       </div>
 
@@ -173,19 +173,19 @@ function renderForm(events: Event[], selectedEventId: string | null, pilotNumber
           <dl class="grid gap-2 sm:grid-cols-2 text-sm">
             <div class="rounded-lg border border-red/15 bg-surface-warm px-3 py-2.5">
               <dt class="text-xs text-muted mb-0.5">Titular</dt>
-              <dd class="font-medium text-primary">Cogua moto park sas</dd>
+              <dd class="font-medium text-foreground">Cogua moto park sas</dd>
             </div>
             <div class="rounded-lg border border-red/15 bg-surface-warm px-3 py-2.5">
               <dt class="text-xs text-muted mb-0.5">NIT</dt>
-              <dd class="font-medium text-primary font-mono">90203908</dd>
+              <dd class="font-medium text-foreground font-mono">90203908</dd>
             </div>
             <div class="rounded-lg border border-red/15 bg-surface-warm px-3 py-2.5">
               <dt class="text-xs text-muted mb-0.5">Banco</dt>
-              <dd class="font-medium text-primary">BBVA</dd>
+              <dd class="font-medium text-foreground">BBVA</dd>
             </div>
             <div class="rounded-lg border border-red/15 bg-surface-warm px-3 py-2.5">
               <dt class="text-xs text-muted mb-0.5">Tipo de cuenta</dt>
-              <dd class="font-medium text-primary">Ahorros</dd>
+              <dd class="font-medium text-foreground">Ahorros</dd>
             </div>
             <div class="rounded-lg border border-red/15 bg-surface-warm px-3 py-2.5 sm:col-span-2">
               <dt class="text-xs text-muted mb-0.5">Número de cuenta</dt>
@@ -202,7 +202,7 @@ function renderForm(events: Event[], selectedEventId: string | null, pilotNumber
       <div id="payment-section" class="hidden">
         <label class="block text-sm font-medium text-red mb-2" for="paymentFile">Comprobante de pago (foto o PDF, max. ${CONFIG.maxFileSizeMB} MB) *</label>
         <input type="file" id="paymentFile" accept="image/*,.pdf" required
-               class="w-full rounded-xl border border-dashed border-red/40 bg-surface-warm px-4 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-accent file:px-4 file:py-2 file:font-semibold file:text-primary" />
+               class="w-full rounded-xl border border-dashed border-red/40 bg-surface-warm px-4 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-accent file:px-4 file:py-2 file:font-semibold file:text-ink" />
         <p id="payment-preview" class="mt-2 text-sm text-muted hidden"></p>
       </div>
 
