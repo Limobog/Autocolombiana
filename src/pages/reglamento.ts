@@ -29,14 +29,14 @@ function renderTable(section: ReglamentoSection): string {
   const head = table.headers
     .map(
       (h) =>
-        `<th class="px-4 py-3 text-left text-sm font-semibold text-red uppercase tracking-wide">${escapeHtml(h)}</th>`
+        `<th class="px-4 py-3 text-left text-sm font-semibold text-silver uppercase tracking-wide">${escapeHtml(h)}</th>`
     )
     .join('');
 
   const body = table.rows
     .map(
       (row) =>
-        `<tr class="border-t border-white/10 hover:bg-surface-warm transition-colors">${row
+        `<tr class="border-t border-white/10 hover:bg-surface-raised transition-colors">${row
           .map(
             (cell) =>
               `<td class="px-4 py-3 text-muted">${escapeHtml(cell)}</td>`
@@ -48,7 +48,7 @@ function renderTable(section: ReglamentoSection): string {
   return `
     <div class="my-6 overflow-x-auto rounded-xl border border-white/10">
       <table class="w-full min-w-[280px] text-sm">
-        <thead class="bg-surface-warm"><tr>${head}</tr></thead>
+        <thead class="bg-surface-raised"><tr>${head}</tr></thead>
         <tbody class="bg-surface-raised">${body}</tbody>
       </table>
     </div>`;
@@ -57,7 +57,7 @@ function renderTable(section: ReglamentoSection): string {
 function renderBullets(items: string[]): string {
   if (!items.length) return '';
   return `
-    <ul class="mt-4 space-y-2 text-muted leading-relaxed list-disc pl-5 marker:text-red">
+    <ul class="mt-4 space-y-2 text-muted leading-relaxed list-disc pl-5 marker:text-silver">
       ${items.map((b) => `<li>${escapeHtml(b)}</li>`).join('')}
     </ul>`;
 }
@@ -79,7 +79,7 @@ function renderSection(section: ReglamentoSection): string {
       .map(
         (sub) => `
       <div class="mt-6">
-        <h3 class="font-title text-xl tracking-wide text-red">${escapeHtml(sub.title)}</h3>
+        <h3 class="font-title text-xl tracking-wide text-silver">${escapeHtml(sub.title)}</h3>
         ${renderBullets(sub.bullets)}
       </div>`
       )
@@ -97,7 +97,7 @@ function renderSection(section: ReglamentoSection): string {
 function renderToc(): string {
   return REGLAMENTO_SECTIONS.map(
     (s) =>
-      `<a href="#${s.id}" class="block py-1.5 text-sm text-muted hover:text-red transition-colors border-l-2 border-transparent hover:border-red pl-3">${escapeHtml(s.title)}</a>`
+      `<a href="#${s.id}" class="block py-1.5 text-sm text-muted hover:text-silver transition-colors border-l-2 border-transparent hover:border-white pl-3">${escapeHtml(s.title)}</a>`
   ).join('');
 }
 
@@ -111,7 +111,7 @@ export function initReglamentoPage(): void {
     ${renderNavbar('reglamento')}
     <main class="mx-auto max-w-7xl px-4 py-10 md:py-14 md:px-6">
       <header class="text-center mb-10 md:mb-14">
-        <p class="text-red font-semibold tracking-widest uppercase text-sm mb-2">Liga de Motociclismo de Bogotá</p>
+        <p class="text-silver font-semibold tracking-widest uppercase text-sm mb-2">Copa Autocolombiana de Clubes MX</p>
         <h1 class="section-title text-4xl md:text-5xl lg:text-6xl">Reglamento oficial</h1>
         <p class="mt-4 max-w-2xl mx-auto text-muted leading-relaxed">
           Normas oficiales del campeonato. Al inscribirte aceptas este reglamento en su totalidad.
@@ -128,8 +128,8 @@ export function initReglamentoPage(): void {
 
       <div class="lg:grid lg:grid-cols-[240px_1fr] lg:gap-10 xl:gap-14">
         <aside class="hidden lg:block">
-          <nav class="sticky top-24 rounded-xl border border-white/10 bg-surface-warm p-4" aria-label="Índice del reglamento">
-            <p class="font-title text-lg text-red tracking-wide mb-3">Índice</p>
+          <nav class="sticky top-24 rounded-xl border border-white/10 bg-surface-raised p-4" aria-label="Índice del reglamento">
+            <p class="font-title text-lg text-silver tracking-wide mb-3">Índice</p>
             ${renderToc()}
           </nav>
         </aside>

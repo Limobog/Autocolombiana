@@ -11,22 +11,22 @@ function isHttpUrl(value: string): boolean {
 function renderLoadingPanel(): string {
   return `
     <div class="flex flex-col items-center justify-center gap-5 py-16 text-center" role="status" aria-live="polite">
-      <div class="h-14 w-14 animate-spin rounded-full border-4 border-accent/40 border-t-red"></div>
+      <div class="h-14 w-14 animate-spin rounded-full border-4 border-white/40 border-t-white"></div>
       <div>
-        <p class="font-title text-xl tracking-wide text-red uppercase">Procesando datos</p>
+        <p class="font-title text-xl tracking-wide text-silver uppercase">Procesando datos</p>
         <p class="mt-2 text-sm text-muted">Consultando eventos en la base de datos...</p>
       </div>
       <div class="flex gap-1.5">
-        <span class="h-2 w-2 animate-pulse rounded-full bg-red" style="animation-delay: 0ms"></span>
-        <span class="h-2 w-2 animate-pulse rounded-full bg-accent" style="animation-delay: 150ms"></span>
-        <span class="h-2 w-2 animate-pulse rounded-full bg-red" style="animation-delay: 300ms"></span>
+        <span class="h-2 w-2 animate-pulse rounded-full bg-white/80" style="animation-delay: 0ms"></span>
+        <span class="h-2 w-2 animate-pulse rounded-full bg-white/40" style="animation-delay: 150ms"></span>
+        <span class="h-2 w-2 animate-pulse rounded-full bg-white/80" style="animation-delay: 300ms"></span>
       </div>
     </div>`;
 }
 
 function renderStatusBadge(event: Event): string {
   if (event.active) {
-    return '<span class="inline-block rounded-full bg-accent/50 px-3 py-1 text-xs font-semibold text-ink border border-accent/30">Habilitado para inscripciones</span>';
+    return '<span class="inline-block rounded-full bg-white/50 px-3 py-1 text-xs font-semibold text-ink border border-white/30">Habilitado para inscripciones</span>';
   }
   return '<span class="inline-block rounded-full bg-gray-metal/30 px-3 py-1 text-xs font-semibold text-muted">No habilitado para inscripciones</span>';
 }
@@ -49,10 +49,10 @@ function renderEventCard(event: Event): string {
       <div class="flex items-start justify-between gap-4 mb-4">
         <div>
           ${renderStatusBadge(event)}
-          <h3 class="font-title text-2xl tracking-wide text-foreground group-hover:text-red transition-colors mt-2">${event.name}</h3>
+          <h3 class="font-title text-2xl tracking-wide text-foreground group-hover:text-silver transition-colors mt-2">${event.name}</h3>
         </div>
         <div class="text-right shrink-0">
-          <p class="font-title text-xl text-red">${formatDate(event.date)}</p>
+          <p class="font-title text-xl text-silver">${formatDate(event.date)}</p>
         </div>
       </div>
       <p class="text-muted mb-2">📍 ${event.location}, ${event.city}</p>
@@ -69,9 +69,9 @@ export async function initEventsPage(): Promise<void> {
     ${renderNavbar('eventos')}
     <main class="mx-auto max-w-7xl px-4 py-12">
       <div class="mb-10 text-center">
-        <h1 class="section-title mb-4">Eventos de la Liga</h1>
+        <h1 class="section-title mb-4">Eventos de la Copa</h1>
         <p class="text-muted max-w-2xl mx-auto">
-          Consulta las válidas de LIMOBOG, descarga el reglamento y revisa los resultados cuando estén disponibles.
+          Consulta las válidas de la Copa Autocolombiana de Clubes MX, descarga el reglamento y revisa los resultados cuando estén disponibles.
         </p>
       </div>
       <div id="events-list" class="grid gap-6 md:grid-cols-2">

@@ -32,17 +32,17 @@ function isHttpUrl(value: string): boolean {
 function renderLoadingPanel(): string {
   return `
     <div class="min-h-screen flex items-center justify-center px-4">
-      <div class="card w-full max-w-lg border border-red/30">
+      <div class="card w-full max-w-lg border border-white/30">
         <div class="flex flex-col items-center justify-center gap-5 py-14 text-center" role="status" aria-live="polite">
-          <div class="h-14 w-14 animate-spin rounded-full border-4 border-accent/40 border-t-red"></div>
+          <div class="h-14 w-14 animate-spin rounded-full border-4 border-white/30 border-t-white"></div>
           <div>
-            <p class="font-title text-xl tracking-wide text-red uppercase">Procesando datos</p>
+            <p class="font-title text-xl tracking-wide text-silver uppercase">Procesando datos</p>
             <p class="mt-2 text-sm text-muted">Consultando eventos e inscripciones en la base de datos...</p>
           </div>
           <div class="flex gap-1.5">
-            <span class="h-2 w-2 animate-pulse rounded-full bg-red" style="animation-delay: 0ms"></span>
-            <span class="h-2 w-2 animate-pulse rounded-full bg-accent" style="animation-delay: 150ms"></span>
-            <span class="h-2 w-2 animate-pulse rounded-full bg-red" style="animation-delay: 300ms"></span>
+            <span class="h-2 w-2 animate-pulse rounded-full bg-white" style="animation-delay: 0ms"></span>
+            <span class="h-2 w-2 animate-pulse rounded-full bg-white" style="animation-delay: 150ms"></span>
+            <span class="h-2 w-2 animate-pulse rounded-full bg-white" style="animation-delay: 300ms"></span>
           </div>
         </div>
       </div>
@@ -83,13 +83,13 @@ function renderLogin(): string {
   return `
     <div class="min-h-screen flex items-center justify-center px-4">
       <div class="card w-full max-w-md">
-        <h1 class="font-title text-3xl text-center text-accent mb-6 tracking-wider">Panel de Gestion</h1>
+        <h1 class="font-title text-3xl text-center text-white mb-6 tracking-wider">Panel de Gestion</h1>
         <form id="login-form" class="space-y-4">
           <div>
             <label class="block text-sm text-secondary mb-2" for="password">Contrasena</label>
             <input type="password" id="password" required class="input-field" />
           </div>
-          <div id="login-error" class="hidden text-red text-sm"></div>
+          <div id="login-error" class="hidden text-silver text-sm"></div>
           <button type="submit" class="btn-primary w-full">Ingresar</button>
         </form>
       </div>
@@ -114,8 +114,8 @@ function renderCategoryCheckboxes(age: number, selected: string[] = []): string 
     ${categories
       .map(
         (c) => `
-      <label class="flex items-center gap-3 rounded-lg border border-red/20 bg-surface-warm px-3 py-2 cursor-pointer hover:border-red/50">
-        <input type="checkbox" name="categoriaIds" value="${c.id}" class="accent-red h-4 w-4" ${selected.includes(c.id) ? 'checked' : ''} />
+      <label class="flex items-center gap-3 rounded-lg border border-white/20 bg-surface-raised px-3 py-2 cursor-pointer hover:border-white/50">
+        <input type="checkbox" name="categoriaIds" value="${c.id}" class="accent-white h-4 w-4" ${selected.includes(c.id) ? 'checked' : ''} />
         <span class="text-sm font-medium">${formatCategoryOptionLabel(c)}</span>
       </label>`
       )
@@ -146,7 +146,7 @@ function renderDocumentLinkCell(url: string | undefined, title: string, ariaLabe
   if (!isHttpUrl(link)) {
     return '<span class="text-muted text-xs">—</span>';
   }
-  return `<a href="${link}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center text-secondary hover:text-accent" title="${title}" aria-label="${ariaLabel}">
+  return `<a href="${link}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center text-secondary hover:text-white" title="${title}" aria-label="${ariaLabel}">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
   </a>`;
 }
@@ -159,23 +159,23 @@ function renderRegistrationRow(reg: Registration, events: Event[]): string {
   const totalLabel = formatCop(resolveRegistrationTotal(reg, events));
 
   return `
-    <tr class="border-b border-red/10 hover:bg-surface-warm" data-id="${reg.id}">
+    <tr class="border-b border-white/10 hover:bg-surface-raised" data-id="${reg.id}">
       <td class="px-3 py-3 text-sm">#${reg.numeroPiloto}</td>
       <td class="px-3 py-3 text-sm">${reg.nombre} ${reg.apellido}</td>
       <td class="px-3 py-3 text-sm hidden md:table-cell">${reg.edad} años</td>
       <td class="px-3 py-3 text-sm hidden lg:table-cell">${formatCategoryDisplayLabel(reg.categoriaId, reg.categoriaLabel)}</td>
-      <td class="px-3 py-3 text-sm hidden md:table-cell font-semibold text-accent">${totalLabel}</td>
+      <td class="px-3 py-3 text-sm hidden md:table-cell font-semibold text-white">${totalLabel}</td>
       <td class="px-3 py-3 text-sm hidden lg:table-cell">${reg.ciudad}</td>
       <td class="px-3 py-3 text-sm hidden lg:table-cell">${reg.marcaMoto || '—'}</td>
       <td class="px-3 py-3 text-sm hidden xl:table-cell">${reg.celular}</td>
       <td class="px-3 py-3 text-sm">${reg.identificacion || '—'}</td>
       <td class="px-3 py-3 text-sm text-center">${renderDocumentLinkCell(reg.comprobantePagoArchivo, 'Ver comprobante de pago', 'Ver comprobante de pago')}</td>
       <td class="px-3 py-3 text-sm">
-        <button class="edit-reg text-secondary hover:text-accent mr-2" data-id="${reg.id}">Editar</button>
-        <button class="delete-reg text-red hover:text-accent" data-id="${reg.id}">Eliminar</button>
+        <button class="edit-reg text-secondary hover:text-white mr-2" data-id="${reg.id}">Editar</button>
+        <button class="delete-reg text-silver hover:text-white" data-id="${reg.id}">Eliminar</button>
       </td>
     </tr>
-    <tr class="hidden edit-row bg-surface-warm" data-edit-id="${reg.id}">
+    <tr class="hidden edit-row bg-surface-raised" data-edit-id="${reg.id}">
       <td colspan="11" class="px-4 py-4">
         <form class="edit-form grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-id="${reg.id}">
           <input type="text" name="nombre" value="${reg.nombre}" placeholder="Nombre" class="input-field text-sm" required />
@@ -206,7 +206,7 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
     .map(
       (e) =>
         `<button class="event-tab px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-          e.active ? 'bg-accent/40 text-ink' : 'bg-surface-raised text-muted'
+          e.active ? 'bg-white/40 text-ink' : 'bg-surface-raised text-muted'
         }" data-event-id="${e.id}">${e.name}</button>`
     )
     .join('');
@@ -217,7 +217,7 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
       return `
         <div class="event-panel hidden" data-event-panel="${event.id}">
           <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h3 class="font-title text-2xl text-accent">${event.name}</h3>
+            <h3 class="font-title text-2xl text-white">${event.name}</h3>
             <div class="flex flex-wrap items-center gap-3">
               ${
                 regs.length > 0
@@ -233,7 +233,7 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
               : `<div class="overflow-x-auto">
                   <table class="w-full text-left">
                     <thead>
-                      <tr class="border-b border-red/30 text-secondary text-sm">
+                      <tr class="border-b border-white/30 text-secondary text-sm">
                         <th class="px-3 py-2"># Piloto</th>
                         <th class="px-3 py-2">Nombre</th>
                         <th class="px-3 py-2 hidden md:table-cell">Edad</th>
@@ -260,7 +260,7 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
       <header class="border-b border-white/10 bg-surface-raised px-4 py-4 shadow-sm">
         <div class="mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 class="font-title text-3xl text-accent tracking-wider">Panel LIMOBOG</h1>
+            <h1 class="font-title text-3xl text-white tracking-wider">Panel Copa Autocolombiana</h1>
             <p class="text-sm text-muted">Gestión de inscripciones y eventos</p>
           </div>
           <button id="logout-btn" class="btn-outline text-sm py-2 px-4">Cerrar sesion</button>
@@ -269,7 +269,7 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
 
       <main class="mx-auto max-w-7xl px-4 py-8 space-y-10">
         <section class="card">
-          <h2 class="font-title text-2xl text-secondary mb-4">Datos de la liga</h2>
+          <h2 class="font-title text-2xl text-silver mb-4">Datos de la copa</h2>
           ${
             isApiEnabled()
               ? `<p class="text-secondary text-sm mb-4 font-semibold">
@@ -293,27 +293,27 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
             ${events
               .map(
                 (e) => `
-              <div class="flex flex-wrap items-center gap-3 rounded-lg border border-red/20 bg-surface-warm p-4" data-event-admin="${e.id}">
+              <div class="flex flex-wrap items-center gap-3 rounded-lg border border-white/20 bg-surface-raised p-4" data-event-admin="${e.id}">
                 <div class="flex-1 min-w-[200px]">
                   <p class="font-semibold">${e.name}</p>
                   <p class="text-sm text-muted">${formatDate(e.date)} · ${e.city}</p>
                 </div>
                 <label class="flex items-center gap-2 text-sm">
-                  <input type="checkbox" class="event-active-toggle accent-red" data-id="${e.id}" ${e.active ? 'checked' : ''} />
+                  <input type="checkbox" class="event-active-toggle accent-white" data-id="${e.id}" ${e.active ? 'checked' : ''} />
                   Habilitado inscripciones
                 </label>
                 <label class="flex items-center gap-2 text-sm">
-                  <input type="checkbox" class="event-finished-toggle accent-accent" data-id="${e.id}" ${e.finished ? 'checked' : ''} />
+                  <input type="checkbox" class="event-finished-toggle accent-white" data-id="${e.id}" ${e.finished ? 'checked' : ''} />
                   Finalizado
                 </label>
-                ${e.reglamentoUrl?.trim() ? '<a href="' + e.reglamentoUrl + '" target="_blank" rel="noopener noreferrer" class="text-secondary text-sm hover:text-accent">Ver reglamento</a>' : '<span class="text-xs text-muted">Sin reglamento</span>'}
-                <button class="edit-event-btn text-secondary text-sm hover:text-accent" data-id="${e.id}">Editar</button>
-                <button class="delete-event-btn text-red text-sm hover:text-accent" data-id="${e.id}">Eliminar</button>
+                ${e.reglamentoUrl?.trim() ? '<a href="' + e.reglamentoUrl + '" target="_blank" rel="noopener noreferrer" class="text-secondary text-sm hover:text-white">Ver reglamento</a>' : '<span class="text-xs text-muted">Sin reglamento</span>'}
+                <button class="edit-event-btn text-secondary text-sm hover:text-white" data-id="${e.id}">Editar</button>
+                <button class="delete-event-btn text-silver text-sm hover:text-white" data-id="${e.id}">Eliminar</button>
               </div>`
               )
               .join('')}
           </div>
-          <form id="event-form" class="hidden mt-4 space-y-3 border-t border-red/20 pt-4">
+          <form id="event-form" class="hidden mt-4 space-y-3 border-t border-white/20 pt-4">
             <input type="hidden" id="event-form-id" />
             <div class="grid gap-3 sm:grid-cols-2">
               <input type="text" id="event-name" placeholder="Nombre del evento" class="input-field" required />
@@ -326,12 +326,12 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
             <div>
               <label class="block text-sm text-secondary mb-2" for="event-reglamento">Reglamento (PDF)</label>
               <input type="file" id="event-reglamento" accept=".pdf,application/pdf"
-                class="w-full rounded-xl border border-dashed border-red/40 bg-surface-warm px-4 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-accent file:px-4 file:py-2 file:font-semibold file:text-ink" />
+                class="w-full rounded-xl border border-dashed border-white/40 bg-surface-raised px-4 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-white file:px-4 file:py-2 file:font-semibold file:text-ink" />
               <p id="event-reglamento-preview" class="mt-2 text-xs text-muted hidden"></p>
               <p id="event-reglamento-current" class="mt-2 text-xs text-secondary hidden"></p>
             </div>
             <label class="flex items-center gap-2 text-sm">
-              <input type="checkbox" id="event-finished" class="accent-accent" />
+              <input type="checkbox" id="event-finished" class="accent-white" />
               Evento finalizado (habilita boton Ver resultados)
             </label>
             <div class="flex gap-2">
@@ -406,14 +406,14 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => {
       const eventId = tab.getAttribute('data-event-id');
-      tabs.forEach((t) => t.classList.remove('ring-2', 'ring-red'));
-      tab.classList.add('ring-2', 'ring-red');
+      tabs.forEach((t) => t.classList.remove('ring-2', 'ring-white'));
+      tab.classList.add('ring-2', 'ring-white');
       panels.forEach((p) => {
         p.classList.toggle('hidden', p.getAttribute('data-event-panel') !== eventId);
       });
     });
   });
-  tabs[0]?.classList.add('ring-2', 'ring-red');
+  tabs[0]?.classList.add('ring-2', 'ring-white');
 
   document.querySelectorAll('.export-registrations-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
@@ -507,7 +507,7 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
       if (event.reglamentoUrl?.trim()) {
         reglamentoCurrent?.classList.remove('hidden');
         if (reglamentoCurrent) {
-          reglamentoCurrent.innerHTML = `Reglamento actual: <a href="${event.reglamentoUrl}" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">Ver PDF</a> (sube otro archivo para reemplazarlo)`;
+          reglamentoCurrent.innerHTML = `Reglamento actual: <a href="${event.reglamentoUrl}" target="_blank" rel="noopener noreferrer" class="text-white hover:underline">Ver PDF</a> (sube otro archivo para reemplazarlo)`;
         }
       } else {
         reglamentoCurrent?.classList.add('hidden');

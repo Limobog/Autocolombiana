@@ -32,8 +32,8 @@ function renderCategoryCheckboxes(age: number, selected: string[] = []): string 
     ${categories
       .map(
         (c) => `
-      <label class="flex items-center gap-3 rounded-lg border border-red/20 bg-surface-warm px-4 py-3 cursor-pointer hover:border-red/50">
-        <input type="checkbox" name="categoriaIds" value="${c.id}" class="accent-red h-4 w-4" ${selected.includes(c.id) ? 'checked' : ''} />
+      <label class="flex items-center gap-3 rounded-lg border border-white/20 bg-surface-raised px-4 py-3 cursor-pointer hover:border-white/50">
+        <input type="checkbox" name="categoriaIds" value="${c.id}" class="accent-white h-4 w-4" ${selected.includes(c.id) ? 'checked' : ''} />
         <span class="text-sm font-medium">${formatCategoryOptionLabel(c)}</span>
       </label>`
       )
@@ -56,15 +56,15 @@ function renderPilotOptions(numbers: number[], selected?: number): string {
 function renderLoadingPanel(): string {
   return `
     <div class="flex flex-col items-center justify-center gap-5 py-16 text-center" role="status" aria-live="polite">
-      <div class="h-14 w-14 animate-spin rounded-full border-4 border-accent/40 border-t-red"></div>
+      <div class="h-14 w-14 animate-spin rounded-full border-4 border-white/30 border-t-white"></div>
       <div>
-        <p class="font-title text-xl tracking-wide text-red">Procesando datos</p>
+        <p class="font-title text-xl tracking-wide text-silver">Procesando datos</p>
         <p class="mt-2 text-sm text-muted">Consultando eventos y numeros de piloto en la base de datos...</p>
       </div>
       <div class="flex gap-1.5">
-        <span class="h-2 w-2 animate-pulse rounded-full bg-red" style="animation-delay: 0ms"></span>
-        <span class="h-2 w-2 animate-pulse rounded-full bg-accent" style="animation-delay: 150ms"></span>
-        <span class="h-2 w-2 animate-pulse rounded-full bg-red" style="animation-delay: 300ms"></span>
+        <span class="h-2 w-2 animate-pulse rounded-full bg-white/80" style="animation-delay: 0ms"></span>
+        <span class="h-2 w-2 animate-pulse rounded-full bg-white/40" style="animation-delay: 150ms"></span>
+        <span class="h-2 w-2 animate-pulse rounded-full bg-white/80" style="animation-delay: 300ms"></span>
       </div>
     </div>`;
 }
@@ -81,61 +81,61 @@ function renderForm(events: Event[], selectedEventId: string | null, pilotNumber
   return `
     <form id="registration-form" class="space-y-6">
       <div>
-        <label class="block text-sm font-medium text-red mb-2" for="eventId">Evento *</label>
+        <label class="block text-sm font-medium text-silver mb-2" for="eventId">Evento *</label>
         <select id="eventId" name="eventId" required class="input-field">${eventOptions}</select>
       </div>
 
       <div class="grid gap-6 sm:grid-cols-2">
         <div>
-          <label class="block text-sm font-medium text-red mb-2" for="nombre">Nombre *</label>
+          <label class="block text-sm font-medium text-silver mb-2" for="nombre">Nombre *</label>
           <input type="text" id="nombre" name="nombre" required class="input-field" autocomplete="given-name" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-red mb-2" for="apellido">Apellido *</label>
+          <label class="block text-sm font-medium text-silver mb-2" for="apellido">Apellido *</label>
           <input type="text" id="apellido" name="apellido" required class="input-field" autocomplete="family-name" />
         </div>
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-red mb-2" for="identificacion">Numero de identificacion *</label>
+        <label class="block text-sm font-medium text-silver mb-2" for="identificacion">Numero de identificacion *</label>
         <input type="text" id="identificacion" name="identificacion" required class="input-field mb-3" placeholder="Ej: 1234567890" />
-        <label class="block text-sm font-medium text-red mb-2" for="idFile">Documento de identidad (foto o PDF, max. ${CONFIG.maxFileSizeMB} MB) *</label>
+        <label class="block text-sm font-medium text-silver mb-2" for="idFile">Documento de identidad (foto o PDF, max. ${CONFIG.maxFileSizeMB} MB) *</label>
         <input type="file" id="idFile" accept="image/*,.pdf" required
-               class="w-full rounded-xl border border-dashed border-red/40 bg-surface-warm px-4 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-accent file:px-4 file:py-2 file:font-semibold file:text-ink" />
+               class="w-full rounded-xl border border-dashed border-white/40 bg-surface-raised px-4 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-white file:px-4 file:py-2 file:font-semibold file:text-ink" />
         <p id="file-preview" class="mt-2 text-sm text-muted hidden"></p>
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-red mb-2" for="fechaNacimiento">Fecha de nacimiento *</label>
+        <label class="block text-sm font-medium text-silver mb-2" for="fechaNacimiento">Fecha de nacimiento *</label>
         <input type="date" id="fechaNacimiento" name="fechaNacimiento" required class="input-field" />
-        <p id="age-display" class="mt-2 text-sm text-accent font-semibold hidden"></p>
+        <p id="age-display" class="mt-2 text-sm text-white font-semibold hidden"></p>
       </div>
 
       <div class="grid gap-6 sm:grid-cols-2">
         <div>
-          <label class="block text-sm font-medium text-red mb-2" for="email">Correo electronico *</label>
+          <label class="block text-sm font-medium text-silver mb-2" for="email">Correo electronico *</label>
           <input type="email" id="email" name="email" required class="input-field" autocomplete="email" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-red mb-2" for="celular">Celular *</label>
+          <label class="block text-sm font-medium text-silver mb-2" for="celular">Celular *</label>
           <input type="tel" id="celular" name="celular" required class="input-field" placeholder="300 123 4567" autocomplete="tel" />
         </div>
       </div>
 
       <div class="grid gap-6 sm:grid-cols-2">
         <div>
-          <label class="block text-sm font-medium text-red mb-2" for="ciudad">Ciudad *</label>
+          <label class="block text-sm font-medium text-silver mb-2" for="ciudad">Ciudad *</label>
           <input type="text" id="ciudad" name="ciudad" required class="input-field" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-red mb-2" for="marcaMoto">Marca moto *</label>
+          <label class="block text-sm font-medium text-silver mb-2" for="marcaMoto">Marca moto *</label>
           <input type="text" id="marcaMoto" name="marcaMoto" required class="input-field" placeholder="Ej: KTM, Yamaha, Honda..." />
         </div>
       </div>
 
       <div class="grid gap-6 sm:grid-cols-2">
         <div>
-          <label class="block text-sm font-medium text-red mb-2" for="numeroPiloto">Numero de piloto *</label>
+          <label class="block text-sm font-medium text-silver mb-2" for="numeroPiloto">Numero de piloto *</label>
           <select id="numeroPiloto" name="numeroPiloto" required class="input-field">
             ${renderPilotOptions(pilotNumbers)}
           </select>
@@ -144,18 +144,18 @@ function renderForm(events: Event[], selectedEventId: string | null, pilotNumber
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-red mb-2">Categorias * (puedes elegir mas de una si aplica)</label>
+        <label class="block text-sm font-medium text-silver mb-2">Categorias * (puedes elegir mas de una si aplica)</label>
         <div id="categoria-container" class="opacity-60 pointer-events-none">
           <p class="text-sm text-muted">Primero ingresa tu fecha de nacimiento</p>
         </div>
       </div>
 
-      <div id="inscription-total" class="hidden rounded-xl border border-accent/30 bg-accent/10 p-5 space-y-4">
+      <div id="inscription-total" class="hidden rounded-xl border border-white/20 bg-white/5 p-5 space-y-4">
         <div class="space-y-2">
           <p class="text-sm text-muted">
-            Valor por categoría: <span id="inscription-unit-price" class="text-red font-semibold">—</span>
+            Valor por categoría: <span id="inscription-unit-price" class="text-silver font-semibold">—</span>
           </p>
-          <p class="font-title text-2xl tracking-wide text-accent">
+          <p class="font-title text-2xl tracking-wide text-white">
             Total a pagar: <span id="inscription-total-amount">—</span>
           </p>
           <p class="text-xs text-muted">
@@ -163,46 +163,46 @@ function renderForm(events: Event[], selectedEventId: string | null, pilotNumber
           </p>
         </div>
 
-        <div class="rounded-xl border border-red/25 bg-surface-warm p-4 space-y-3">
-          <p class="text-sm font-semibold text-red uppercase tracking-wide">
+        <div class="rounded-xl border border-white/25 bg-surface-raised p-4 space-y-3">
+          <p class="text-sm font-semibold text-silver uppercase tracking-wide">
             Datos para realizar el pago
           </p>
           <p class="text-xs text-muted">
             Transfiere el total indicado a la siguiente cuenta de ahorros y adjunta el comprobante más abajo.
           </p>
           <dl class="grid gap-2 sm:grid-cols-2 text-sm">
-            <div class="rounded-lg border border-red/15 bg-surface-warm px-3 py-2.5">
+            <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
               <dt class="text-xs text-muted mb-0.5">Titular</dt>
               <dd class="font-medium text-foreground">Cogua moto park sas</dd>
             </div>
-            <div class="rounded-lg border border-red/15 bg-surface-warm px-3 py-2.5">
+            <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
               <dt class="text-xs text-muted mb-0.5">NIT</dt>
               <dd class="font-medium text-foreground font-mono">90203908</dd>
             </div>
-            <div class="rounded-lg border border-red/15 bg-surface-warm px-3 py-2.5">
+            <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
               <dt class="text-xs text-muted mb-0.5">Banco</dt>
               <dd class="font-medium text-foreground">BBVA</dd>
             </div>
-            <div class="rounded-lg border border-red/15 bg-surface-warm px-3 py-2.5">
+            <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
               <dt class="text-xs text-muted mb-0.5">Tipo de cuenta</dt>
               <dd class="font-medium text-foreground">Ahorros</dd>
             </div>
-            <div class="rounded-lg border border-red/15 bg-surface-warm px-3 py-2.5 sm:col-span-2">
+            <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5 sm:col-span-2">
               <dt class="text-xs text-muted mb-0.5">Número de cuenta</dt>
-              <dd class="font-medium text-accent font-mono text-base tracking-wide">0180011666</dd>
+              <dd class="font-medium text-white font-mono text-base tracking-wide">0180011666</dd>
             </div>
-            <div class="rounded-lg border border-red/15 bg-surface-warm px-3 py-2.5 sm:col-span-2">
+            <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5 sm:col-span-2">
               <dt class="text-xs text-muted mb-0.5">Llave</dt>
-              <dd class="font-medium text-accent font-mono text-base tracking-wide">0091823623</dd>
+              <dd class="font-medium text-white font-mono text-base tracking-wide">0091823623</dd>
             </div>
           </dl>
         </div>
       </div>
 
       <div id="payment-section" class="hidden">
-        <label class="block text-sm font-medium text-red mb-2" for="paymentFile">Comprobante de pago (foto o PDF, max. ${CONFIG.maxFileSizeMB} MB) *</label>
+        <label class="block text-sm font-medium text-silver mb-2" for="paymentFile">Comprobante de pago (foto o PDF, max. ${CONFIG.maxFileSizeMB} MB) *</label>
         <input type="file" id="paymentFile" accept="image/*,.pdf" required
-               class="w-full rounded-xl border border-dashed border-red/40 bg-surface-warm px-4 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-accent file:px-4 file:py-2 file:font-semibold file:text-ink" />
+               class="w-full rounded-xl border border-dashed border-white/40 bg-surface-raised px-4 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-white file:px-4 file:py-2 file:font-semibold file:text-ink" />
         <p id="payment-preview" class="mt-2 text-sm text-muted hidden"></p>
       </div>
 
@@ -224,7 +224,7 @@ async function refreshPilotSelect(eventId: string): Promise<void> {
   select.disabled = true;
   select.classList.add('opacity-60', 'pointer-events-none');
   status.innerHTML =
-    '<span class="inline-flex items-center gap-2 text-red"><span class="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-accent/40 border-t-red"></span>Consultando numeros disponibles...</span>';
+    '<span class="inline-flex items-center gap-2 text-silver"><span class="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>Consultando numeros disponibles...</span>';
 
   try {
     const numbers = await getAvailablePilotNumbers(eventId);
@@ -497,7 +497,7 @@ export async function initRegistrationPage(): Promise<void> {
     <main class="mx-auto max-w-3xl px-4 py-12">
       <div class="mb-8 text-center">
         <h1 class="section-title mb-4">Inscripción de Piloto</h1>
-        <p class="text-muted">Completa el formulario para registrarte en la Liga de Motociclismo de Bogotá (LIMOBOG).</p>
+        <p class="text-muted">Completa el formulario para registrarte en la Copa Autocolombiana de Clubes MX.</p>
       </div>
       <div class="card animate-fade-in-up" id="registration-card">
         ${renderLoadingPanel()}
@@ -529,6 +529,6 @@ export async function initRegistrationPage(): Promise<void> {
     bindRegistrationForm(events);
   } catch {
     card.innerHTML =
-      '<p class="text-center text-red-400 py-8">No se pudieron cargar los datos. Recarga la pagina e intenta de nuevo.</p>';
+      '<p class="text-center text-silver-400 py-8">No se pudieron cargar los datos. Recarga la pagina e intenta de nuevo.</p>';
   }
 }

@@ -17,7 +17,7 @@ export async function initResultsPage(): Promise<void> {
     ${renderNavbar('eventos')}
     <main class="mx-auto max-w-3xl px-4 py-12">
       <div id="results-content" class="card text-center py-16">
-        <div class="h-12 w-12 mx-auto animate-spin rounded-full border-4 border-accent/40 border-t-red"></div>
+        <div class="h-12 w-12 mx-auto animate-spin rounded-full border-4 border-white/40 border-t-white"></div>
         <p class="mt-4 text-muted">Cargando resultados...</p>
       </div>
     </main>
@@ -59,7 +59,7 @@ export async function initResultsPage(): Promise<void> {
 
   content.innerHTML = `
     <h1 class="section-title mb-2">Resultados</h1>
-    <p class="text-red font-semibold mb-1">${event.name}</p>
+    <p class="text-silver font-semibold mb-1">${event.name}</p>
     <p class="text-sm text-muted mb-6">${formatDate(event.date)} · ${event.city}</p>
     <p class="text-muted leading-relaxed">
       La tabla de resultados se conectara proximamente con los datos del evento.

@@ -23,9 +23,9 @@ function renderCategoryCards(): string {
   return CATEGORIES.map((cat) => {
     const { name, engine } = splitCategoryLabel(cat);
     return `
-      <div class="card border-l-4 border-l-accent hover:border-l-red">
-        <span class="font-title text-2xl tracking-wide text-red">${name}</span>
-        <span class="mt-1 block text-sm font-bold text-foreground">${formatCategoryAge(cat)}</span>
+      <div class="card border-l-2 border-l-white/30 hover:border-l-white/60">
+        <span class="font-title text-2xl tracking-wide text-white">${name}</span>
+        <span class="mt-1 block text-sm font-semibold text-silver">${formatCategoryAge(cat)}</span>
         ${engine ? `<span class="mt-2 block text-muted text-xs leading-snug">${engine}</span>` : ''}
       </div>`;
   }).join('');
@@ -38,99 +38,103 @@ export function initHomePage(): void {
   app.innerHTML = `
     ${renderNavbar('home')}
 
-    <section class="hero-pattern relative overflow-hidden">
-      <div class="mx-auto max-w-7xl px-4 py-14 md:py-20">
-        <div class="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
-          <div class="animate-fade-in-up order-2 lg:order-1">
-            <span class="shield-badge mb-5">Copa MX · Autocolombiana</span>
-            <h1 class="font-title text-5xl leading-none tracking-wider text-foreground md:text-7xl">
-              LIGA DE<br/>
-              <span class="text-red">MOTOCICLISMO</span><br/>
-              <span class="text-accent">DE BOGOTÁ</span>
+    <section class="hero-geo relative">
+      <div class="geo-shapes" aria-hidden="true">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+      </div>
+      <div class="geo-grid absolute inset-0 opacity-40 pointer-events-none" aria-hidden="true"></div>
+      <div class="mx-auto max-w-7xl px-4 py-16 md:py-24 relative z-10">
+        <div class="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+          <div class="animate-fade-in-up order-2 lg:order-1 text-center lg:text-left">
+            <span class="badge-tag mb-6">De Clubes · MX</span>
+            <h1 class="font-title text-4xl leading-none tracking-wider text-white sm:text-5xl md:text-6xl lg:text-7xl">
+              COPA<br/>
+              <span class="text-silver">AUTOCOLOMBIANA</span>
             </h1>
-            <p class="mt-6 text-lg text-muted leading-relaxed max-w-xl">
-              LIMOBOG es la liga oficial de motociclismo de Bogotá. Tradición racing,
-              orgullo colombiano y competencia profesional con válidas, rankings,
-              inscripciones en línea y resultados oficiales.
+            <p class="mt-2 font-title text-2xl md:text-3xl tracking-widest text-white/80">DE CLUBES MX</p>
+            <p class="mt-6 text-base md:text-lg text-muted leading-relaxed max-w-xl mx-auto lg:mx-0">
+              El campeonato nacional de motocross por clubes. Válidas oficiales, categorías por edad,
+              inscripciones en línea, resultados y la adrenalina del MX colombiano.
             </p>
-            <div class="mt-8 flex flex-wrap gap-4">
+            <div class="mt-8 flex flex-wrap gap-4 justify-center lg:justify-start">
               <a href="./inscripcion.html" class="btn-primary text-base px-8">Inscríbete ahora</a>
               <a href="./eventos.html" class="btn-outline text-base px-8">Ver eventos</a>
             </div>
-            <div class="mt-10 flex flex-wrap gap-3">
+            <div class="mt-10 flex flex-wrap gap-3 justify-center lg:justify-start">
               <div class="stat-pill">
-                <span class="font-title text-3xl text-red leading-none">${CATEGORIES.length}</span>
+                <span class="font-title text-3xl text-white leading-none">${CATEGORIES.length}</span>
                 <span class="text-xs font-semibold text-muted mt-1">Categorías</span>
               </div>
               <div class="stat-pill">
-                <span class="font-title text-3xl text-red leading-none">MX</span>
-                <span class="text-xs font-semibold text-muted mt-1">Autocolombiana</span>
+                <span class="font-title text-3xl text-white leading-none">MX</span>
+                <span class="text-xs font-semibold text-muted mt-1">Clubes</span>
               </div>
               <div class="stat-pill">
-                <span class="font-title text-3xl text-red leading-none">2026</span>
+                <span class="font-title text-3xl text-white leading-none">2026</span>
                 <span class="text-xs font-semibold text-muted mt-1">Temporada</span>
               </div>
             </div>
           </div>
           <div class="flex justify-center animate-fade-in-up order-1 lg:order-2">
             <div class="relative">
-              <div class="absolute -top-3 -right-3 h-16 w-16 rounded-full bg-accent border-2 border-accent/40 flex items-center justify-center font-title text-xl text-ink shadow-glow-yellow">🏁</div>
-              <img src="./logo-limobog.png" alt="Logo LIMOBOG — Liga de Motociclismo de Bogotá"
-                   class="max-w-xs md:max-w-md object-contain drop-shadow-2xl" />
+              <div class="absolute inset-0 bg-white/5 blur-3xl rounded-full scale-75" aria-hidden="true"></div>
+              <img src="./logo-copa.png" alt="Copa Autocolombiana de Clubes MX"
+                   class="relative max-w-[280px] sm:max-w-xs md:max-w-sm lg:max-w-md w-full object-contain drop-shadow-glow-strong" />
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="section-warm py-14">
-      <div class="mx-auto max-w-7xl px-4">
+    <section class="section-geo py-14 md:py-18">
+      <div class="mx-auto max-w-7xl px-4 relative z-10">
         <div class="text-center mb-10">
-          <h2 class="section-title mb-3">¿Qué es LIMOBOG?</h2>
+          <h2 class="section-title mb-3">¿Qué es la Copa?</h2>
           <p class="text-muted max-w-2xl mx-auto leading-relaxed">
-            La entidad que organiza y regula las competencias oficiales de motociclismo en Bogotá.
+            El certamen que reúne a los mejores clubes y pilotos de motocross en Colombia.
           </p>
         </div>
         <div class="mx-auto max-w-3xl text-center text-muted leading-relaxed space-y-4 mb-12">
           <p>
-            Nuestra misión es fortalecer el deporte con estándares técnicos, seguridad y una
-            identidad que honra la tradición racing y el espíritu competitivo colombiano.
+            La Copa Autocolombiana de Clubes MX es una competencia de alto nivel con formato por válidas,
+            acumulación de puntos y categorías técnicas para cada rango de edad y cilindraje.
           </p>
           <p>
-            Calendarios de válidas, resultados, registro de pilotos y difusión del motociclismo
-            bogotano — todo en una plataforma moderna y accesible.
+            Inscripciones digitales, calendario de eventos, reglamento oficial y resultados — todo en un solo lugar.
           </p>
         </div>
         <div class="grid gap-6 md:grid-cols-3">
           <div class="card-featured text-center">
-            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-2xl border border-accent/30 text-ink">🏁</div>
-            <h3 class="font-title text-2xl tracking-wide text-red mb-2">Tradición Racing</h3>
-            <p class="text-muted text-sm">Escudos clásicos, estética vintage y motociclismo profesional con identidad institucional moderna.</p>
+            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-lg border border-white/15 bg-white/5 font-title text-2xl text-white">01</div>
+            <h3 class="font-title text-2xl tracking-wide text-white mb-2">Por Clubes</h3>
+            <p class="text-muted text-sm">Representa a tu club y compite por el título nacional de la Copa Autocolombiana.</p>
           </div>
           <div class="card text-center">
-            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red/10 text-2xl">🇨🇴</div>
-            <h3 class="font-title text-2xl tracking-wide text-red mb-2">Orgullo Colombiano</h3>
-            <p class="text-muted text-sm">Amarillo, rojo y blanco en cada válida. Competencia de alto nivel con elegancia deportiva.</p>
+            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-lg border border-white/10 bg-white/5 font-title text-2xl text-silver">02</div>
+            <h3 class="font-title text-2xl tracking-wide text-white mb-2">Alto Nivel</h3>
+            <p class="text-muted text-sm">Pistas exigentes, organización profesional y estándares técnicos de competencia MX.</p>
           </div>
           <div class="card text-center">
-            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent/30 text-2xl border border-accent/20">⚡</div>
-            <h3 class="font-title text-2xl tracking-wide text-red mb-2">Velocidad y Competencia</h3>
-            <p class="text-muted text-sm">Rankings, categorías por disciplina, inscripciones en línea y resultados oficiales.</p>
+            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-lg border border-white/10 bg-white/5 font-title text-2xl text-silver">03</div>
+            <h3 class="font-title text-2xl tracking-wide text-white mb-2">Todo en Línea</h3>
+            <p class="text-muted text-sm">Registro de pilotos, consulta de eventos y seguimiento de resultados desde la web.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="py-14 bg-surface">
+    <section class="section-light py-14">
       <div class="mx-auto max-w-7xl px-4">
         <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10">
           <div>
             <h2 class="section-title mb-2">Categorías oficiales</h2>
             <p class="text-muted max-w-xl">
-              Copa MX — Autocolombiana · LIMOBOG. Elige la categoría acorde a tu edad al momento del evento.
+              Elige la categoría acorde a tu edad al momento del evento.
             </p>
           </div>
-          <a href="./inscripcion.html" class="btn-secondary shrink-0">Registrarme</a>
+          <a href="./inscripcion.html" class="btn-primary shrink-0">Registrarme</a>
         </div>
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           ${renderCategoryCards()}
@@ -138,24 +142,23 @@ export function initHomePage(): void {
       </div>
     </section>
 
-    <section class="section-soft py-14">
-      <div class="mx-auto max-w-7xl px-4">
+    <section class="py-14 bg-surface relative overflow-hidden">
+      <div class="geo-grid absolute inset-0 opacity-20 pointer-events-none" aria-hidden="true"></div>
+      <div class="mx-auto max-w-7xl px-4 relative z-10">
         <h2 class="section-title text-center mb-10">Acceso rápido</h2>
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           ${[
-            ['📅', 'Eventos', 'Calendario de válidas', './eventos.html'],
-            ['📝', 'Inscripción', 'Registro de pilotos', './inscripcion.html'],
-            ['📋', 'Reglamento', 'Normas oficiales', './reglamento.html'],
-            ['🏆', 'Resultados', 'Clasificaciones', './resultados.html'],
+            ['Eventos', 'Calendario de válidas', './eventos.html'],
+            ['Inscripción', 'Registro de pilotos', './inscripcion.html'],
+            ['Reglamento', 'Normas oficiales', './reglamento.html'],
+            ['Resultados', 'Clasificaciones', './resultados.html'],
           ]
             .map(
-              ([icon, title, desc, href]) => `
-            <a href="${href}" class="card group flex items-start gap-4 hover:border-accent/40">
-              <span class="text-3xl">${icon}</span>
-              <div>
-                <h3 class="font-title text-xl tracking-wide text-red group-hover:text-red-dark">${title}</h3>
-                <p class="text-sm text-muted mt-1">${desc}</p>
-              </div>
+              ([title, desc, href]) => `
+            <a href="${href}" class="card group block hover:bg-white/5">
+              <h3 class="font-title text-xl tracking-wide text-white group-hover:text-silver">${title}</h3>
+              <p class="text-sm text-muted mt-2">${desc}</p>
+              <span class="inline-block mt-4 text-xs font-semibold uppercase tracking-widest text-silver group-hover:text-white">Ir →</span>
             </a>`
             )
             .join('')}
@@ -163,15 +166,13 @@ export function initHomePage(): void {
       </div>
     </section>
 
-    <section class="bg-red py-16">
-      <div class="mx-auto max-w-4xl px-4 text-center">
-        <h2 class="font-title text-4xl md:text-5xl tracking-wider text-white mb-4">¿Listo para competir?</h2>
-        <p class="text-white/90 mb-8 text-lg max-w-xl mx-auto">
-          Inscríbete en la próxima válida y forma parte de la Liga de Motociclismo de Bogotá.
+    <section class="cta-geo py-16 md:py-20">
+      <div class="mx-auto max-w-4xl px-4 text-center relative z-10">
+        <h2 class="font-title text-4xl md:text-5xl tracking-wider text-white mb-4">¿Listo para la pista?</h2>
+        <p class="text-muted mb-8 text-lg max-w-xl mx-auto">
+          Inscríbete en la próxima válida de la Copa Autocolombiana de Clubes MX.
         </p>
-        <a href="./inscripcion.html" class="inline-flex items-center justify-center rounded-xl bg-accent px-10 py-4 text-lg font-bold text-ink border border-accent/40 transition-all duration-300 hover:bg-yellow-light hover:shadow-glow-yellow">
-          Registrarme como piloto
-        </a>
+        <a href="./inscripcion.html" class="btn-primary text-lg px-10 py-4">Registrarme como piloto</a>
       </div>
     </section>
 
