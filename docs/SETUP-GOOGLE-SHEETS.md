@@ -25,8 +25,8 @@ Con esta configuracion, las inscripciones se guardan directamente en una Google 
 2. Borra el contenido default y pega todo el codigo de `docs/google-apps-script.gs`
 3. Reemplaza en las lineas 10-11:
    ```javascript
-   const SPREADSHEET_ID = 'tu-id-de-la-sheet';//1g5crmfmbcxyvmLMXxYECxO90gFYiXf7P5JaSze7pmbI
-   const DRIVE_FOLDER_ID = 'tu-id-de-la-carpeta-drive';//1oImoS0x__kgBBXaL9HAg3Qf-4Zj0Xz0l
+   const SPREADSHEET_ID = 'tu-id-de-la-sheet';//1kAlC3MP2DqH5KXkQQLVZF0SbHV6X8DY3nAyLxO81654
+   const DRIVE_FOLDER_ID = 'tu-id-de-la-carpeta-drive';//1TQAM3BE93OjiaODNgI_2SkXLFQ2uqQqM
    ```
 4. Guarda el proyecto (Ctrl+S)
 5. En el selector de funciones (arriba), elige **`setupSheets`** — NO elijas `doGet` ni `doPost`

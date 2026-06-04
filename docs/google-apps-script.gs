@@ -7,8 +7,8 @@
  * Despliega como Web App: Ejecutar como "Yo", Acceso "Cualquier persona".
  */
 
-const SPREADSHEET_ID = '1g5crmfmbcxyvmLMXxYECxO90gFYiXf7P5JaSze7pmbI';
-const DRIVE_FOLDER_ID = '1oImoS0x__kgBBXaL9HAg3Qf-4Zj0Xz0l';
+const SPREADSHEET_ID = '1kAlC3MP2DqH5KXkQQLVZF0SbHV6X8DY3nAyLxO81654';
+const DRIVE_FOLDER_ID = '1TQAM3BE93OjiaODNgI_2SkXLFQ2uqQqM';
 
 const EVENT_HEADERS = ['id', 'name', 'date', 'location', 'city', 'description', 'active', 'reglamentoUrl', 'finished', 'valorInscripcion'];
 const REG_HEADERS = [
