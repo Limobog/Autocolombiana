@@ -1,5 +1,35 @@
 import { renderFooter } from '../components/footer';
 import { renderNavbar, initNavbar } from '../components/navbar';
+import { CATEGORIES, type Category } from '../types';
+
+function formatCategoryAge(category: Category): string {
+  if (category.maxAge >= 999) {
+    if (category.minAge >= 36) return 'Mayor a 35 años';
+    if (category.id.startsWith('enduro')) return 'Mayor a 14 años';
+    return `Desde ${category.minAge} años`;
+  }
+  return `${category.minAge} – ${category.maxAge} años`;
+}
+
+function splitCategoryLabel(category: Category): { name: string; engine: string } {
+  const sep = category.label.indexOf(' — ');
+  if (sep >= 0) {
+    return { name: category.label.slice(0, sep), engine: category.label.slice(sep + 3) };
+  }
+  return { name: category.label, engine: '' };
+}
+
+function renderCategoryCards(): string {
+  return CATEGORIES.map((cat) => {
+    const { name, engine } = splitCategoryLabel(cat);
+    return `
+      <div class="card flex flex-col gap-2">
+        <span class="font-title text-2xl tracking-wide text-secondary">${name}</span>
+        <span class="text-accent font-semibold">${formatCategoryAge(cat)}</span>
+        ${engine ? `<span class="text-gray-light text-sm leading-snug">${engine}</span>` : ''}
+      </div>`;
+  }).join('');
+}
 
 export function initHomePage(): void {
   const app = document.getElementById('app');
@@ -75,25 +105,12 @@ export function initHomePage(): void {
 
     <section class="py-16 dirt-texture">
       <div class="mx-auto max-w-7xl px-4">
-        <h2 class="section-title text-center mb-4">Servicios de la liga</h2>
-        <p class="text-center text-gray-light mb-10 max-w-2xl mx-auto">Todo lo que necesitas para seguir y participar en el motociclismo bogotano.</p>
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          ${[
-            ['Calendario', 'Válidas y fechas oficiales'],
-            ['Inscripciones', 'Registro de pilotos en línea'],
-            ['Resultados', 'Clasificaciones y puntos'],
-            ['Reglamentos', 'Normas y comité técnico'],
-            ['Ranking', 'Tabla de pilotos'],
-            ['Eventos', 'Competencias en Bogotá'],
-          ]
-            .map(
-              ([title, desc]) => `
-            <div class="card flex flex-col gap-2">
-              <span class="font-title text-2xl tracking-wide text-secondary">${title}</span>
-              <span class="text-gray-light font-medium">${desc}</span>
-            </div>`
-            )
-            .join('')}
+        <h2 class="section-title text-center mb-4">Categorías oficiales</h2>
+        <p class="text-center text-gray-light mb-10 max-w-2xl mx-auto">
+          Copa MX — Autocolombiana · LIMObog. Compite en la categoría acorde a tu edad al momento del evento.
+        </p>
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          ${renderCategoryCards()}
         </div>
       </div>
     </section>

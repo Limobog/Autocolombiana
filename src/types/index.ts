@@ -8,24 +8,34 @@ export interface Category {
   maxAge: number;
 }
 
-/** IDs legacy (A/B) → IDs actuales por rango de edad. */
+/** IDs legacy (Minicross / rangos antiguos) → IDs actuales LIMObog. */
 const LEGACY_CATEGORY_IDS: Record<string, string> = {
   '50cc-a': '50cc-4-6',
   '50cc-b': '50cc-6-8',
-  '65cc-a': '65cc-7-9',
-  '65cc-b': '65cc-8-10',
-  '85cc-a': '85cc-9-11',
-  '85cc-b': '85cc-11-13',
+  '65cc-a': '65cc-b',
+  '65cc-b': '65cc-b',
+  '65cc-7-9': '65cc-b',
+  '65cc-8-10': '65cc-b',
+  '85cc-a': '85cc-b',
+  '85cc-b': '85cc-b',
+  '85cc-9-11': '85cc-b',
+  '85cc-11-13': '85cc-b',
+  '125cc-junior': '125cc',
 };
 
 export const CATEGORIES: Category[] = [
-  { id: '50cc-4-6', label: '50cc', minAge: 4, maxAge: 6 },
+  { id: '50cc-4-6', label: '50cc — motos originales de fábrica, rin 10', minAge: 4, maxAge: 6 },
   { id: '50cc-6-8', label: '50cc', minAge: 6, maxAge: 8 },
-  { id: '65cc-7-9', label: '65cc', minAge: 7, maxAge: 9 },
-  { id: '65cc-8-10', label: '65cc', minAge: 8, maxAge: 10 },
-  { id: '85cc-9-11', label: '85cc', minAge: 9, maxAge: 11 },
-  { id: '85cc-11-13', label: '85cc', minAge: 11, maxAge: 13 },
-  { id: '125cc-junior', label: '125cc Junior', minAge: 12, maxAge: 17 },
+  { id: '65cc-b', label: '65cc B', minAge: 7, maxAge: 10 },
+  { id: '85cc-b', label: '85cc B', minAge: 10, maxAge: 15 },
+  { id: '125cc', label: '125cc — hasta 125cc (2T) / 150–250cc (4T)', minAge: 12, maxAge: 17 },
+  { id: 'mx-novatos', label: 'MX Novatos — 125–250cc (2T) / 250–450cc (4T)', minAge: 15, maxAge: 999 },
+  { id: 'mx-b', label: 'MX B — 125–250cc (2T) / 250–250cc (4T)', minAge: 15, maxAge: 999 },
+  { id: 'mx-a', label: 'MX A — 125–250cc (2T) / 250–250cc (4T)', minAge: 15, maxAge: 999 },
+  { id: 'mx-master', label: 'MX Master — cilindraje libre', minAge: 36, maxAge: 999 },
+  { id: 'femenino', label: 'Femenino — cilindraje libre desde 85cc', minAge: 12, maxAge: 999 },
+  { id: 'enduro-a', label: 'Enduro A — cilindraje libre, moto enduro', minAge: 15, maxAge: 999 },
+  { id: 'enduro-b', label: 'Enduro B — cilindraje libre, moto enduro', minAge: 15, maxAge: 999 },
 ];
 
 export function resolveCategoryId(id: string): string {
@@ -33,6 +43,12 @@ export function resolveCategoryId(id: string): string {
 }
 
 export function formatCategoryOptionLabel(category: Category): string {
+  if (category.maxAge >= 999) {
+    if (category.minAge >= 36) {
+      return `${category.label} (mayor a 35 años)`;
+    }
+    return `${category.label} (desde ${category.minAge} años)`;
+  }
   return `${category.label} (${category.minAge} – ${category.maxAge} años)`;
 }
 

@@ -199,15 +199,20 @@ Todo el código fuente debe estar en **UTF-8** (`.editorconfig`, `.vscode/settin
 
 ## Categorías por edad
 
-| Categoría | Edad |
-|-----------|------|
-| 50cc | 4 – 6 años |
-| 50cc | 6 – 8 años |
-| 65cc | 7 – 9 años |
-| 65cc | 8 – 10 años |
-| 85cc | 9 – 11 años |
-| 85cc | 11 – 13 años |
-| 125cc Junior | 12 – 17 años |
+| Categoría | Edad | Cilindraje |
+|-----------|------|------------|
+| 50cc (4–6 años) | 4 – 6 años | Motos originales de fábrica, rin 10 |
+| 50cc (6–8 años) | 6 – 8 años | — |
+| 65cc B | 7 – 10 años | — |
+| 85cc B | 10 – 15 años | — |
+| 125cc | 12 – 17 años | Hasta 125cc (2T) / 150–250cc (4T) |
+| MX Novatos | Desde 15 años | 125–250cc (2T) / 250–450cc (4T) |
+| MX B | Desde 15 años | 125–250cc (2T) / 250–250cc (4T) |
+| MX A | Desde 15 años | 125–250cc (2T) / 250–250cc (4T) |
+| MX Master | Mayor a 35 años | Cilindraje libre |
+| Femenino | Desde 12 años | Cilindraje libre desde 85cc |
+| Enduro A | Mayor a 14 años | Cilindraje libre, moto enduro |
+| Enduro B | Mayor a 14 años | Cilindraje libre, moto enduro |
 
 Edad mínima: primer día del evento. Edad máxima: cumplida al 1 de enero del año del campeonato (según reglamento).
 
