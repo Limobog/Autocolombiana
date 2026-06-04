@@ -49,7 +49,7 @@ Con esta configuracion, las inscripciones se guardan directamente en una Google 
 Abre `src/config.ts` y pega la URL:
 idimplementación: AKfycbzOsYJzbNYJ7DUPTTJ4lp2x5svHEkFXOKvTruZV1X_JvsrukeBdfEWkcoe4WnYXN6Ck
 ```typescript
-apiUrl: 'https://script.google.com/macros/s/AKfycb.../exec',//https://script.google.com/macros/s/AKfycbzOsYJzbNYJ7DUPTTJ4lp2x5svHEkFXOKvTruZV1X_JvsrukeBdfEWkcoe4WnYXN6Ck/exec
+apiUrl: 'https://script.google.com/macros/s/AKfycb.../exec',//https://script.google.com/macros/s/AKfycbxH5PfCIGk8aKrbP8H7DR0PIMLZrpW9Uj0tzeP1W-g_m9G7JWY-h2jP6CnwwFaNAp1K/exec
 ```
 
 Reconstruye y despliega:
