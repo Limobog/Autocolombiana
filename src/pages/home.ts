@@ -56,7 +56,8 @@ export function initHomePage(): void {
             <p class="mt-2 font-title text-2xl md:text-3xl tracking-widest text-white/80">DE CLUBES MX</p>
             <p class="mt-6 text-base md:text-lg text-muted leading-relaxed max-w-xl mx-auto lg:mx-0">
               El motocross por clubes que reúne a pilotos de todo Colombia. Cinco válidas, dos mangas por categoría
-              y puntos que cuentan en cada fecha. Desde 50cc hasta MX Master y Enduro — hay un lugar para ti en la pista.
+              y puntos que cuentan en cada fecha. Desde 50cc hasta MX Master y Enduro. <br>
+              <strong>Hay un lugar para ti en la pista.</strong>
             </p>
             <!--
             <!--
