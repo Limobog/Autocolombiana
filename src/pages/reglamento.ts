@@ -116,7 +116,7 @@ export function initReglamentoPage(): void {
         <p class="mt-4 max-w-2xl mx-auto text-muted leading-relaxed">
           Normas oficiales del campeonato. Al inscribirte aceptas este reglamento en su totalidad.
         </p>
-        <a href="./reglamento-oficial-minicross.pdf" target="_blank" rel="noopener noreferrer"
+        <a href="./reglamento-oficial-copa-mx-autocolombiana.pdf" target="_blank" rel="noopener noreferrer"
            class="btn-outline inline-flex items-center gap-2 mt-6">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
