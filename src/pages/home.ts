@@ -58,6 +58,12 @@ export function initHomePage(): void {
               El motocross por clubes que reúne a pilotos de todo Colombia. Cinco válidas, dos mangas por categoría
               y puntos que cuentan en cada fecha. Desde 50cc hasta MX Master y Enduro — hay un lugar para ti en la pista.
             </p>
+            <p class="mt-4 text-sm md:text-base text-silver leading-relaxed max-w-xl mx-auto lg:mx-0 border-l-2 border-white/30 pl-4">
+              Es el <strong class="text-white font-semibold">único campeonato en todo Colombia</strong> que mezcla
+              <strong class="text-white font-semibold">motocross y enduro</strong> en una misma temporada. Al final del
+              campeonato hay una <strong class="text-white font-semibold">premiación de $20.000.000 COP</strong> para
+              los participantes que cumplan los requisitos del reglamento.
+            </p>
             <div class="mt-8 flex flex-wrap gap-4 justify-center lg:justify-start">
               <a href="./inscripcion.html" class="btn-primary text-base px-8">Inscríbete ahora</a>
               <a href="./eventos.html" class="btn-outline text-base px-8">Ver eventos</a>
@@ -72,8 +78,8 @@ export function initHomePage(): void {
                 <span class="text-xs font-semibold text-muted mt-1">Válidas</span>
               </div>
               <div class="stat-pill">
-                <span class="font-title text-3xl text-white leading-none">2</span>
-                <span class="text-xs font-semibold text-muted mt-1">Mangas</span>
+                <span class="font-title text-2xl text-white leading-none">$20M</span>
+                <span class="text-xs font-semibold text-muted mt-1">Premiación</span>
               </div>
             </div>
           </div>
@@ -83,6 +89,25 @@ export function initHomePage(): void {
               <img src="./logo-copa.png" alt="Copa Autocolombiana de Clubes MX"
                    class="relative max-w-[280px] sm:max-w-xs md:max-w-sm lg:max-w-md w-full object-contain drop-shadow-glow-strong" />
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="border-y border-white/10 bg-surface-raised/50 py-10 md:py-12">
+      <div class="mx-auto max-w-7xl px-4">
+        <div class="grid gap-4 md:grid-cols-2 max-w-4xl mx-auto">
+          <div class="card-featured text-center md:text-left">
+            <p class="font-title text-2xl tracking-wide text-white mb-2">MX + Enduro</p>
+            <p class="text-muted text-sm leading-relaxed">
+              El único campeonato en todo Colombia que combina categorías de motocross y enduro en una misma temporada.
+            </p>
+          </div>
+          <div class="card text-center md:text-left">
+            <p class="font-title text-2xl tracking-wide text-white mb-2">$20.000.000 en premios</p>
+            <p class="text-muted text-sm leading-relaxed">
+              Bolsa de premiación al final del campeonato para participantes que cumplan los requisitos del reglamento oficial.
+            </p>
           </div>
         </div>
       </div>
@@ -99,8 +124,8 @@ export function initHomePage(): void {
             </p>
             <p>
               Da igual de dónde vengas o con quién compitas: aquí todos suman puntos en igualdad de condiciones.
-              Cinco válidas, dos mangas por categoría y un reglamento claro para que solo te preocupes por dar
-              lo mejor en pista.
+              Compite en motocross o enduro — somos el único campeonato nacional que reúne ambas disciplinas — y pelea
+              por una premiación de $20 millones al cierre de la temporada.
             </p>
             <p>
               Inscríbete en línea, consulta el calendario y sigue tus resultados desde esta misma web.
@@ -172,7 +197,8 @@ export function initHomePage(): void {
       <div class="mx-auto max-w-4xl px-4 text-center relative z-10">
         <h2 class="font-title text-4xl md:text-5xl tracking-wider text-white mb-4">¿Listo para la pista?</h2>
         <p class="text-muted mb-8 text-lg max-w-xl mx-auto">
-          La próxima válida te espera. Inscríbete, elige tu categoría y sal a demostrar de qué estás hecho.
+          El único campeonato que une motocross y enduro en Colombia — con $20 millones en premiación al final.
+          Inscríbete, elige tu categoría y sal a demostrar de qué estás hecho.
         </p>
         <a href="./inscripcion.html" class="btn-primary text-lg px-10 py-4">Registrarme como piloto</a>
       </div>
