@@ -58,12 +58,16 @@ export function initHomePage(): void {
               El motocross por clubes que reúne a pilotos de todo Colombia. Cinco válidas, dos mangas por categoría
               y puntos que cuentan en cada fecha. Desde 50cc hasta MX Master y Enduro — hay un lugar para ti en la pista.
             </p>
+            <!--
+            <!--
             <p class="mt-4 text-sm md:text-base text-silver leading-relaxed max-w-xl mx-auto lg:mx-0 border-l-2 border-white/30 pl-4">
               Es el <strong class="text-white font-semibold">único campeonato en todo Colombia</strong> que mezcla
               <strong class="text-white font-semibold">motocross y enduro</strong> en una misma temporada. Al final del
               campeonato hay una <strong class="text-white font-semibold">premiación de $20.000.000 COP</strong> para
               los participantes que cumplan los requisitos del reglamento.
             </p>
+            -->
+            -->
             <div class="mt-8 flex flex-wrap gap-4 justify-center lg:justify-start">
               <a href="./inscripcion.html" class="btn-primary text-base px-8">Inscríbete ahora</a>
               <a href="./eventos.html" class="btn-outline text-base px-8">Ver eventos</a>
