@@ -55,9 +55,8 @@ export function initHomePage(): void {
             </h1>
             <p class="mt-2 font-title text-2xl md:text-3xl tracking-widest text-white/80">DE CLUBES MX</p>
             <p class="mt-6 text-base md:text-lg text-muted leading-relaxed max-w-xl mx-auto lg:mx-0">
-              Campeonato privado de motocross organizado por LIMOBOG. Cinco válidas, dos mangas por categoría,
-              acumulación de puntos y categorías oficiales desde 50cc hasta MX Master y Enduro.
-              Inscríbete en línea y compite en toda la temporada.
+              El motocross por clubes que reúne a pilotos de todo Colombia. Cinco válidas, dos mangas por categoría
+              y puntos que cuentan en cada fecha. Desde 50cc hasta MX Master y Enduro — hay un lugar para ti en la pista.
             </p>
             <div class="mt-8 flex flex-wrap gap-4 justify-center lg:justify-start">
               <a href="./inscripcion.html" class="btn-primary text-base px-8">Inscríbete ahora</a>
@@ -91,38 +90,31 @@ export function initHomePage(): void {
 
     <section class="section-geo py-14 md:py-18">
       <div class="mx-auto max-w-7xl px-4 relative z-10">
-        <div class="text-center mb-10">
-          <h2 class="section-title mb-3">¿Qué es la Copa?</h2>
-          <p class="text-muted max-w-2xl mx-auto leading-relaxed">
-            La evolución del Campeonato Interligas: el certamen que une clubes, ligas y pilotos de todo el país.
-          </p>
-        </div>
-        <div class="mx-auto max-w-3xl text-center text-muted leading-relaxed space-y-4 mb-12">
-          <p>
-            La Copa MX Autocolombiana promueve el desarrollo deportivo de pilotos de todas las edades y niveles,
-            con igualdad de oportunidades para competir y sumar puntos sin importar la ciudad, el club o la liga
-            a la que pertenezcan.
-          </p>
-          <p>
-            Formato acumulativo por válidas con reglamento propio y estándares FEDEMOTO. Inscripciones digitales,
-            calendario de eventos, reglamento oficial y resultados — todo en un solo lugar.
+        <div class="text-center mb-12 max-w-3xl mx-auto">
+          <h2 class="section-title mb-5">¿Qué es la Copa?</h2>
+          <p class="text-muted leading-relaxed text-base md:text-lg">
+            Nacimos de la experiencia del Campeonato Interligas y hoy somos el punto de encuentro de clubes,
+            ligas y pilotos de todo el país. Da igual de dónde vengas o con quién compitas: aquí todos suman puntos
+            en igualdad de condiciones. Cinco válidas, dos mangas por categoría y un reglamento claro para que
+            solo te preocupes por dar lo mejor en pista. Inscríbete en línea, consulta el calendario y sigue
+            tus resultados desde esta misma web.
           </p>
         </div>
         <div class="grid gap-6 md:grid-cols-3">
           <div class="card-featured text-center">
             <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-lg border border-white/15 bg-white/5 font-title text-2xl text-white">01</div>
-            <h3 class="font-title text-2xl tracking-wide text-white mb-2">Por Clubes y Ligas</h3>
-            <p class="text-muted text-sm">Representa a tu club o liga y suma puntos en cada válida. Pilotos de todo el país compiten en igualdad de condiciones durante las 5 fechas del campeonato.</p>
+            <h3 class="font-title text-2xl tracking-wide text-white mb-2">Tu club, tu liga</h3>
+            <p class="text-muted text-sm leading-relaxed">Lleva los colores de tu equipo a cada válida y compite por puntos en las 5 fechas. Novatos y expertos, de cualquier ciudad — todos tienen su lugar.</p>
           </div>
           <div class="card text-center">
             <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-lg border border-white/10 bg-white/5 font-title text-2xl text-silver">02</div>
-            <h3 class="font-title text-2xl tracking-wide text-white mb-2">Formato Oficial</h3>
-            <p class="text-muted text-sm">Dos mangas por categoría con acumulación de puntos. Clasificación el domingo a 2 vueltas y puntuación oficial que define la tabla general del evento.</p>
+            <h3 class="font-title text-2xl tracking-wide text-white mb-2">Pura acción</h3>
+            <p class="text-muted text-sm leading-relaxed">Dos mangas que valen, clasificación el domingo y una tabla de puntos que premia la constancia. Cada salida cuenta.</p>
           </div>
           <div class="card text-center">
             <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-lg border border-white/10 bg-white/5 font-title text-2xl text-silver">03</div>
-            <h3 class="font-title text-2xl tracking-wide text-white mb-2">Todo en Línea</h3>
-            <p class="text-muted text-sm">Registro de pilotos, consulta de válidas, reglamento oficial y seguimiento de resultados desde la plataforma web del campeonato.</p>
+            <h3 class="font-title text-2xl tracking-wide text-white mb-2">Sin complicaciones</h3>
+            <p class="text-muted text-sm leading-relaxed">Inscríbete, revisa las válidas, lee el reglamento y consulta resultados. Todo desde aquí, en pocos clics.</p>
           </div>
         </div>
       </div>
@@ -173,7 +165,7 @@ export function initHomePage(): void {
       <div class="mx-auto max-w-4xl px-4 text-center relative z-10">
         <h2 class="font-title text-4xl md:text-5xl tracking-wider text-white mb-4">¿Listo para la pista?</h2>
         <p class="text-muted mb-8 text-lg max-w-xl mx-auto">
-          Inscríbete en la próxima válida de la Copa Autocolombiana de Clubes MX.
+          La próxima válida te espera. Inscríbete, elige tu categoría y sal a demostrar de qué estás hecho.
         </p>
         <a href="./inscripcion.html" class="btn-primary text-lg px-10 py-4">Registrarme como piloto</a>
       </div>
