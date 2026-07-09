@@ -203,7 +203,9 @@ Todo el código fuente debe estar en **UTF-8** (`.editorconfig`, `.vscode/settin
 |-----------|------|------------|
 | 50cc (4–6 años) | 4 – 6 años | Motos originales de fábrica, rin 10 |
 | 50cc (6–8 años) | 6 – 8 años | — |
+| 65cc A | 7 – 10 años | — |
 | 65cc B | 7 – 10 años | — |
+| 85cc A | 10 – 15 años | — |
 | 85cc B | 10 – 15 años | — |
 | 125cc | 12 – 17 años | Hasta 125cc (2T) / 150–250cc (4T) |
 | MX Novatos | Desde 15 años | 125–250cc (2T) / 250–450cc (4T) |

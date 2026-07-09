@@ -12,13 +12,13 @@ export interface Category {
 const LEGACY_CATEGORY_IDS: Record<string, string> = {
   '50cc-a': '50cc-4-6',
   '50cc-b': '50cc-6-8',
-  '65cc-a': '65cc-b',
+  '65cc-a': '65cc-a',
   '65cc-b': '65cc-b',
-  '65cc-7-9': '65cc-b',
+  '65cc-7-9': '65cc-a',
   '65cc-8-10': '65cc-b',
-  '85cc-a': '85cc-b',
+  '85cc-a': '85cc-a',
   '85cc-b': '85cc-b',
-  '85cc-9-11': '85cc-b',
+  '85cc-9-11': '85cc-a',
   '85cc-11-13': '85cc-b',
   '125cc-junior': '125cc',
 };
@@ -26,7 +26,9 @@ const LEGACY_CATEGORY_IDS: Record<string, string> = {
 export const CATEGORIES: Category[] = [
   { id: '50cc-4-6', label: '50cc — motos originales de fábrica, rin 10', minAge: 4, maxAge: 6 },
   { id: '50cc-6-8', label: '50cc', minAge: 6, maxAge: 8 },
+  { id: '65cc-a', label: '65cc A', minAge: 7, maxAge: 10 },
   { id: '65cc-b', label: '65cc B', minAge: 7, maxAge: 10 },
+  { id: '85cc-a', label: '85cc A', minAge: 10, maxAge: 15 },
   { id: '85cc-b', label: '85cc B', minAge: 10, maxAge: 15 },
   { id: '125cc', label: '125cc — hasta 125cc (2T) / 150–250cc (4T)', minAge: 12, maxAge: 17 },
   { id: 'mx-novatos', label: 'MX Novatos — 125–250cc (2T) / 250–450cc (4T)', minAge: 15, maxAge: 999 },

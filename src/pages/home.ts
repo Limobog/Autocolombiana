@@ -92,13 +92,20 @@ export function initHomePage(): void {
       <div class="mx-auto max-w-7xl px-4 relative z-10">
         <div class="text-center mb-12 max-w-3xl mx-auto">
           <h2 class="section-title mb-5">¿Qué es la Copa?</h2>
-          <p class="text-muted leading-relaxed text-base md:text-lg">
-            Nacimos de la experiencia del Campeonato Interligas y hoy somos el punto de encuentro de clubes,
-            ligas y pilotos de todo el país. Da igual de dónde vengas o con quién compitas: aquí todos suman puntos
-            en igualdad de condiciones. Cinco válidas, dos mangas por categoría y un reglamento claro para que
-            solo te preocupes por dar lo mejor en pista. Inscríbete en línea, consulta el calendario y sigue
-            tus resultados desde esta misma web.
-          </p>
+          <div class="text-muted leading-relaxed text-base md:text-lg space-y-3">
+            <p>
+              Nacimos de la experiencia del Campeonato Interligas y hoy somos el punto de encuentro de clubes,
+              ligas y pilotos de todo el país.
+            </p>
+            <p>
+              Da igual de dónde vengas o con quién compitas: aquí todos suman puntos en igualdad de condiciones.
+              Cinco válidas, dos mangas por categoría y un reglamento claro para que solo te preocupes por dar
+              lo mejor en pista.
+            </p>
+            <p>
+              Inscríbete en línea, consulta el calendario y sigue tus resultados desde esta misma web.
+            </p>
+          </div>
         </div>
         <div class="grid gap-6 md:grid-cols-3">
           <div class="card-featured text-center">
