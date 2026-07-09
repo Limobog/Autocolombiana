@@ -55,8 +55,9 @@ export function initHomePage(): void {
             </h1>
             <p class="mt-2 font-title text-2xl md:text-3xl tracking-widest text-white/80">DE CLUBES MX</p>
             <p class="mt-6 text-base md:text-lg text-muted leading-relaxed max-w-xl mx-auto lg:mx-0">
-              El campeonato nacional de motocross por clubes. Válidas oficiales, categorías por edad,
-              inscripciones en línea, resultados y la adrenalina del MX colombiano.
+              Campeonato privado de motocross organizado por LIMOBOG. Cinco válidas, dos mangas por categoría,
+              acumulación de puntos y categorías oficiales desde 50cc hasta MX Master y Enduro.
+              Inscríbete en línea y compite en toda la temporada.
             </p>
             <div class="mt-8 flex flex-wrap gap-4 justify-center lg:justify-start">
               <a href="./inscripcion.html" class="btn-primary text-base px-8">Inscríbete ahora</a>
@@ -68,12 +69,12 @@ export function initHomePage(): void {
                 <span class="text-xs font-semibold text-muted mt-1">Categorías</span>
               </div>
               <div class="stat-pill">
-                <span class="font-title text-3xl text-white leading-none">MX</span>
-                <span class="text-xs font-semibold text-muted mt-1">Clubes</span>
+                <span class="font-title text-3xl text-white leading-none">5</span>
+                <span class="text-xs font-semibold text-muted mt-1">Válidas</span>
               </div>
               <div class="stat-pill">
-                <span class="font-title text-3xl text-white leading-none">2026</span>
-                <span class="text-xs font-semibold text-muted mt-1">Temporada</span>
+                <span class="font-title text-3xl text-white leading-none">2</span>
+                <span class="text-xs font-semibold text-muted mt-1">Mangas</span>
               </div>
             </div>
           </div>
@@ -93,33 +94,35 @@ export function initHomePage(): void {
         <div class="text-center mb-10">
           <h2 class="section-title mb-3">¿Qué es la Copa?</h2>
           <p class="text-muted max-w-2xl mx-auto leading-relaxed">
-            El certamen que reúne a los mejores clubes y pilotos de motocross en Colombia.
+            La evolución del Campeonato Interligas: el certamen que une clubes, ligas y pilotos de todo el país.
           </p>
         </div>
         <div class="mx-auto max-w-3xl text-center text-muted leading-relaxed space-y-4 mb-12">
           <p>
-            La Copa Autocolombiana de Clubes MX es una competencia de alto nivel con formato por válidas,
-            acumulación de puntos y categorías técnicas para cada rango de edad y cilindraje.
+            La Copa MX Autocolombiana promueve el desarrollo deportivo de pilotos de todas las edades y niveles,
+            con igualdad de oportunidades para competir y sumar puntos sin importar la ciudad, el club o la liga
+            a la que pertenezcan.
           </p>
           <p>
-            Inscripciones digitales, calendario de eventos, reglamento oficial y resultados — todo en un solo lugar.
+            Formato acumulativo por válidas con reglamento propio y estándares FEDEMOTO. Inscripciones digitales,
+            calendario de eventos, reglamento oficial y resultados — todo en un solo lugar.
           </p>
         </div>
         <div class="grid gap-6 md:grid-cols-3">
           <div class="card-featured text-center">
             <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-lg border border-white/15 bg-white/5 font-title text-2xl text-white">01</div>
-            <h3 class="font-title text-2xl tracking-wide text-white mb-2">Por Clubes</h3>
-            <p class="text-muted text-sm">Representa a tu club y compite por el título nacional de la Copa Autocolombiana.</p>
+            <h3 class="font-title text-2xl tracking-wide text-white mb-2">Por Clubes y Ligas</h3>
+            <p class="text-muted text-sm">Representa a tu club o liga y suma puntos en cada válida. Pilotos de todo el país compiten en igualdad de condiciones durante las 5 fechas del campeonato.</p>
           </div>
           <div class="card text-center">
             <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-lg border border-white/10 bg-white/5 font-title text-2xl text-silver">02</div>
-            <h3 class="font-title text-2xl tracking-wide text-white mb-2">Alto Nivel</h3>
-            <p class="text-muted text-sm">Pistas exigentes, organización profesional y estándares técnicos de competencia MX.</p>
+            <h3 class="font-title text-2xl tracking-wide text-white mb-2">Formato Oficial</h3>
+            <p class="text-muted text-sm">Dos mangas por categoría con acumulación de puntos. Clasificación el domingo a 2 vueltas y puntuación oficial que define la tabla general del evento.</p>
           </div>
           <div class="card text-center">
             <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-lg border border-white/10 bg-white/5 font-title text-2xl text-silver">03</div>
             <h3 class="font-title text-2xl tracking-wide text-white mb-2">Todo en Línea</h3>
-            <p class="text-muted text-sm">Registro de pilotos, consulta de eventos y seguimiento de resultados desde la web.</p>
+            <p class="text-muted text-sm">Registro de pilotos, consulta de válidas, reglamento oficial y seguimiento de resultados desde la plataforma web del campeonato.</p>
           </div>
         </div>
       </div>
