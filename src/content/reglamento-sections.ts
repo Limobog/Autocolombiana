@@ -336,7 +336,7 @@ export const REGLAMENTO_SECTIONS: ReglamentoSection[] = [
       {
         title: '15.1 Premiación final del campeonato',
         bullets: [
-          'Requisito de participación: haber competido en al menos 4 de las 5 válidas del campeonato.',
+          'Requisito de participación: haber competido en al menos 3 de 4 válidas del campeonato.',
           'Los ganadores serán elegidos aleatoriamente entre todos los participantes que cumplan con los requisitos.',
           'El anuncio se realizará durante la premiación de la última válida.',
           'Bolsa de premios de $20.000.000 COP, dividida en 5 tarjetas de regalo de $4.000.000 COP cada una.',

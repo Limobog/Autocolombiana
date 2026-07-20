@@ -55,7 +55,7 @@ export function initHomePage(): void {
             </h1>
             <p class="mt-2 font-title text-2xl md:text-3xl tracking-widest text-white/80">DE CLUBES MX</p>
             <p class="mt-6 text-base md:text-lg text-muted leading-relaxed max-w-xl mx-auto lg:mx-0">
-              El motocross por clubes que reúne a pilotos de todo Colombia. Cinco válidas, dos mangas por categoría
+              El motocross por clubes que reúne a pilotos de todo Colombia. Cuatro válidas, dos mangas por categoría
               y puntos que cuentan en cada fecha. Desde 50cc hasta MX Master y Enduro. <br>
               <strong>Hay un lugar para ti en la pista.</strong>
             </p>
@@ -79,7 +79,7 @@ export function initHomePage(): void {
                 <span class="text-xs font-semibold text-muted mt-1">Categorías</span>
               </div>
               <div class="stat-pill">
-                <span class="font-title text-3xl text-white leading-none">5</span>
+                <span class="font-title text-3xl text-white leading-none">4</span>
                 <span class="text-xs font-semibold text-muted mt-1">Válidas</span>
               </div>
               <div class="stat-pill">
@@ -141,7 +141,7 @@ export function initHomePage(): void {
           <div class="card-featured text-center">
             <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-lg border border-white/15 bg-white/5 font-title text-2xl text-white">01</div>
             <h3 class="font-title text-2xl tracking-wide text-white mb-2">Tu club, tu liga</h3>
-            <p class="text-muted text-sm leading-relaxed">Lleva los colores de tu equipo a cada válida y compite por puntos en las 5 fechas. Novatos y expertos, de cualquier ciudad — todos tienen su lugar.</p>
+            <p class="text-muted text-sm leading-relaxed">Lleva los colores de tu equipo a cada válida y compite por puntos en las 4 fechas. Novatos y expertos, de cualquier ciudad — todos tienen su lugar.</p>
           </div>
           <div class="card text-center">
             <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-lg border border-white/10 bg-white/5 font-title text-2xl text-silver">02</div>
