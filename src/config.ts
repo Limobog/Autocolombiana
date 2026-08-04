@@ -10,9 +10,12 @@ export const CONFIG = {
   apiUrl:
     'https://script.google.com/macros/s/AKfycbxH5PfCIGk8aKrbP8H7DR0PIMLZrpW9Uj0tzeP1W-g_m9G7JWY-h2jP6CnwwFaNAp1K/exec' as string,
 
-  /** Enlace directo a la Google Sheet (pestana Registrations) */
+  /**
+   * Enlace directo a la Google Sheet donde el Apps Script guarda los datos.
+   * Debe coincidir con SPREADSHEET_ID en docs/google-apps-script.gs.
+   */
   spreadsheetUrl:
-    'https://docs.google.com/spreadsheets/d/1g5crmfmbcxyvmLMXxYECxO90gFYiXf7P5JaSze7pmbI/edit' as string,
+    'https://docs.google.com/spreadsheets/d/1kAlC3MP2DqH5KXkQQLVZF0SbHV6X8DY3nAyLxO81654/edit' as string,
 
   storageKeys: {
     registrations: 'minicross_registrations_v1',

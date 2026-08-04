@@ -10,7 +10,7 @@
 const SPREADSHEET_ID = '1kAlC3MP2DqH5KXkQQLVZF0SbHV6X8DY3nAyLxO81654';
 const DRIVE_FOLDER_ID = '1TQAM3BE93OjiaODNgI_2SkXLFQ2uqQqM';
 
-const EVENT_HEADERS = ['id', 'name', 'date', 'location', 'city', 'description', 'active', 'reglamentoUrl', 'finished', 'valorInscripcion'];
+const EVENT_HEADERS = ['id', 'name', 'date', 'location', 'city', 'description', 'active', 'reglamentoUrl', 'finished', 'valorInscripcion', 'championshipId'];
 const REG_HEADERS = [
   'id', 'eventId', 'eventName', 'nombre', 'apellido', 'identificacion',
   'identificacionArchivo', 'identificacionFileName', 'identificacionFileType',
@@ -359,6 +359,7 @@ function getEvents_(ss) {
     evt.finished = parseBoolField_(evt.finished);
     if (!evt.reglamentoUrl) evt.reglamentoUrl = '';
     evt.valorInscripcion = Number(evt.valorInscripcion) || 0;
+    evt.championshipId = normalizeChampionshipId_(evt.championshipId, evt.name);
     return evt;
   });
 }
@@ -399,6 +400,17 @@ function writeRegistrations_(ss, registrations) {
 
 function parseBoolField_(value) {
   return value === true || value === 'true' || value === 'TRUE' || value === 1 || value === '1';
+}
+
+/**
+ * Normaliza el campeonato de un evento: 'mx' o 'enduro'.
+ * Si la celda esta vacia (eventos creados antes de esta columna),
+ * se infiere por el nombre del evento.
+ */
+function normalizeChampionshipId_(value, eventName) {
+  var v = String(value || '').trim().toLowerCase();
+  if (v === 'enduro' || v === 'mx') return v;
+  return /enduro/i.test(String(eventName || '')) ? 'enduro' : 'mx';
 }
 
 function getEventsSheet_(ss) {
@@ -456,6 +468,7 @@ function prepareEventRow_(ss, data) {
   row.active = parseBoolField_(row.active);
   row.finished = parseBoolField_(row.finished);
   row.valorInscripcion = Number(row.valorInscripcion) || 0;
+  row.championshipId = normalizeChampionshipId_(row.championshipId, row.name);
   if (data.reglamentoArchivo && String(data.reglamentoArchivo).indexOf('data:') === 0) {
     row.reglamentoUrl = saveReglamentoToDrive_(data, ss);
   } else if (data.reglamentoUrl && String(data.reglamentoUrl).indexOf('http') === 0) {
@@ -600,6 +613,7 @@ function syncEventHeadersFull_(ss, sheet, headers) {
     row.finished = parseBoolField_(row.finished);
     if (!row.reglamentoUrl) row.reglamentoUrl = '';
     row.valorInscripcion = Number(row.valorInscripcion) || 0;
+    row.championshipId = normalizeChampionshipId_(row.championshipId, row.name);
   });
   writeObjects_(sheet, headers, remapRowsToHeaders_(rows, headers));
 }
@@ -719,6 +733,7 @@ function setupSheets() {
         active: true,
         reglamentoUrl: '',
         finished: false,
+        championshipId: 'mx',
       },
       {
         id: 'evt-002',
@@ -730,6 +745,7 @@ function setupSheets() {
         active: true,
         reglamentoUrl: '',
         finished: false,
+        championshipId: 'mx',
       },
     ]);
   }
