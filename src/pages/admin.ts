@@ -18,8 +18,20 @@ import {
   getCategoriesForAge,
   getCategoryById,
 } from '../types';
-import type { Event, EventSavePayload, Registration } from '../types';
+import type { ChampionshipId, Event, EventSavePayload, Registration } from '../types';
+import { CHAMPIONSHIPS } from '../championships';
 import Swal from 'sweetalert2';
+
+function getEventChampionshipId(events: Event[], eventId: string): ChampionshipId {
+  return events.find((e) => e.id === eventId)?.championshipId ?? 'mx';
+}
+
+function renderChampBadge(championshipId: ChampionshipId): string {
+  const isEnduro = championshipId === 'enduro';
+  return `<span class="inline-block rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+    isEnduro ? 'bg-white/15 text-white border border-white/25' : 'bg-white/5 text-silver border border-white/15'
+  }">${isEnduro ? 'Enduro' : 'MX'}</span>`;
+}
 
 function isAuthenticated(): boolean {
   return sessionStorage.getItem(CONFIG.storageKeys.adminSession) === 'true';
@@ -105,8 +117,8 @@ function parseCategoryIds(value: string): string[] {
     .filter(Boolean);
 }
 
-function renderCategoryCheckboxes(age: number, selected: string[] = []): string {
-  const categories = getCategoriesForAge(age);
+function renderCategoryCheckboxes(age: number, championshipId: ChampionshipId, selected: string[] = []): string {
+  const categories = getCategoriesForAge(age, championshipId);
   if (categories.length === 0) {
     return '<p class="text-sm text-muted">Sin categorias disponibles para esta edad.</p>';
   }
@@ -128,6 +140,7 @@ function refreshEditFormCategories(form: HTMLFormElement): void {
   const container = form.querySelector<HTMLElement>('.edit-categoria-container');
   if (!birthInput || !container) return;
 
+  const championshipId = (container.getAttribute('data-champ') as ChampionshipId) || 'mx';
   const selected = Array.from(form.querySelectorAll<HTMLInputElement>('input[name="categoriaIds"]:checked')).map(
     (el) => el.value
   );
@@ -138,7 +151,7 @@ function refreshEditFormCategories(form: HTMLFormElement): void {
     return;
   }
 
-  container.innerHTML = renderCategoryCheckboxes(age, selected);
+  container.innerHTML = renderCategoryCheckboxes(age, championshipId, selected);
 }
 
 function renderDocumentLinkCell(url: string | undefined, title: string, ariaLabel: string): string {
@@ -157,6 +170,7 @@ function renderRegistrationRow(reg: Registration, events: Event[]): string {
   const ageForCategories = birthDate ? calculateAge(birthDate) : reg.edad;
   const categoryAge = ageForCategories >= 0 ? ageForCategories : reg.edad;
   const totalLabel = formatCop(resolveRegistrationTotal(reg, events));
+  const championshipId = getEventChampionshipId(events, reg.eventId);
 
   return `
     <tr class="border-b border-white/10 hover:bg-surface-raised" data-id="${reg.id}">
@@ -188,7 +202,7 @@ function renderRegistrationRow(reg: Registration, events: Event[]): string {
           <input type="number" name="numeroPiloto" value="${reg.numeroPiloto}" min="4" max="999" class="input-field text-sm" required />
           <div class="sm:col-span-2 lg:col-span-3">
             <p class="text-sm text-secondary mb-2 font-medium">Categorias *</p>
-            <div class="edit-categoria-container">${renderCategoryCheckboxes(categoryAge, selectedCategoryIds)}</div>
+            <div class="edit-categoria-container" data-champ="${championshipId}">${renderCategoryCheckboxes(categoryAge, championshipId, selectedCategoryIds)}</div>
           </div>
           <div class="sm:col-span-2 lg:col-span-3 flex gap-2">
             <button type="submit" class="btn-secondary text-sm py-2 px-4">Guardar</button>
@@ -202,12 +216,20 @@ function renderRegistrationRow(reg: Registration, events: Event[]): string {
 function renderAdminPanel(events: Event[], registrations: Registration[]): string {
   const activeEvents = events.filter((e) => e.active);
 
+  const champTabs = (['mx', 'enduro'] as ChampionshipId[])
+    .map((id) => {
+      const count = registrations.filter((r) => getEventChampionshipId(events, r.eventId) === id).length;
+      return `<button class="champ-tab px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wide transition-all bg-surface-raised text-muted border border-white/10"
+        data-champ-tab="${id}">${CHAMPIONSHIPS[id].name.replace('Copa Autocolombiana de ', '')} <span class="ml-1 text-xs font-normal">(${count})</span></button>`;
+    })
+    .join('');
+
   const eventTabs = events
     .map(
       (e) =>
         `<button class="event-tab px-4 py-2 rounded-lg text-sm font-medium transition-all ${
           e.active ? 'bg-white/40 text-ink' : 'bg-surface-raised text-muted'
-        }" data-event-id="${e.id}">${e.name}</button>`
+        }" data-event-id="${e.id}" data-champ="${e.championshipId}">${e.name}</button>`
     )
     .join('');
 
@@ -295,7 +317,7 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
                 (e) => `
               <div class="flex flex-wrap items-center gap-3 rounded-lg border border-white/20 bg-surface-raised p-4" data-event-admin="${e.id}">
                 <div class="flex-1 min-w-[200px]">
-                  <p class="font-semibold">${e.name}</p>
+                  <p class="font-semibold">${e.name} ${renderChampBadge(e.championshipId)}</p>
                   <p class="text-sm text-muted">${formatDate(e.date)} · ${e.city}</p>
                 </div>
                 <label class="flex items-center gap-2 text-sm">
@@ -316,7 +338,14 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
           <form id="event-form" class="hidden mt-4 space-y-3 border-t border-white/20 pt-4">
             <input type="hidden" id="event-form-id" />
             <div class="grid gap-3 sm:grid-cols-2">
-              <input type="text" id="event-name" placeholder="Nombre del evento" class="input-field" required />
+              <div>
+                <label class="block text-xs text-muted mb-1" for="event-championship">Campeonato</label>
+                <select id="event-championship" class="input-field" required>
+                  <option value="mx">${CHAMPIONSHIPS.mx.name}</option>
+                  <option value="enduro">${CHAMPIONSHIPS.enduro.name}</option>
+                </select>
+              </div>
+              <input type="text" id="event-name" placeholder="Nombre del evento" class="input-field sm:self-end" required />
               <input type="date" id="event-date" class="input-field" required />
               <input type="text" id="event-location" placeholder="Ubicacion / Pista" class="input-field" required />
               <input type="text" id="event-city" placeholder="Ciudad" class="input-field" required />
@@ -343,7 +372,10 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
 
         <section class="card">
           <h2 class="font-title text-2xl text-secondary mb-4">Inscripciones por evento</h2>
-          <div class="flex flex-wrap gap-2 mb-6">${eventTabs}</div>
+          <p class="text-xs text-muted uppercase tracking-widest font-semibold mb-2">Campeonato</p>
+          <div class="flex flex-wrap gap-2 mb-4" id="champ-tabs">${champTabs}</div>
+          <p class="text-xs text-muted uppercase tracking-widest font-semibold mb-2">Evento</p>
+          <div class="flex flex-wrap gap-2 mb-6" id="event-tabs">${eventTabs}</div>
           <div id="registrations-panels">${registrationsByEvent}</div>
         </section>
       </main>
@@ -400,20 +432,44 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
 
   const panels = document.querySelectorAll('.event-panel');
   const tabs = document.querySelectorAll('.event-tab');
-  if (panels.length > 0) {
-    (panels[0] as HTMLElement).classList.remove('hidden');
-  }
-  tabs.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      const eventId = tab.getAttribute('data-event-id');
-      tabs.forEach((t) => t.classList.remove('ring-2', 'ring-white'));
-      tab.classList.add('ring-2', 'ring-white');
-      panels.forEach((p) => {
-        p.classList.toggle('hidden', p.getAttribute('data-event-panel') !== eventId);
-      });
+  const champTabs = document.querySelectorAll('.champ-tab');
+
+  const selectEventTab = (tab: Element | undefined): void => {
+    tabs.forEach((t) => t.classList.remove('ring-2', 'ring-white'));
+    panels.forEach((p) => p.classList.add('hidden'));
+    if (!tab) return;
+    tab.classList.add('ring-2', 'ring-white');
+    const eventId = tab.getAttribute('data-event-id');
+    panels.forEach((p) => {
+      p.classList.toggle('hidden', p.getAttribute('data-event-panel') !== eventId);
     });
+  };
+
+  const selectChampTab = (champId: string): void => {
+    champTabs.forEach((t) => {
+      const isActive = t.getAttribute('data-champ-tab') === champId;
+      t.classList.toggle('ring-2', isActive);
+      t.classList.toggle('ring-white', isActive);
+      t.classList.toggle('text-white', isActive);
+    });
+    let firstVisible: Element | undefined;
+    tabs.forEach((tab) => {
+      const visible = tab.getAttribute('data-champ') === champId;
+      (tab as HTMLElement).classList.toggle('hidden', !visible);
+      if (visible && !firstVisible) firstVisible = tab;
+    });
+    selectEventTab(firstVisible);
+  };
+
+  champTabs.forEach((tab) => {
+    tab.addEventListener('click', () => selectChampTab(tab.getAttribute('data-champ-tab')!));
   });
-  tabs[0]?.classList.add('ring-2', 'ring-white');
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => selectEventTab(tab));
+  });
+
+  selectChampTab('mx');
 
   document.querySelectorAll('.export-registrations-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
@@ -490,6 +546,7 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
       if (!event) return;
       eventForm.classList.remove('hidden');
       (document.getElementById('event-form-id') as HTMLInputElement).value = event.id;
+      (document.getElementById('event-championship') as HTMLSelectElement).value = event.championshipId;
       (document.getElementById('event-name') as HTMLInputElement).value = event.name;
       (document.getElementById('event-date') as HTMLInputElement).value = parseSheetDate(event.date);
       (document.getElementById('event-location') as HTMLInputElement).value = event.location;
@@ -573,6 +630,7 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
       active: existing?.active ?? true,
       finished: (document.getElementById('event-finished') as HTMLInputElement).checked,
       reglamentoUrl: existing?.reglamentoUrl ?? '',
+      championshipId: (document.getElementById('event-championship') as HTMLSelectElement).value as ChampionshipId,
     };
 
     const reglamentoFile = (document.getElementById('event-reglamento') as HTMLInputElement).files?.[0];
@@ -647,7 +705,9 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
       const fd = new FormData(form as HTMLFormElement);
       const fechaNacimiento = parseSheetDate(fd.get('fechaNacimiento') as string);
       const categoriaIds = fd.getAll('categoriaIds').map(String);
-      const validCategories = getCategoriesForAge(calculateAge(fechaNacimiento));
+      const registration = registrations.find((r) => r.id === id);
+      const championshipId = registration ? getEventChampionshipId(events, registration.eventId) : 'mx';
+      const validCategories = getCategoriesForAge(calculateAge(fechaNacimiento), championshipId);
 
       if (!fechaNacimiento) {
         await showError('Fecha invalida', 'Revisa la fecha de nacimiento.');

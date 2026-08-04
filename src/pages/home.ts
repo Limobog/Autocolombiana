@@ -1,6 +1,13 @@
 import { renderFooter } from '../components/footer';
 import { renderNavbar, initNavbar } from '../components/navbar';
-import { CATEGORIES, type Category } from '../types';
+import {
+  CHAMPIONSHIPS,
+  getActiveChampionship,
+  onChampionshipChange,
+  setActiveChampionship,
+  type Championship,
+} from '../championships';
+import { getChampionshipCategories, type Category, type ChampionshipId } from '../types';
 
 function formatCategoryAge(category: Category): string {
   if (category.maxAge >= 999) {
@@ -19,86 +26,62 @@ function splitCategoryLabel(category: Category): { name: string; engine: string 
   return { name: category.label, engine: '' };
 }
 
-function renderCategoryCards(): string {
-  return CATEGORIES.map((cat) => {
-    const { name, engine } = splitCategoryLabel(cat);
-    return `
+function renderCategoryCards(championshipId: ChampionshipId): string {
+  return getChampionshipCategories(championshipId)
+    .map((cat) => {
+      const { name, engine } = splitCategoryLabel(cat);
+      return `
       <div class="card border-l-2 border-l-white/30 hover:border-l-white/60">
         <span class="font-title text-2xl tracking-wide text-white">${name}</span>
         <span class="mt-1 block text-sm font-semibold text-silver">${formatCategoryAge(cat)}</span>
         ${engine ? `<span class="mt-2 block text-muted text-xs leading-snug">${engine}</span>` : ''}
       </div>`;
-  }).join('');
+    })
+    .join('');
 }
 
-export function initHomePage(): void {
-  const app = document.getElementById('app');
-  if (!app) return;
-
-  app.innerHTML = `
-    ${renderNavbar('home')}
-
-    <section class="hero-geo relative">
-      <div class="geo-shapes" aria-hidden="true">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-        <div class="shape shape-3"></div>
-      </div>
-      <div class="geo-grid absolute inset-0 opacity-40 pointer-events-none" aria-hidden="true"></div>
-      <div class="mx-auto max-w-7xl px-4 py-16 md:py-24 relative z-10">
-        <div class="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-          <div class="animate-fade-in-up order-2 lg:order-1 text-center lg:text-left">
-            <span class="badge-tag mb-6">De Clubes · MX</span>
-            <h1 class="font-title text-4xl leading-none tracking-wider text-white sm:text-5xl md:text-6xl lg:text-7xl">
-              COPA<br/>
-              <span class="text-silver">AUTOCOLOMBIANA</span>
-            </h1>
-            <p class="mt-2 font-title text-2xl md:text-3xl tracking-widest text-white/80">DE CLUBES MX</p>
-            <p class="mt-6 text-base md:text-lg text-muted leading-relaxed max-w-xl mx-auto lg:mx-0">
-              El motocross por clubes que reúne a pilotos de todo Colombia. Cuatro válidas, dos mangas por categoría
-              y puntos que cuentan en cada fecha. Desde 50cc hasta MX Master y Enduro. <br>
-              <strong>Hay un lugar para ti en la pista.</strong>
-            </p>
-            <!--
-            <!--
-            <p class="mt-4 text-sm md:text-base text-silver leading-relaxed max-w-xl mx-auto lg:mx-0 border-l-2 border-white/30 pl-4">
-              Es el <strong class="text-white font-semibold">único campeonato en todo Colombia</strong> que mezcla
-              <strong class="text-white font-semibold">motocross y enduro</strong> en una misma temporada. Al final del
-              campeonato hay una <strong class="text-white font-semibold">premiación de $20.000.000 COP</strong> para
-              los participantes que cumplan los requisitos del reglamento.
-            </p>
-            -->
-            -->
-            <div class="mt-8 flex flex-wrap gap-4 justify-center lg:justify-start">
-              <a href="./inscripcion.html" class="btn-primary text-base px-8">Inscríbete ahora</a>
-              <a href="./eventos.html" class="btn-outline text-base px-8">Ver eventos</a>
-            </div>
-            <div class="mt-10 flex flex-wrap gap-3 justify-center lg:justify-start">
-              <div class="stat-pill">
-                <span class="font-title text-3xl text-white leading-none">${CATEGORIES.length}</span>
-                <span class="text-xs font-semibold text-muted mt-1">Categorías</span>
-              </div>
-              <div class="stat-pill">
-                <span class="font-title text-3xl text-white leading-none">4</span>
-                <span class="text-xs font-semibold text-muted mt-1">Válidas</span>
-              </div>
-              <div class="stat-pill">
-                <span class="font-title text-2xl text-white leading-none">$20M</span>
-                <span class="text-xs font-semibold text-muted mt-1">Premiación</span>
-              </div>
-            </div>
-          </div>
-          <div class="flex justify-center animate-fade-in-up order-1 lg:order-2">
-            <div class="relative">
-              <div class="absolute inset-0 bg-white/5 blur-3xl rounded-full scale-75" aria-hidden="true"></div>
-              <img src="./logo-copa.png" alt="Copa Autocolombiana de Clubes MX"
-                   class="relative max-w-[280px] sm:max-w-xs md:max-w-sm lg:max-w-md w-full object-contain drop-shadow-glow-strong" />
-            </div>
-          </div>
+function renderSplitPanel(champ: Championship, isActive: boolean): string {
+  return `
+    <button type="button" class="split-panel split-panel--${champ.id} ${isActive ? 'is-active' : ''}"
+            data-champ-panel="${champ.id}" aria-label="Ver ${champ.name}">
+      <div class="split-inner">
+        <span class="split-active-badge items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1 text-[11px] font-bold uppercase tracking-widest text-white">
+          <span class="h-1.5 w-1.5 rounded-full bg-white animate-pulse"></span> Viendo ahora
+        </span>
+        <img src="${champ.logo}" alt="${champ.name}" class="split-logo" />
+        <div>
+          <p class="font-title text-3xl md:text-4xl lg:text-5xl leading-none tracking-wider text-white">
+            COPA <span class="text-silver">AUTOCOLOMBIANA</span>
+          </p>
+          <p class="mt-1 font-title text-lg md:text-xl tracking-widest text-white/80">${champ.heroSubtitle}</p>
         </div>
+        <p class="text-muted text-sm md:text-base leading-relaxed max-w-md hidden sm:block">${champ.tagline}</p>
+        <div class="flex flex-wrap items-center justify-center gap-2 text-xs font-semibold text-silver">
+          <span class="rounded-full border border-white/15 bg-white/5 px-3 py-1">${champ.categoriesCount} categorías</span>
+          <span class="rounded-full border border-white/15 bg-white/5 px-3 py-1">${champ.validasCount} válidas</span>
+          <span class="rounded-full border border-white/15 bg-white/5 px-3 py-1">${champ.extraStat[0]} ${champ.extraStat[1].toLowerCase()}</span>
+        </div>
+        <span class="split-cta inline-flex items-center gap-2 rounded-lg bg-white px-6 py-2.5 font-bold text-ink text-sm">
+          Explorar campeonato
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+          </svg>
+        </span>
       </div>
-    </section>
+    </button>`;
+}
 
+function renderSplitHero(active: Championship): string {
+  return `
+    <section class="split-hero" aria-label="Elige tu campeonato">
+      ${renderSplitPanel(CHAMPIONSHIPS.mx, active.id === 'mx')}
+      <div class="split-divider" aria-hidden="true"></div>
+      ${renderSplitPanel(CHAMPIONSHIPS.enduro, active.id === 'enduro')}
+    </section>`;
+}
+
+function renderMxHighlights(): string {
+  return `
     <section class="border-y border-white/10 bg-surface-raised/50 py-10 md:py-12">
       <div class="mx-auto max-w-7xl px-4">
         <div class="grid gap-4 md:grid-cols-2 max-w-4xl mx-auto">
@@ -116,64 +99,130 @@ export function initHomePage(): void {
           </div>
         </div>
       </div>
-    </section>
+    </section>`;
+}
 
+function renderEnduroFormat(): string {
+  const cards = CHAMPIONSHIPS.enduro.calendar
+    .map(
+      (v) => `
+      <div class="card-featured">
+        <div class="flex items-start justify-between gap-4 mb-3">
+          <div>
+            <span class="badge-tag mb-2">${v.edition}</span>
+            <h3 class="font-title text-3xl tracking-wide text-white">${v.format}</h3>
+          </div>
+          <p class="font-title text-xl text-silver text-right shrink-0">${v.date}</p>
+        </div>
+        <p class="text-silver text-sm font-semibold mb-4">📍 ${v.location}</p>
+        <ul class="space-y-2 text-muted text-sm leading-relaxed list-disc pl-5 marker:text-silver">
+          ${v.details.map((d) => `<li>${d}</li>`).join('')}
+        </ul>
+      </div>`
+    )
+    .join('');
+
+  return `
+    <section class="border-y border-white/10 bg-surface-raised/50 py-12 md:py-14">
+      <div class="mx-auto max-w-7xl px-4">
+        <div class="text-center mb-10">
+          <h2 class="section-title mb-3">Formato del campeonato</h2>
+          <p class="text-muted max-w-2xl mx-auto">
+            Dos válidas contra el cronómetro. La clasificación se define por tiempos en pruebas especiales.
+          </p>
+        </div>
+        <div class="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">${cards}</div>
+      </div>
+    </section>`;
+}
+
+function renderAboutSection(champ: Championship): string {
+  const mxBody = `
+    <p>
+      Nacimos de la experiencia del Campeonato Interligas y hoy somos el punto de encuentro de clubes,
+      ligas y pilotos de todo el país.
+    </p>
+    <p>
+      Da igual de dónde vengas o con quién compitas: aquí todos suman puntos en igualdad de condiciones.
+      Compite en motocross o enduro — somos el único campeonato nacional que reúne ambas disciplinas — y pelea
+      por una premiación de $20 millones al cierre de la temporada.
+    </p>
+    <p>
+      Inscríbete en línea, consulta el calendario y sigue tus resultados desde esta misma web.
+    </p>`;
+
+  const enduroBody = `
+    <p>
+      La Copa Autocolombiana de Enduro llega en su primera edición con el mismo equipo organizador
+      de la Copa de Clubes MX: eventos serios, seguros y pensados para el piloto.
+    </p>
+    <p>
+      Aquí no compites rueda a rueda: compites contra el cronómetro. Cada válida tiene pruebas especiales
+      donde tu tiempo define la clasificación — del Sprint Enduro en Cogua Motopark al Hard Scrambler de La Pista Off Road.
+    </p>
+    <p>
+      Desde infantiles hasta expertos: hay una categoría para tu nivel. Inscríbete en línea y vive el enduro.
+    </p>`;
+
+  const cardsMx = [
+    ['01', 'Tu club, tu liga', 'Lleva los colores de tu equipo a cada válida y compite por puntos en las 4 fechas. Novatos y expertos, de cualquier ciudad — todos tienen su lugar.'],
+    ['02', 'Pura acción', 'Dos mangas que valen, clasificación el domingo y una tabla de puntos que premia la constancia. Cada salida cuenta.'],
+    ['03', 'Sin complicaciones', 'Inscríbete, revisa las válidas, lee el reglamento y consulta resultados. Todo desde aquí, en pocos clics.'],
+  ];
+
+  const cardsEnduro = [
+    ['01', 'Contra el reloj', 'Pruebas especiales cronometradas: tu tiempo es tu resultado. Sin excusas, sin tráfico — solo tú y el terreno.'],
+    ['02', 'Para todos los niveles', 'De Enduro 1 Infantil a la categoría Oro: novatos, intermedios y expertos tienen su propia clasificación.'],
+    ['03', 'Sin complicaciones', 'Inscríbete, revisa las válidas, lee el reglamento y consulta resultados. Todo desde aquí, en pocos clics.'],
+  ];
+
+  const cards = (champ.id === 'mx' ? cardsMx : cardsEnduro)
+    .map(
+      ([num, title, desc], i) => `
+      <div class="${i === 0 ? 'card-featured' : 'card'} text-center">
+        <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-lg border ${i === 0 ? 'border-white/15 text-white' : 'border-white/10 text-silver'} bg-white/5 font-title text-2xl">${num}</div>
+        <h3 class="font-title text-2xl tracking-wide text-white mb-2">${title}</h3>
+        <p class="text-muted text-sm leading-relaxed">${desc}</p>
+      </div>`
+    )
+    .join('');
+
+  return `
     <section class="section-geo py-14 md:py-18">
       <div class="mx-auto max-w-7xl px-4 relative z-10">
         <div class="text-center mb-12 max-w-3xl mx-auto">
           <h2 class="section-title mb-5">¿Qué es la Copa?</h2>
           <div class="text-muted leading-relaxed text-base md:text-lg space-y-3">
-            <p>
-              Nacimos de la experiencia del Campeonato Interligas y hoy somos el punto de encuentro de clubes,
-              ligas y pilotos de todo el país.
-            </p>
-            <p>
-              Da igual de dónde vengas o con quién compitas: aquí todos suman puntos en igualdad de condiciones.
-              Compite en motocross o enduro — somos el único campeonato nacional que reúne ambas disciplinas — y pelea
-              por una premiación de $20 millones al cierre de la temporada.
-            </p>
-            <p>
-              Inscríbete en línea, consulta el calendario y sigue tus resultados desde esta misma web.
-            </p>
+            ${champ.id === 'mx' ? mxBody : enduroBody}
           </div>
         </div>
-        <div class="grid gap-6 md:grid-cols-3">
-          <div class="card-featured text-center">
-            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-lg border border-white/15 bg-white/5 font-title text-2xl text-white">01</div>
-            <h3 class="font-title text-2xl tracking-wide text-white mb-2">Tu club, tu liga</h3>
-            <p class="text-muted text-sm leading-relaxed">Lleva los colores de tu equipo a cada válida y compite por puntos en las 4 fechas. Novatos y expertos, de cualquier ciudad — todos tienen su lugar.</p>
-          </div>
-          <div class="card text-center">
-            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-lg border border-white/10 bg-white/5 font-title text-2xl text-silver">02</div>
-            <h3 class="font-title text-2xl tracking-wide text-white mb-2">Pura acción</h3>
-            <p class="text-muted text-sm leading-relaxed">Dos mangas que valen, clasificación el domingo y una tabla de puntos que premia la constancia. Cada salida cuenta.</p>
-          </div>
-          <div class="card text-center">
-            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-lg border border-white/10 bg-white/5 font-title text-2xl text-silver">03</div>
-            <h3 class="font-title text-2xl tracking-wide text-white mb-2">Sin complicaciones</h3>
-            <p class="text-muted text-sm leading-relaxed">Inscríbete, revisa las válidas, lee el reglamento y consulta resultados. Todo desde aquí, en pocos clics.</p>
-          </div>
-        </div>
+        <div class="grid gap-6 md:grid-cols-3">${cards}</div>
       </div>
-    </section>
+    </section>`;
+}
 
+function renderCategoriesSection(champ: Championship): string {
+  return `
     <section class="section-light py-14">
       <div class="mx-auto max-w-7xl px-4">
         <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10">
           <div>
             <h2 class="section-title mb-2">Categorías oficiales</h2>
             <p class="text-muted max-w-xl">
-              Elige la categoría acorde a tu edad al momento del evento.
+              ${champ.name} · Elige la categoría acorde a tu edad al momento del evento.
             </p>
           </div>
           <a href="./inscripcion.html" class="btn-primary shrink-0">Registrarme</a>
         </div>
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          ${renderCategoryCards()}
+          ${renderCategoryCards(champ.id)}
         </div>
       </div>
-    </section>
+    </section>`;
+}
 
+function renderQuickAccess(): string {
+  return `
     <section class="py-14 bg-surface relative overflow-hidden">
       <div class="geo-grid absolute inset-0 opacity-20 pointer-events-none" aria-hidden="true"></div>
       <div class="mx-auto max-w-7xl px-4 relative z-10">
@@ -196,21 +245,62 @@ export function initHomePage(): void {
             .join('')}
         </div>
       </div>
-    </section>
+    </section>`;
+}
 
+function renderCta(champ: Championship): string {
+  const text =
+    champ.id === 'mx'
+      ? 'El único campeonato que une motocross y enduro en Colombia — con $20 millones en premiación al final. Inscríbete, elige tu categoría y sal a demostrar de qué estás hecho.'
+      : 'Primera edición, dos válidas y el cronómetro como único rival. Inscríbete, elige tu categoría y demuestra de qué estás hecho en el enduro.';
+
+  return `
     <section class="cta-geo py-16 md:py-20">
       <div class="mx-auto max-w-4xl px-4 text-center relative z-10">
         <h2 class="font-title text-4xl md:text-5xl tracking-wider text-white mb-4">¿Listo para la pista?</h2>
-        <p class="text-muted mb-8 text-lg max-w-xl mx-auto">
-          El único campeonato que une motocross y enduro en Colombia — con $20 millones en premiación al final.
-          Inscríbete, elige tu categoría y sal a demostrar de qué estás hecho.
-        </p>
+        <p class="text-muted mb-8 text-lg max-w-xl mx-auto">${text}</p>
         <a href="./inscripcion.html" class="btn-primary text-lg px-10 py-4">Registrarme como piloto</a>
       </div>
-    </section>
+    </section>`;
+}
 
+function renderHomeContent(champ: Championship): string {
+  return `
+    ${champ.id === 'mx' ? renderMxHighlights() : renderEnduroFormat()}
+    ${renderAboutSection(champ)}
+    ${renderCategoriesSection(champ)}
+    ${renderQuickAccess()}
+    ${renderCta(champ)}`;
+}
+
+function renderPage(): void {
+  const app = document.getElementById('app');
+  if (!app) return;
+
+  const champ = getActiveChampionship();
+
+  app.innerHTML = `
+    ${renderNavbar('home')}
+    ${renderSplitHero(champ)}
+    <div id="home-content">
+      ${renderHomeContent(champ)}
+    </div>
     ${renderFooter()}
   `;
 
   initNavbar();
+
+  document.querySelectorAll<HTMLButtonElement>('[data-champ-panel]').forEach((panel) => {
+    panel.addEventListener('click', () => {
+      const id = panel.getAttribute('data-champ-panel') as ChampionshipId;
+      setActiveChampionship(id);
+      // Tras el re-render (síncrono) llevamos al usuario al contenido del campeonato.
+      document.getElementById('home-content')?.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+}
+
+export function initHomePage(): void {
+  renderPage();
+  onChampionshipChange(() => renderPage());
 }

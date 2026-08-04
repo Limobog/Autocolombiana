@@ -2,13 +2,18 @@ import { CONFIG } from '../config';
 import { renderFooter } from '../components/footer';
 import { renderNavbar, initNavbar } from '../components/navbar';
 import {
+  renderChampionshipModal,
+  initChampionshipModal,
+} from '../components/championship';
+import { getActiveChampionship, onChampionshipChange, setActiveChampionship } from '../championships';
+import {
   createRegistration,
   loadEvents,
   getAvailablePilotNumbers,
   readFileAsDataUrl,
 } from '../utils/storage';
 import { calculateAge, formatDate } from '../utils/age';
-import { getCategoriesForAge, formatCategoryOptionLabel, type Event } from '../types';
+import { getCategoriesForAge, formatCategoryOptionLabel, type ChampionshipId, type Event } from '../types';
 import { formatCop } from '../utils/registration-total';
 import Swal from 'sweetalert2';
 
@@ -23,8 +28,10 @@ function getEventIdFromUrl(): string | null {
   return new URLSearchParams(window.location.search).get('evento');
 }
 
-function renderCategoryCheckboxes(age: number, selected: string[] = []): string {
-  const categories = getCategoriesForAge(age);
+let urlChampionshipChecked = false;
+
+function renderCategoryCheckboxes(age: number, championshipId: ChampionshipId, selected: string[] = []): string {
+  const categories = getCategoriesForAge(age, championshipId);
   if (categories.length === 0) {
     return '<p class="text-sm text-muted">Sin categorias disponibles para esta edad.</p>';
   }
@@ -253,10 +260,11 @@ function updateCategories(age: number, events: Event[]): void {
   ageDisplay.textContent = `Edad calculada: ${age} años`;
   ageDisplay.classList.remove('hidden');
 
-  const categories = getCategoriesForAge(age);
+  const championshipId = getActiveChampionship().id;
+  const categories = getCategoriesForAge(age, championshipId);
   container.classList.toggle('opacity-60', categories.length === 0);
   container.classList.toggle('pointer-events-none', categories.length === 0);
-  container.innerHTML = renderCategoryCheckboxes(age);
+  container.innerHTML = renderCategoryCheckboxes(age, championshipId);
   updateInscriptionTotal(events);
 }
 
@@ -393,7 +401,7 @@ function bindRegistrationForm(events: Event[]): void {
       return;
     }
 
-    const validCategories = getCategoriesForAge(edad);
+    const validCategories = getCategoriesForAge(edad, getActiveChampionship().id);
     if (categoriaIds.length === 0 || !categoriaIds.every((id) => validCategories.some((c) => c.id === id))) {
       await Swal.fire({
         icon: 'error',
@@ -484,32 +492,49 @@ function bindRegistrationForm(events: Event[]): void {
   });
 }
 
-export async function initRegistrationPage(): Promise<void> {
+async function renderPage(): Promise<void> {
   const app = document.getElementById('app');
   if (!app) return;
+
+  const champ = getActiveChampionship();
 
   app.innerHTML = `
     ${renderNavbar('inscripcion')}
     <main class="mx-auto max-w-3xl px-4 py-12">
       <div class="mb-8 text-center">
         <h1 class="section-title mb-4">Inscripción de Piloto</h1>
-        <p class="text-muted">Completa el formulario para registrarte en la Copa Autocolombiana de Clubes MX.</p>
+        <p class="text-muted">Completa el formulario para registrarte en la ${champ.name}.</p>
       </div>
       <div class="card animate-fade-in-up" id="registration-card">
         ${renderLoadingPanel()}
       </div>
     </main>
     ${renderFooter()}
+    ${renderChampionshipModal()}
   `;
 
   initNavbar();
+  initChampionshipModal();
 
   const card = document.getElementById('registration-card');
   if (!card) return;
 
   try {
-    const events = (await loadEvents()).filter((e) => e.active);
+    const allEvents = await loadEvents();
     const eventIdFromUrl = getEventIdFromUrl();
+
+    // Enlace directo a un evento del otro campeonato: se adopta ese campeonato (solo al cargar).
+    if (!urlChampionshipChecked) {
+      urlChampionshipChecked = true;
+      const urlEvent = eventIdFromUrl ? allEvents.find((e) => e.id === eventIdFromUrl) : undefined;
+      if (urlEvent && urlEvent.championshipId !== champ.id) {
+        setActiveChampionship(urlEvent.championshipId);
+        await renderPage();
+        return;
+      }
+    }
+
+    const events = allEvents.filter((e) => e.active && e.championshipId === champ.id);
     const initialEventId =
       eventIdFromUrl && events.some((e) => e.id === eventIdFromUrl)
         ? eventIdFromUrl
@@ -519,7 +544,7 @@ export async function initRegistrationPage(): Promise<void> {
 
     card.innerHTML =
       events.length === 0
-        ? '<p class="text-center text-muted py-8">No hay eventos abiertos para inscripción.</p>'
+        ? `<p class="text-center text-muted py-8">No hay eventos de la ${champ.name} abiertos para inscripción en este momento.</p>`
         : renderForm(events, initialEventId, initialPilots);
 
     bindRegistrationForm(events);
@@ -527,4 +552,11 @@ export async function initRegistrationPage(): Promise<void> {
     card.innerHTML =
       '<p class="text-center text-silver-400 py-8">No se pudieron cargar los datos. Recarga la pagina e intenta de nuevo.</p>';
   }
+}
+
+export async function initRegistrationPage(): Promise<void> {
+  await renderPage();
+  onChampionshipChange(() => {
+    void renderPage();
+  });
 }

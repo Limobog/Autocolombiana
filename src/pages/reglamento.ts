@@ -1,9 +1,15 @@
 import { renderFooter } from '../components/footer';
 import { renderNavbar, initNavbar } from '../components/navbar';
 import {
+  renderChampionshipModal,
+  initChampionshipModal,
+} from '../components/championship';
+import { getActiveChampionship, onChampionshipChange } from '../championships';
+import {
   REGLAMENTO_SECTIONS,
   type ReglamentoSection,
 } from '../content/reglamento-sections';
+import { REGLAMENTO_ENDURO_SECTIONS } from '../content/reglamento-enduro-sections';
 
 function escapeHtml(text: string): string {
   return text
@@ -94,50 +100,71 @@ function renderSection(section: ReglamentoSection): string {
     </article>`;
 }
 
-function renderToc(): string {
-  return REGLAMENTO_SECTIONS.map(
-    (s) =>
-      `<a href="#${s.id}" class="block py-1.5 text-sm text-muted hover:text-silver transition-colors border-l-2 border-transparent hover:border-white pl-3">${escapeHtml(s.title)}</a>`
-  ).join('');
+function renderToc(sections: ReglamentoSection[]): string {
+  return sections
+    .map(
+      (s) =>
+        `<a href="#${s.id}" class="block py-1.5 text-sm text-muted hover:text-silver transition-colors border-l-2 border-transparent hover:border-white pl-3">${escapeHtml(s.title)}</a>`
+    )
+    .join('');
 }
 
-export function initReglamentoPage(): void {
+function renderPage(): void {
   const app = document.getElementById('app');
   if (!app) return;
 
-  const sectionsHtml = REGLAMENTO_SECTIONS.map(renderSection).join('');
+  const champ = getActiveChampionship();
+  const sections = champ.id === 'enduro' ? REGLAMENTO_ENDURO_SECTIONS : REGLAMENTO_SECTIONS;
+  const sectionsHtml = sections.map(renderSection).join('');
 
-  app.innerHTML = `
-    ${renderNavbar('reglamento')}
-    <main class="mx-auto max-w-7xl px-4 py-10 md:py-14 md:px-6">
-      <header class="text-center mb-10 md:mb-14">
-        <p class="text-silver font-semibold tracking-widest uppercase text-sm mb-2">Copa Autocolombiana de Clubes MX</p>
-        <h1 class="section-title text-4xl md:text-5xl lg:text-6xl">Reglamento oficial</h1>
-        <p class="mt-4 max-w-2xl mx-auto text-muted leading-relaxed">
-          Normas oficiales del campeonato. Al inscribirte aceptas este reglamento en su totalidad.
-        </p>
-        <a href="./reglamento-oficial-copa-mx-autocolombiana.pdf" target="_blank" rel="noopener noreferrer"
+  const pdfButton =
+    champ.id === 'mx'
+      ? `<a href="./reglamento-oficial-copa-mx-autocolombiana.pdf" target="_blank" rel="noopener noreferrer"
            class="btn-outline inline-flex items-center gap-2 mt-6">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
           </svg>
           Descargar PDF oficial
-        </a>
+        </a>`
+      : `<p class="mt-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-2 text-sm text-silver">
+          Reglamento oficial en PDF disponible próximamente
+        </p>`;
+
+  const intro =
+    champ.id === 'mx'
+      ? 'Normas oficiales del campeonato. Al inscribirte aceptas este reglamento en su totalidad.'
+      : 'Resumen provisional del campeonato: formato de competencia y categorías oficiales. Al inscribirte aceptas el reglamento en su totalidad.';
+
+  app.innerHTML = `
+    ${renderNavbar('reglamento')}
+    <main class="mx-auto max-w-7xl px-4 py-10 md:py-14 md:px-6">
+      <header class="text-center mb-10 md:mb-14">
+        <p class="text-silver font-semibold tracking-widest uppercase text-sm mb-2">${escapeHtml(champ.name)}</p>
+        <h1 class="section-title text-4xl md:text-5xl lg:text-6xl">Reglamento oficial</h1>
+        <p class="mt-4 max-w-2xl mx-auto text-muted leading-relaxed">${intro}</p>
+        ${pdfButton}
       </header>
 
       <div class="lg:grid lg:grid-cols-[240px_1fr] lg:gap-10 xl:gap-14">
         <aside class="hidden lg:block">
           <nav class="sticky top-24 rounded-xl border border-white/10 bg-surface-raised p-4" aria-label="Índice del reglamento">
             <p class="font-title text-lg text-silver tracking-wide mb-3">Índice</p>
-            ${renderToc()}
+            ${renderToc(sections)}
           </nav>
         </aside>
         <div class="space-y-8">${sectionsHtml}</div>
       </div>
     </main>
     ${renderFooter()}
+    ${renderChampionshipModal()}
   `;
 
   initNavbar();
+  initChampionshipModal();
+}
+
+export function initReglamentoPage(): void {
+  renderPage();
+  onChampionshipChange(() => renderPage());
 }

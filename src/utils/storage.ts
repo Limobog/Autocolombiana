@@ -39,6 +39,13 @@ function parseBoolField(value: unknown): boolean {
   return value === true || value === 'TRUE' || value === 'true' || value === 1 || value === '1';
 }
 
+function normalizeChampionshipId(raw: Record<string, unknown>): Event['championshipId'] {
+  const value = String(raw.championshipId ?? '').trim().toLowerCase();
+  if (value === 'enduro' || value === 'mx') return value;
+  // Fallback para eventos creados antes de existir el campo: se infiere por el nombre.
+  return /enduro/i.test(String(raw.name ?? '')) ? 'enduro' : 'mx';
+}
+
 function normalizeEvent(raw: Record<string, unknown>): Event {
   return {
     id: String(raw.id ?? ''),
@@ -51,6 +58,7 @@ function normalizeEvent(raw: Record<string, unknown>): Event {
     finished: parseBoolField(raw.finished),
     reglamentoUrl: String(raw.reglamentoUrl ?? ''),
     valorInscripcion: Number(raw.valorInscripcion ?? 0) || 0,
+    championshipId: normalizeChampionshipId(raw),
   };
 }
 

@@ -1,5 +1,10 @@
 import { renderFooter } from '../components/footer';
 import { renderNavbar, initNavbar } from '../components/navbar';
+import {
+  renderChampionshipModal,
+  initChampionshipModal,
+} from '../components/championship';
+import { onChampionshipChange } from '../championships';
 import { loadEvents } from '../utils/storage';
 import { formatDate } from '../utils/age';
 
@@ -7,7 +12,7 @@ function getEventIdFromUrl(): string | null {
   return new URLSearchParams(window.location.search).get('evento');
 }
 
-export async function initResultsPage(): Promise<void> {
+async function renderPage(): Promise<void> {
   const app = document.getElementById('app');
   if (!app) return;
 
@@ -22,9 +27,11 @@ export async function initResultsPage(): Promise<void> {
       </div>
     </main>
     ${renderFooter()}
+    ${renderChampionshipModal()}
   `;
 
   initNavbar();
+  initChampionshipModal();
 
   const content = document.getElementById('results-content');
   if (!content) return;
@@ -66,4 +73,11 @@ export async function initResultsPage(): Promise<void> {
       Esta pagina ya esta habilitada para <strong>${event.name}</strong>.
     </p>
     <a href="./eventos.html" class="btn-outline inline-block mt-8">Volver a eventos</a>`;
+}
+
+export async function initResultsPage(): Promise<void> {
+  await renderPage();
+  onChampionshipChange(() => {
+    void renderPage();
+  });
 }

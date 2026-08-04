@@ -1,5 +1,10 @@
 import { renderFooter } from '../components/footer';
 import { renderNavbar, initNavbar } from '../components/navbar';
+import {
+  renderChampionshipModal,
+  initChampionshipModal,
+} from '../components/championship';
+import { getActiveChampionship, onChampionshipChange, type Championship } from '../championships';
 import { loadEvents } from '../utils/storage';
 import { formatDate } from '../utils/age';
 import type { Event } from '../types';
@@ -61,9 +66,42 @@ function renderEventCard(event: Event): string {
     </article>`;
 }
 
-export async function initEventsPage(): Promise<void> {
+function renderCalendarFallback(champ: Championship): string {
+  if (champ.calendar.length === 0) {
+    return `
+      <div class="col-span-full card text-center py-12">
+        <p class="text-muted text-lg mb-4">No hay eventos publicados en este momento.</p>
+        <p class="text-sm text-muted/60">Vuelve pronto o contactanos para mas informacion.</p>
+      </div>`;
+  }
+
+  return champ.calendar
+    .map(
+      (v) => `
+      <article class="card group">
+        <div class="flex items-start justify-between gap-4 mb-4">
+          <div>
+            <span class="inline-block rounded-full bg-gray-metal/30 px-3 py-1 text-xs font-semibold text-muted">Inscripciones próximamente</span>
+            <h3 class="font-title text-2xl tracking-wide text-foreground group-hover:text-silver transition-colors mt-2">${v.edition} — ${v.format}</h3>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-title text-xl text-silver">${v.date}</p>
+          </div>
+        </div>
+        <p class="text-muted mb-2">📍 ${v.location}</p>
+        <ul class="text-muted/80 mb-2 text-sm leading-relaxed list-disc pl-5 marker:text-silver space-y-1">
+          ${v.details.map((d) => `<li>${d}</li>`).join('')}
+        </ul>
+      </article>`
+    )
+    .join('');
+}
+
+async function renderPage(): Promise<void> {
   const app = document.getElementById('app');
   if (!app) return;
+
+  const champ = getActiveChampionship();
 
   app.innerHTML = `
     ${renderNavbar('eventos')}
@@ -71,7 +109,7 @@ export async function initEventsPage(): Promise<void> {
       <div class="mb-10 text-center">
         <h1 class="section-title mb-4">Eventos de la Copa</h1>
         <p class="text-muted max-w-2xl mx-auto">
-          Consulta las válidas de la Copa Autocolombiana de Clubes MX, descarga el reglamento y revisa los resultados cuando estén disponibles.
+          Consulta las válidas de la ${champ.name}, descarga el reglamento y revisa los resultados cuando estén disponibles.
         </p>
       </div>
       <div id="events-list" class="grid gap-6 md:grid-cols-2">
@@ -79,22 +117,22 @@ export async function initEventsPage(): Promise<void> {
       </div>
     </main>
     ${renderFooter()}
+    ${renderChampionshipModal()}
   `;
 
   initNavbar();
+  initChampionshipModal();
 
   const list = document.getElementById('events-list');
   if (!list) return;
 
   try {
-    const events = (await loadEvents()).sort((a, b) => a.date.localeCompare(b.date));
+    const events = (await loadEvents())
+      .filter((e) => e.championshipId === champ.id)
+      .sort((a, b) => a.date.localeCompare(b.date));
 
     if (events.length === 0) {
-      list.innerHTML = `
-        <div class="col-span-full card text-center py-12">
-          <p class="text-muted text-lg mb-4">No hay eventos publicados en este momento.</p>
-          <p class="text-sm text-muted/60">Vuelve pronto o contactanos para mas informacion.</p>
-        </div>`;
+      list.innerHTML = renderCalendarFallback(champ);
       return;
     }
 
@@ -106,4 +144,11 @@ export async function initEventsPage(): Promise<void> {
         <p class="text-sm text-muted/60">Intenta de nuevo en unos minutos.</p>
       </div>`;
   }
+}
+
+export async function initEventsPage(): Promise<void> {
+  await renderPage();
+  onChampionshipChange(() => {
+    void renderPage();
+  });
 }

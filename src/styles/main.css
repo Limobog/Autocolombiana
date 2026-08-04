@@ -197,3 +197,150 @@
 .animate-fade-in-up {
   animation: fadeInUp 0.6s ease forwards;
 }
+
+/* ===== Hero dividido: selector de campeonato ===== */
+.split-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 65px);
+  background-color: #0a0a0a;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .split-hero {
+    flex-direction: row;
+  }
+}
+
+.split-panel {
+  position: relative;
+  flex: 1 1 0%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  cursor: pointer;
+  overflow: hidden;
+  border: none;
+  background-color: transparent;
+  text-align: center;
+  transition:
+    flex-grow 0.8s cubic-bezier(0.22, 0.9, 0.28, 1),
+    opacity 0.6s ease,
+    filter 0.6s ease;
+  min-height: 46vh;
+}
+
+@media (min-width: 768px) {
+  .split-panel {
+    min-height: 0;
+  }
+}
+
+/* Fondos diferenciados por campeonato */
+.split-panel--mx {
+  background:
+    radial-gradient(ellipse 90% 65% at 30% 35%, rgba(255, 255, 255, 0.07) 0%, transparent 60%),
+    linear-gradient(160deg, #101010 0%, #0a0a0a 70%);
+}
+
+.split-panel--enduro {
+  background:
+    radial-gradient(ellipse 90% 65% at 70% 35%, rgba(255, 255, 255, 0.07) 0%, transparent 60%),
+    repeating-linear-gradient(-35deg, transparent 0 26px, rgba(255, 255, 255, 0.018) 26px 28px),
+    linear-gradient(200deg, #101010 0%, #0a0a0a 70%);
+}
+
+.split-panel:hover,
+.split-panel:focus-visible {
+  flex-grow: 1.8;
+}
+
+/* La sección no elegida se atenúa mientras la otra crece */
+.split-hero:has(.split-panel:hover) .split-panel:not(:hover),
+.split-hero:has(.split-panel:focus-visible) .split-panel:not(:focus-visible) {
+  opacity: 0.45;
+  filter: brightness(0.7) saturate(0.7);
+}
+
+.split-panel .split-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  max-width: 30rem;
+  transition: transform 0.8s cubic-bezier(0.22, 0.9, 0.28, 1);
+  will-change: transform;
+}
+
+.split-panel:hover .split-inner,
+.split-panel:focus-visible .split-inner {
+  transform: scale(1.08);
+}
+
+.split-panel .split-logo {
+  height: clamp(96px, 16vw, 190px);
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 40px rgba(255, 255, 255, 0.12));
+  transition: filter 0.6s ease;
+}
+
+.split-panel:hover .split-logo {
+  filter: drop-shadow(0 0 60px rgba(255, 255, 255, 0.25));
+}
+
+/* Detalle de acción que aparece al hacer hover */
+.split-panel .split-cta {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.45s ease 0.1s, transform 0.45s ease 0.1s;
+}
+
+.split-panel:hover .split-cta,
+.split-panel:focus-visible .split-cta,
+.split-panel.is-active .split-cta {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Divisor central luminoso */
+.split-divider {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+}
+
+@media (min-width: 768px) {
+  .split-divider {
+    left: 50%;
+    right: auto;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    height: auto;
+    background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  }
+}
+
+.split-panel .split-active-badge {
+  display: none;
+}
+
+.split-panel.is-active .split-active-badge {
+  display: inline-flex;
+}
+
+/* ===== Modal de selección de campeonato ===== */
+.champ-modal-backdrop {
+  background: rgba(5, 5, 5, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
