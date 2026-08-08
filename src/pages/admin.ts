@@ -220,7 +220,7 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
     .map((id) => {
       const count = registrations.filter((r) => getEventChampionshipId(events, r.eventId) === id).length;
       return `<button class="champ-tab px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wide transition-all bg-surface-raised text-muted border border-white/10"
-        data-champ-tab="${id}">${CHAMPIONSHIPS[id].name.replace('Copa Autocolombiana de ', '')} <span class="ml-1 text-xs font-normal">(${count})</span></button>`;
+        data-champ-tab="${id}">${CHAMPIONSHIPS[id].shortLabel} <span class="ml-1 text-xs font-normal">(${count})</span></button>`;
     })
     .join('');
 

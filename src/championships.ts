@@ -13,6 +13,10 @@ export interface Championship {
   id: ChampionshipId;
   /** Nombre completo, ej: "Copa Autocolombiana de Clubes MX" */
   name: string;
+  /** Artículo gramatical del nombre: "la Copa...", "el Festival..." */
+  article: 'la' | 'el';
+  /** Título principal del hero (HTML permitido para resaltar palabras) */
+  heroTitleHtml: string;
   /** Línea final del título del hero, ej: "DE CLUBES MX" */
   heroSubtitle: string;
   /** Etiqueta corta para switcher y badges */
@@ -32,6 +36,8 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
   mx: {
     id: 'mx',
     name: 'Copa Autocolombiana de Clubes MX',
+    article: 'la',
+    heroTitleHtml: 'COPA <span class="text-silver">AUTOCOLOMBIANA</span>',
     heroSubtitle: 'DE CLUBES MX',
     shortLabel: 'Clubes MX',
     badge: 'De Clubes · MX',
@@ -45,13 +51,15 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
   },
   enduro: {
     id: 'enduro',
-    name: 'Copa Autocolombiana de Enduro',
-    heroSubtitle: 'DE ENDURO · 1.ª EDICIÓN',
-    shortLabel: 'Enduro',
-    badge: 'Enduro · 1.ª Edición',
+    name: 'Festival de Enduro Autocolombiana',
+    article: 'el',
+    heroTitleHtml: 'FESTIVAL <span class="text-silver">ENDURO</span>',
+    heroSubtitle: 'AUTOCOLOMBIANA · 1.ª EDICIÓN',
+    shortLabel: 'Festival Enduro',
+    badge: 'Festival · 1.ª Edición',
     logo: './logo-enduro.svg',
     tagline:
-      'La primera edición del enduro Autocolombiano: competencia contra el cronómetro, clasificación por tiempos y pruebas especiales que exigen todo de ti.',
+      'La primera edición del Festival de Enduro Autocolombiana: competencia contra el cronómetro, clasificación por tiempos y pruebas especiales que exigen todo de ti.',
     categoriesCount: ENDURO_CATEGORIES.length,
     validasCount: 2,
     extraStat: ['1.ª', 'Edición'],

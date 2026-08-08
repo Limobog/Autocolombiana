@@ -51,7 +51,7 @@ function renderSplitPanel(champ: Championship, isActive: boolean): string {
         <img src="${champ.logo}" alt="${champ.name}" class="split-logo" />
         <div>
           <p class="font-title text-3xl md:text-4xl lg:text-5xl leading-none tracking-wider text-white">
-            COPA <span class="text-silver">AUTOCOLOMBIANA</span>
+            ${champ.heroTitleHtml}
           </p>
           <p class="mt-1 font-title text-lg md:text-xl tracking-widest text-white/80">${champ.heroSubtitle}</p>
         </div>
@@ -153,7 +153,7 @@ function renderAboutSection(champ: Championship): string {
 
   const enduroBody = `
     <p>
-      La Copa Autocolombiana de Enduro llega en su primera edición con el mismo equipo organizador
+      El Festival de Enduro Autocolombiana llega en su primera edición con el mismo equipo organizador
       de la Copa de Clubes MX: eventos serios, seguros y pensados para el piloto.
     </p>
     <p>
@@ -191,7 +191,7 @@ function renderAboutSection(champ: Championship): string {
     <section class="section-geo py-14 md:py-18">
       <div class="mx-auto max-w-7xl px-4 relative z-10">
         <div class="text-center mb-12 max-w-3xl mx-auto">
-          <h2 class="section-title mb-5">¿Qué es la Copa?</h2>
+          <h2 class="section-title mb-5">${champ.id === 'mx' ? '¿Qué es la Copa?' : '¿Qué es el Festival?'}</h2>
           <div class="text-muted leading-relaxed text-base md:text-lg space-y-3">
             ${champ.id === 'mx' ? mxBody : enduroBody}
           </div>

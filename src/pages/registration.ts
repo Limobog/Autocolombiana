@@ -503,7 +503,7 @@ async function renderPage(): Promise<void> {
     <main class="mx-auto max-w-3xl px-4 py-12">
       <div class="mb-8 text-center">
         <h1 class="section-title mb-4">Inscripción de Piloto</h1>
-        <p class="text-muted">Completa el formulario para registrarte en la ${champ.name}.</p>
+        <p class="text-muted">Completa el formulario para registrarte en ${champ.article} ${champ.name}.</p>
       </div>
       <div class="card animate-fade-in-up" id="registration-card">
         ${renderLoadingPanel()}
@@ -544,7 +544,7 @@ async function renderPage(): Promise<void> {
 
     card.innerHTML =
       events.length === 0
-        ? `<p class="text-center text-muted py-8">No hay eventos de la ${champ.name} abiertos para inscripción en este momento.</p>`
+        ? `<p class="text-center text-muted py-8">No hay eventos ${champ.article === 'el' ? 'del' : 'de la'} ${champ.name} abiertos para inscripción en este momento.</p>`
         : renderForm(events, initialEventId, initialPilots);
 
     bindRegistrationForm(events);

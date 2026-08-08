@@ -1,7 +1,7 @@
 import type { ReglamentoSection } from './reglamento-sections';
 
 /**
- * Reglamento provisional de la Copa Autocolombiana de Enduro (1.ª Edición).
+ * Reglamento provisional del Festival de Enduro Autocolombiana (1.ª Edición).
  * El documento oficial completo se publicará cuando la organización lo entregue.
  */
 export const REGLAMENTO_ENDURO_SECTIONS: ReglamentoSection[] = [
@@ -9,7 +9,7 @@ export const REGLAMENTO_ENDURO_SECTIONS: ReglamentoSection[] = [
     id: 'generalidades',
     title: '1. Generalidades',
     paragraphs: [
-      'La Copa Autocolombiana de Enduro — 1.ª Edición es un campeonato privado de enduro organizado por el mismo equipo de la Copa Autocolombiana de Clubes MX, con la misma experiencia y compromiso de ofrecer eventos organizados, seguros y transparentes.',
+      'El Festival de Enduro Autocolombiana — 1.ª Edición es un campeonato privado de enduro organizado por el mismo equipo de la Copa Autocolombiana de Clubes MX, con la misma experiencia y compromiso de ofrecer eventos organizados, seguros y transparentes.',
       'El campeonato se disputa contra el cronómetro: la clasificación de cada válida se define por los tiempos registrados en las pruebas especiales.',
       'Todos los pilotos, equipos, mecánicos, acompañantes y demás participantes aceptan el presente reglamento desde el momento en que realizan su inscripción.',
       'Este es un resumen provisional. El reglamento oficial completo será publicado próximamente en esta misma página.',
@@ -70,7 +70,7 @@ export const REGLAMENTO_ENDURO_SECTIONS: ReglamentoSection[] = [
     id: 'reglamento-oficial',
     title: '4. Reglamento oficial',
     paragraphs: [
-      'El reglamento oficial completo de la Copa Autocolombiana de Enduro (equipamiento, seguridad, puntuación, premiación y protestas) será publicado próximamente.',
+      'El reglamento oficial completo del Festival de Enduro Autocolombiana (equipamiento, seguridad, puntuación, premiación y protestas) será publicado próximamente.',
       'Mientras tanto, aplican los criterios generales de seguridad y comportamiento deportivo de la organización. En los aspectos no contemplados se aplicarán las disposiciones del Reglamento Nacional de FEDEMOTO.',
     ],
   },

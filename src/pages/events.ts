@@ -107,9 +107,9 @@ async function renderPage(): Promise<void> {
     ${renderNavbar('eventos')}
     <main class="mx-auto max-w-7xl px-4 py-12">
       <div class="mb-10 text-center">
-        <h1 class="section-title mb-4">Eventos de la Copa</h1>
+        <h1 class="section-title mb-4">Eventos ${champ.article === 'el' ? 'del Festival' : 'de la Copa'}</h1>
         <p class="text-muted max-w-2xl mx-auto">
-          Consulta las válidas de la ${champ.name}, descarga el reglamento y revisa los resultados cuando estén disponibles.
+          Consulta las válidas ${champ.article === 'el' ? 'del' : 'de la'} ${champ.name}, descarga el reglamento y revisa los resultados cuando estén disponibles.
         </p>
       </div>
       <div id="events-list" class="grid gap-6 md:grid-cols-2">

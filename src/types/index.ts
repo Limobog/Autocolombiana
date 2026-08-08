@@ -43,7 +43,7 @@ export const CATEGORIES: Category[] = [
 ];
 
 /**
- * Categorías de la Copa Autocolombiana de Enduro (1.ª Edición).
+ * Categorías del Festival de Enduro Autocolombiana (1.ª Edición).
  * Rangos de edad relacionados con las categorías MX equivalentes por cilindrada:
  * 50cc → 4–8, 65cc → 7–10 (ampliado a 12 por 110/125 4T), 85cc → 10–15.
  */
