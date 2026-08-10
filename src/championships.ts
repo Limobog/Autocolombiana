@@ -26,6 +26,8 @@ export interface Championship {
   tagline: string;
   categoriesCount: number;
   validasCount: number;
+  /** Cómo se llaman las fechas en este campeonato: "válidas" (MX) o "ediciones" (Festival) */
+  validasLabel: string;
   /** Tercera stat del hero: [valor, etiqueta] */
   extraStat: [string, string];
   /** Calendario informativo (se muestra si aún no hay eventos creados) */
@@ -46,6 +48,7 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
       'El motocross por clubes que reúne a pilotos de todo Colombia. Cuatro válidas, dos mangas por categoría y puntos que cuentan en cada fecha.',
     categoriesCount: CATEGORIES.length,
     validasCount: 4,
+    validasLabel: 'válidas',
     extraStat: ['$20M', 'Premiación'],
     calendar: [],
   },
@@ -62,17 +65,18 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
       'La primera edición del Festival de Enduro Autocolombiana: competencia contra el cronómetro, clasificación por tiempos y pruebas especiales que exigen todo de ti.',
     categoriesCount: ENDURO_CATEGORIES.length,
     validasCount: 2,
-    extraStat: ['1.ª', 'Edición'],
+    validasLabel: 'ediciones',
+    extraStat: ['3', 'Pruebas especiales'],
     calendar: [
       {
-        edition: '1.ª Válida',
+        edition: '1.ª Edición',
         format: 'Sprint Enduro',
         date: '30 de agosto',
         location: 'Cogua Motopark',
         details: ['Competencia contra el cronómetro', 'Clasificación por tiempos', '2 pruebas especiales'],
       },
       {
-        edition: '2.ª Válida',
+        edition: '2.ª Edición',
         format: 'Hard Scrambler',
         date: '11 de octubre',
         location: 'La Pista Off Road',

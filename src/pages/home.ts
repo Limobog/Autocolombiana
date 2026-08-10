@@ -58,7 +58,7 @@ function renderSplitPanel(champ: Championship, isActive: boolean): string {
         <p class="text-muted text-sm md:text-base leading-relaxed max-w-md hidden sm:block">${champ.tagline}</p>
         <div class="flex flex-wrap items-center justify-center gap-2 text-xs font-semibold text-silver">
           <span class="rounded-full border border-white/15 bg-white/5 px-3 py-1">${champ.categoriesCount} categorías</span>
-          <span class="rounded-full border border-white/15 bg-white/5 px-3 py-1">${champ.validasCount} válidas</span>
+          <span class="rounded-full border border-white/15 bg-white/5 px-3 py-1">${champ.validasCount} ${champ.validasLabel}</span>
           <span class="rounded-full border border-white/15 bg-white/5 px-3 py-1">${champ.extraStat[0]} ${champ.extraStat[1].toLowerCase()}</span>
         </div>
         <span class="split-cta inline-flex items-center gap-2 rounded-lg bg-white px-6 py-2.5 font-bold text-ink text-sm">
@@ -128,7 +128,7 @@ function renderEnduroFormat(): string {
         <div class="text-center mb-10">
           <h2 class="section-title mb-3">Formato del campeonato</h2>
           <p class="text-muted max-w-2xl mx-auto">
-            Dos válidas contra el cronómetro. La clasificación se define por tiempos en pruebas especiales.
+            Dos ediciones contra el cronómetro. La clasificación se define por tiempos en pruebas especiales.
           </p>
         </div>
         <div class="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">${cards}</div>
@@ -157,7 +157,7 @@ function renderAboutSection(champ: Championship): string {
       de la Copa de Clubes MX: eventos serios, seguros y pensados para el piloto.
     </p>
     <p>
-      Aquí no compites rueda a rueda: compites contra el cronómetro. Cada válida tiene pruebas especiales
+      Aquí no compites rueda a rueda: compites contra el cronómetro. Cada edición tiene pruebas especiales
       donde tu tiempo define la clasificación — del Sprint Enduro en Cogua Motopark al Hard Scrambler de La Pista Off Road.
     </p>
     <p>
@@ -173,7 +173,7 @@ function renderAboutSection(champ: Championship): string {
   const cardsEnduro = [
     ['01', 'Contra el reloj', 'Pruebas especiales cronometradas: tu tiempo es tu resultado. Sin excusas, sin tráfico — solo tú y el terreno.'],
     ['02', 'Para todos los niveles', 'De Enduro 1 Infantil a la categoría Oro: novatos, intermedios y expertos tienen su propia clasificación.'],
-    ['03', 'Sin complicaciones', 'Inscríbete, revisa las válidas, lee el reglamento y consulta resultados. Todo desde aquí, en pocos clics.'],
+    ['03', 'Sin complicaciones', 'Inscríbete, revisa las ediciones, lee el reglamento y consulta resultados. Todo desde aquí, en pocos clics.'],
   ];
 
   const cards = (champ.id === 'mx' ? cardsMx : cardsEnduro)
@@ -221,7 +221,7 @@ function renderCategoriesSection(champ: Championship): string {
     </section>`;
 }
 
-function renderQuickAccess(): string {
+function renderQuickAccess(champ: Championship): string {
   return `
     <section class="py-14 bg-surface relative overflow-hidden">
       <div class="geo-grid absolute inset-0 opacity-20 pointer-events-none" aria-hidden="true"></div>
@@ -229,7 +229,7 @@ function renderQuickAccess(): string {
         <h2 class="section-title text-center mb-10">Acceso rápido</h2>
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           ${[
-            ['Eventos', 'Calendario de válidas', './eventos.html'],
+            ['Eventos', `Calendario de ${champ.validasLabel}`, './eventos.html'],
             ['Inscripción', 'Registro de pilotos', './inscripcion.html'],
             ['Reglamento', 'Normas oficiales', './reglamento.html'],
             ['Resultados', 'Clasificaciones', './resultados.html'],
@@ -252,7 +252,7 @@ function renderCta(champ: Championship): string {
   const text =
     champ.id === 'mx'
       ? 'El único campeonato que une motocross y enduro en Colombia — con $20 millones en premiación al final. Inscríbete, elige tu categoría y sal a demostrar de qué estás hecho.'
-      : 'Primera edición, dos válidas y el cronómetro como único rival. Inscríbete, elige tu categoría y demuestra de qué estás hecho en el enduro.';
+      : 'Dos ediciones y el cronómetro como único rival. Inscríbete, elige tu categoría y demuestra de qué estás hecho en el enduro.';
 
   return `
     <section class="cta-geo py-16 md:py-20">
@@ -269,7 +269,7 @@ function renderHomeContent(champ: Championship): string {
     ${champ.id === 'mx' ? renderMxHighlights() : renderEnduroFormat()}
     ${renderAboutSection(champ)}
     ${renderCategoriesSection(champ)}
-    ${renderQuickAccess()}
+    ${renderQuickAccess(champ)}
     ${renderCta(champ)}`;
 }
 

@@ -12,7 +12,7 @@ export function renderFooter(): string {
       <div class="mx-auto max-w-7xl px-4 py-8 text-center">
         <img src="${champ.logo}" alt="${champ.name}" class="h-10 w-auto mx-auto mb-4 opacity-90 object-contain" />
         <p class="font-title text-xl tracking-wider text-white mb-1">${champ.name}</p>
-        <p class="text-sm text-muted mb-5">${champ.id === 'mx' ? 'Motocross' : 'Enduro'} · Válidas oficiales · Inscripciones en línea</p>
+        <p class="text-sm text-muted mb-5">${champ.id === 'mx' ? 'Motocross · Válidas oficiales' : 'Enduro · Ediciones oficiales'} · Inscripciones en línea</p>
         <div class="flex flex-wrap justify-center gap-4 mb-6 text-sm font-semibold">
           <a href="./eventos.html" class="text-silver hover:text-white transition-colors">Eventos</a>
           <span class="text-gray-metal">|</span>
