@@ -43,7 +43,7 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
     heroSubtitle: 'DE CLUBES MX',
     shortLabel: 'Clubes MX',
     badge: 'De Clubes · MX',
-    logo: './logo-copa.png',
+    logo: './logo-copa-mx.png',
     tagline:
       'El motocross por clubes que reúne a pilotos de todo Colombia. Cuatro válidas, dos mangas por categoría y puntos que cuentan en cada fecha.',
     categoriesCount: CATEGORIES.length,
