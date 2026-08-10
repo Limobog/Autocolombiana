@@ -11,6 +11,7 @@ const SPREADSHEET_ID = '1kAlC3MP2DqH5KXkQQLVZF0SbHV6X8DY3nAyLxO81654';
 const DRIVE_FOLDER_ID = '1TQAM3BE93OjiaODNgI_2SkXLFQ2uqQqM';
 
 const EVENT_HEADERS = ['id', 'name', 'date', 'location', 'city', 'description', 'active', 'reglamentoUrl', 'finished', 'valorInscripcion', 'championshipId'];
+const CATEGORY_HEADERS = ['id', 'championshipId', 'label', 'minAge', 'maxAge'];
 const REG_HEADERS = [
   'id', 'eventId', 'eventName', 'nombre', 'apellido', 'identificacion',
   'identificacionArchivo', 'identificacionFileName', 'identificacionFileType',
@@ -48,9 +49,14 @@ function doGet(e) {
     return jsonResponse({ registrations: getRegistrations_(ss) });
   }
 
+  if (action === 'categories') {
+    return jsonResponse({ categories: getCategories_(ss) });
+  }
+
   return jsonResponse({
     events: getEvents_(ss),
     registrations: getRegistrations_(ss),
+    categories: getCategories_(ss),
   });
 }
 
@@ -74,6 +80,13 @@ function doPost(e) {
     case 'saveEvents':
       writeEvents_(ss, body.events);
       return jsonResponse({ success: true });
+    case 'saveCategories':
+      try {
+        writeCategories_(ss, body.categories);
+        return jsonResponse({ success: true });
+      } catch (err) {
+        return jsonResponse({ success: false, error: err.message || String(err) });
+      }
     case 'saveRegistrations':
       try {
         writeRegistrations_(ss, body.registrations);
@@ -368,6 +381,43 @@ function getRegistrations_(ss) {
   var sheet = getRegistrationsSheet_(ss);
   if (!sheet || sheet.getLastRow() < 2) return [];
   return sheetToObjects_(sheet);
+}
+
+// ─── Categorías por campeonato (gestionadas desde el panel) ──────────────────
+
+function getCategoriesSheet_(ss) {
+  return getOrCreateSheet_(ss, 'Categories', CATEGORY_HEADERS);
+}
+
+function normalizeCategoryRow_(row) {
+  var maxAge = Number(row.maxAge);
+  var minAge = Number(row.minAge);
+  return {
+    id: String(row.id || '').trim(),
+    championshipId: String(row.championshipId || '').trim().toLowerCase() === 'enduro' ? 'enduro' : 'mx',
+    label: String(row.label || '').trim(),
+    minAge: isFinite(minAge) && minAge >= 0 ? minAge : 0,
+    maxAge: isFinite(maxAge) && maxAge > 0 ? maxAge : 999,
+  };
+}
+
+function getCategories_(ss) {
+  var sheet = getCategoriesSheet_(ss);
+  if (!sheet || sheet.getLastRow() < 2) return [];
+  return sheetToObjects_(sheet)
+    .map(normalizeCategoryRow_)
+    .filter(function (c) { return c.id && c.label; });
+}
+
+function writeCategories_(ss, categories) {
+  var rows = (categories || [])
+    .map(normalizeCategoryRow_)
+    .filter(function (c) { return c.id && c.label; });
+  if (rows.length === 0) {
+    throw new Error('saveCategories bloqueado: se recibio una lista vacia.');
+  }
+  var sheet = getCategoriesSheet_(ss);
+  writeObjects_(sheet, CATEGORY_HEADERS, rows);
 }
 
 function writeEvents_(ss, events) {
@@ -719,6 +769,7 @@ function setupSheets() {
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   getEventsSheet_(ss);
   getRegistrationsSheet_(ss);
+  getCategoriesSheet_(ss);
 
   var eventsSheet = ss.getSheetByName('Events');
   if (eventsSheet.getLastRow() === 1) {

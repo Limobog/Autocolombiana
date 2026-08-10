@@ -8,6 +8,7 @@ import {
 import { getActiveChampionship, onChampionshipChange, setActiveChampionship } from '../championships';
 import {
   createRegistration,
+  initCategories,
   loadEvents,
   getAvailablePilotNumbers,
   readFileAsDataUrl,
@@ -520,7 +521,7 @@ async function renderPage(): Promise<void> {
   if (!card) return;
 
   try {
-    const allEvents = await loadEvents();
+    const [allEvents] = await Promise.all([loadEvents(), initCategories().catch(() => undefined)]);
     const eventIdFromUrl = getEventIdFromUrl();
 
     // Enlace directo a un evento del otro campeonato: se adopta ese campeonato (solo al cargar).

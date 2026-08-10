@@ -10,6 +10,52 @@ import {
   type ReglamentoSection,
 } from '../content/reglamento-sections';
 import { REGLAMENTO_ENDURO_SECTIONS } from '../content/reglamento-enduro-sections';
+import { getChampionshipCategories } from '../types';
+import { initCategories } from '../utils/storage';
+
+function formatCategoryAgeRow(minAge: number, maxAge: number): string {
+  if (maxAge >= 999) {
+    if (minAge >= 36) return 'Mayores a 35 años';
+    return `Desde ${minAge} años`;
+  }
+  return `${minAge} a ${maxAge} años`;
+}
+
+function fondoNumeroForCategory(id: string): string {
+  if (id === 'femenino') return 'Fondo rosado — números blancos';
+  if (id === 'enduro-a') return 'Fondo rojo — número negro';
+  if (id === 'enduro-b') return 'Fondo rojo — número blanco';
+  return 'Fondo blanco — números negros';
+}
+
+/** Reconstruye la tabla de categorías MX con lo configurado en el panel. */
+function buildMxSections(): ReglamentoSection[] {
+  const categories = getChampionshipCategories('mx');
+  return REGLAMENTO_SECTIONS.map((section) => {
+    if (section.id !== 'categorias' || !section.table) return section;
+    const rows = categories.map((c) => [
+      c.label,
+      formatCategoryAgeRow(c.minAge, c.maxAge),
+      fondoNumeroForCategory(c.id),
+    ]);
+    return { ...section, table: { ...section.table, rows } };
+  });
+}
+
+/** Reconstruye la tabla de categorías del Festival con lo configurado en el panel. */
+function buildEnduroSections(): ReglamentoSection[] {
+  const categories = getChampionshipCategories('enduro');
+  return REGLAMENTO_ENDURO_SECTIONS.map((section) => {
+    if (section.id !== 'categorias' || !section.table) return section;
+    const rows = categories.map((c) => {
+      const sep = c.label.indexOf(' — ');
+      const name = sep >= 0 ? c.label.slice(0, sep) : c.label;
+      const detail = sep >= 0 ? c.label.slice(sep + 3) : '—';
+      return [name, formatCategoryAgeRow(c.minAge, c.maxAge), detail];
+    });
+    return { ...section, table: { headers: ['Categoría', 'Edad', 'Detalle'], rows } };
+  });
+}
 
 function escapeHtml(text: string): string {
   return text
@@ -114,7 +160,7 @@ function renderPage(): void {
   if (!app) return;
 
   const champ = getActiveChampionship();
-  const sections = champ.id === 'enduro' ? REGLAMENTO_ENDURO_SECTIONS : REGLAMENTO_SECTIONS;
+  const sections = champ.id === 'enduro' ? buildEnduroSections() : buildMxSections();
   const sectionsHtml = sections.map(renderSection).join('');
 
   const pdfButton =
@@ -164,7 +210,12 @@ function renderPage(): void {
   initChampionshipModal();
 }
 
-export function initReglamentoPage(): void {
+export async function initReglamentoPage(): Promise<void> {
+  try {
+    await initCategories();
+  } catch {
+    /* se usan las categorías por defecto */
+  }
   renderPage();
   onChampionshipChange(() => renderPage());
 }

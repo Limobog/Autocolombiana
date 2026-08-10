@@ -21,6 +21,7 @@ export const CONFIG = {
     registrations: 'minicross_registrations_v1',
     events: 'minicross_events_v1',
     adminSession: 'minicross_admin_session',
+    categories: 'copa_categories_v1',
   },
   maxFileSizeMB: 5,
 };

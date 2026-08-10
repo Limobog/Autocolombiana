@@ -1,5 +1,4 @@
 import type { ChampionshipId } from './types';
-import { CATEGORIES, ENDURO_CATEGORIES } from './types';
 
 export interface ChampionshipValida {
   edition: string;
@@ -24,7 +23,6 @@ export interface Championship {
   badge: string;
   logo: string;
   tagline: string;
-  categoriesCount: number;
   validasCount: number;
   /** Cómo se llaman las fechas en este campeonato: "válidas" (MX) o "ediciones" (Festival) */
   validasLabel: string;
@@ -46,7 +44,6 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
     logo: './logo-copa-mx.png',
     tagline:
       'El motocross por clubes que reúne a pilotos de todo Colombia. Cuatro válidas, dos mangas por categoría y puntos que cuentan en cada fecha.',
-    categoriesCount: CATEGORIES.length,
     validasCount: 4,
     validasLabel: 'válidas',
     extraStat: ['$20M', 'Premiación'],
@@ -63,7 +60,6 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
     logo: './logo-enduro.png',
     tagline:
       'La primera edición del Festival de Enduro Autocolombiana: competencia contra el cronómetro, clasificación por tiempos y pruebas especiales que exigen todo de ti.',
-    categoriesCount: ENDURO_CATEGORIES.length,
     validasCount: 2,
     validasLabel: 'ediciones',
     extraStat: ['3', 'Pruebas especiales'],

@@ -1,7 +1,16 @@
 import { CONFIG } from '../config';
-import type { AppData, Event, EventSavePayload, Registration, RegistrationFormData } from '../types';
+import type {
+  AppData,
+  Category,
+  ChampionshipId,
+  Event,
+  EventSavePayload,
+  Registration,
+  RegistrationFormData,
+  StoredCategory,
+} from '../types';
 import { calculateAge, generateId, parseSheetDate } from './age';
-import { getCategoryById, formatCategoryOptionLabel, validateCategorySelection } from '../types';
+import { getCategoryById, formatCategoryOptionLabel, setCategoryStore, validateCategorySelection } from '../types';
 import { computeRegistrationTotal } from './registration-total';
 import {
   apiGet,
@@ -89,6 +98,85 @@ function normalizeRegistration(raw: Record<string, unknown>): Registration {
     createdAt: String(raw.createdAt ?? ''),
     updatedAt: String(raw.updatedAt ?? ''),
   };
+}
+
+// ─── Categorías dinámicas (gestionadas desde el panel) ──────────────────────
+
+function normalizeStoredCategory(raw: Record<string, unknown>): StoredCategory | null {
+  const id = String(raw.id ?? '').trim();
+  const label = String(raw.label ?? '').trim();
+  const champRaw = String(raw.championshipId ?? '').trim().toLowerCase();
+  const championshipId: ChampionshipId = champRaw === 'enduro' ? 'enduro' : 'mx';
+  const minAge = Number(raw.minAge ?? 0);
+  const maxAgeRaw = Number(raw.maxAge ?? 999);
+  if (!id || !label) return null;
+  return {
+    id,
+    label,
+    championshipId,
+    minAge: Number.isFinite(minAge) && minAge >= 0 ? minAge : 0,
+    maxAge: Number.isFinite(maxAgeRaw) && maxAgeRaw > 0 ? maxAgeRaw : 999,
+  };
+}
+
+function groupCategories(rows: StoredCategory[]): Partial<Record<ChampionshipId, Category[]>> {
+  const store: Partial<Record<ChampionshipId, Category[]>> = {};
+  for (const row of rows) {
+    const list = (store[row.championshipId] ??= []);
+    list.push({ id: row.id, label: row.label, minAge: row.minAge, maxAge: row.maxAge });
+  }
+  return store;
+}
+
+async function loadStoredCategories(): Promise<StoredCategory[] | null> {
+  if (isApiEnabled()) {
+    try {
+      const data = await apiGet<{ categories: Record<string, unknown>[] }>({ action: 'categories' });
+      const rows = (data.categories ?? [])
+        .map(normalizeStoredCategory)
+        .filter((c): c is StoredCategory => c !== null);
+      if (rows.length > 0) return rows;
+    } catch {
+      /* fallback below */
+    }
+  }
+
+  const fromLocal = readLocal<StoredCategory[]>(CONFIG.storageKeys.categories);
+  if (fromLocal?.length) {
+    const rows = fromLocal
+      .map((c) => normalizeStoredCategory(c as unknown as Record<string, unknown>))
+      .filter((c): c is StoredCategory => c !== null);
+    if (rows.length > 0) return rows;
+  }
+
+  return null;
+}
+
+/**
+ * Carga las categorías configuradas (Sheets → localStorage) y actualiza el store global.
+ * Si no hay nada guardado se mantienen las categorías por defecto del código.
+ */
+export async function initCategories(): Promise<void> {
+  const rows = await loadStoredCategories();
+  if (rows) setCategoryStore(groupCategories(rows));
+}
+
+/**
+ * Guarda la lista completa de categorías (ambos campeonatos).
+ * Devuelve true si se sincronizó con Google Sheets, false si solo quedó local.
+ */
+export async function saveStoredCategories(rows: StoredCategory[]): Promise<boolean> {
+  writeLocal(CONFIG.storageKeys.categories, rows);
+  setCategoryStore(groupCategories(rows));
+  if (isApiEnabled()) {
+    try {
+      await apiPost({ action: 'saveCategories', categories: rows });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return false;
 }
 
 export async function loadEvents(): Promise<Event[]> {

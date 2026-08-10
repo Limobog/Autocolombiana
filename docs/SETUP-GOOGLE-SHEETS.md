@@ -82,6 +82,18 @@ npm run build
 | valorInscripcion | Valor de inscripcion por categoria (COP, numero) |
 | championshipId | Campeonato del evento: `mx` o `enduro` (si esta vacio se infiere por el nombre) |
 
+## Estructura de la hoja Categories
+
+Las categorias de cada campeonato se gestionan desde el panel (seccion "Categorias por campeonato") y se guardan en la hoja `Categories`. Si la hoja esta vacia, el sitio usa las categorias por defecto del codigo.
+
+| Columna | Contenido |
+| --- | --- |
+| id | Identificador estable de la categoria (no cambia al renombrar) |
+| championshipId | `mx` o `enduro` |
+| label | Nombre visible, ej: `85cc A — hasta 85cc 2T` |
+| minAge | Edad minima (numero) |
+| maxAge | Edad maxima (numero; 999 = sin limite) |
+
 Si agregaste columnas manualmente, ejecuta **repairEventsSheet** o **repairAllSheets** en Apps Script (deben aparecer en el selector de funciones tras pegar el script actualizado).
 
 > **Importante:** Las funciones `repair*` crean una **copia de seguridad** de la hoja (`BACKUP_Registrations_...`) antes de remapear columnas. El uso normal del sitio **solo agrega columnas nuevas** al final y **no borra inscripciones**. Ejecuta `repair*` solo si las columnas estan cruzadas/desordenadas.

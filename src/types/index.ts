@@ -58,10 +58,35 @@ export const ENDURO_CATEGORIES: Category[] = [
   { id: 'end-oro', label: 'Oro — abierta para pilotos expertos', minAge: 15, maxAge: 999 },
 ];
 
-const ALL_CATEGORIES: Category[] = [...CATEGORIES, ...ENDURO_CATEGORIES];
+/** Categoría almacenada con su campeonato (formato de la hoja Categories). */
+export interface StoredCategory extends Category {
+  championshipId: ChampionshipId;
+}
+
+/**
+ * Store mutable de categorías. Arranca con las listas por defecto del código
+ * y puede ser reemplazado con lo configurado desde el panel de gestión
+ * (Google Sheets / localStorage) vía setCategoryStore.
+ */
+const categoryStore: Record<ChampionshipId, Category[]> = {
+  mx: [...CATEGORIES],
+  enduro: [...ENDURO_CATEGORIES],
+};
+
+/**
+ * Reemplaza las categorías de uno o ambos campeonatos.
+ * Solo actualiza las claves presentes y con al menos una categoría
+ * (lista vacía = se mantienen las actuales / por defecto).
+ */
+export function setCategoryStore(store: Partial<Record<ChampionshipId, Category[]>>): void {
+  if (store.mx && store.mx.length > 0) categoryStore.mx = store.mx.map((c) => ({ ...c }));
+  if (store.enduro && store.enduro.length > 0) {
+    categoryStore.enduro = store.enduro.map((c) => ({ ...c }));
+  }
+}
 
 export function getChampionshipCategories(championshipId: ChampionshipId): Category[] {
-  return championshipId === 'enduro' ? ENDURO_CATEGORIES : CATEGORIES;
+  return categoryStore[championshipId];
 }
 
 export function resolveCategoryId(id: string): string {
@@ -94,7 +119,13 @@ export function formatCategoryDisplayLabel(categoriaId: string, fallbackLabel = 
 
 export function getCategoryById(id: string): Category | undefined {
   const resolved = resolveCategoryId(id);
-  return ALL_CATEGORIES.find((c) => c.id === resolved);
+  return (
+    categoryStore.mx.find((c) => c.id === resolved) ??
+    categoryStore.enduro.find((c) => c.id === resolved) ??
+    // Categorías eliminadas del panel pero referenciadas por inscripciones antiguas.
+    CATEGORIES.find((c) => c.id === resolved) ??
+    ENDURO_CATEGORIES.find((c) => c.id === resolved)
+  );
 }
 
 export function getCategoriesForAge(age: number, championshipId: ChampionshipId = 'mx'): Category[] {

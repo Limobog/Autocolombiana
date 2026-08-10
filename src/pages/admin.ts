@@ -1,9 +1,11 @@
 import { CONFIG } from '../config';
 import { renderFooter } from '../components/footer';
 import {
+  initCategories,
   loadEvents,
   loadRegistrations,
   saveEvents,
+  saveStoredCategories,
   readFileAsDataUrl,
   updateRegistration,
   deleteRegistration,
@@ -17,8 +19,9 @@ import {
   formatCategoryOptionLabel,
   getCategoriesForAge,
   getCategoryById,
+  getChampionshipCategories,
 } from '../types';
-import type { ChampionshipId, Event, EventSavePayload, Registration } from '../types';
+import type { Category, ChampionshipId, Event, EventSavePayload, Registration, StoredCategory } from '../types';
 import { CHAMPIONSHIPS } from '../championships';
 import Swal from 'sweetalert2';
 
@@ -213,6 +216,191 @@ function renderRegistrationRow(reg: Registration, events: Event[]): string {
     </tr>`;
 }
 
+// ─── Gestión de categorías por campeonato ────────────────────────────────────
+
+function escapeAttr(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+function slugifyCategoryId(label: string): string {
+  const base = label
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+  return base || 'categoria';
+}
+
+function renderCategoryAdminRow(cat?: Category): string {
+  const maxVal = cat && cat.maxAge < 999 ? String(cat.maxAge) : '';
+  return `
+    <div class="cat-admin-row flex flex-wrap items-center gap-3 rounded-lg border border-white/15 bg-surface-raised p-3" data-cat-id="${cat?.id ?? ''}">
+      <input type="text" class="cat-label input-field text-sm flex-1 min-w-[240px]" value="${cat ? escapeAttr(cat.label) : ''}"
+             placeholder="Nombre — detalle (ej: 85cc A — hasta 85cc 2T)" />
+      <label class="flex items-center gap-2 text-xs text-muted">
+        Edad
+        <input type="number" class="cat-min input-field text-sm w-20 py-2" min="0" max="120" value="${cat?.minAge ?? ''}" placeholder="min" required />
+        a
+        <input type="number" class="cat-max input-field text-sm w-20 py-2" min="0" max="120" value="${maxVal}" placeholder="Sin lím." />
+      </label>
+      <button type="button" class="cat-delete text-silver text-sm hover:text-white shrink-0">Eliminar</button>
+    </div>`;
+}
+
+function renderCategoriesAdminSection(): string {
+  const tabs = (['mx', 'enduro'] as ChampionshipId[])
+    .map(
+      (id) =>
+        `<button type="button" class="cat-tab px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wide transition-all bg-surface-raised text-muted border border-white/10 ${
+          id === 'mx' ? 'ring-2 ring-white text-white' : ''
+        }" data-cat-tab="${id}">${CHAMPIONSHIPS[id].shortLabel} (${getChampionshipCategories(id).length})</button>`
+    )
+    .join('');
+
+  const panels = (['mx', 'enduro'] as ChampionshipId[])
+    .map(
+      (id) => `
+      <div class="cat-champ-panel ${id === 'mx' ? '' : 'hidden'}" data-cat-panel="${id}">
+        <div class="space-y-2" data-cat-list="${id}">
+          ${getChampionshipCategories(id).map((c) => renderCategoryAdminRow(c)).join('')}
+        </div>
+        <div class="flex flex-wrap gap-2 mt-4">
+          <button type="button" class="cat-add btn-outline text-sm py-2 px-4" data-champ="${id}">+ Agregar categoría</button>
+          <button type="button" class="cat-save btn-primary text-sm py-2 px-4" data-champ="${id}">Guardar categorías</button>
+        </div>
+      </div>`
+    )
+    .join('');
+
+  return `
+    <section class="card" id="categories-admin">
+      <h2 class="font-title text-2xl text-secondary mb-1">Categorías por campeonato</h2>
+      <p class="text-sm text-muted mb-4">
+        Edita el nombre y el rango de edad, elimina o agrega categorías. Deja la edad máxima vacía para "sin límite".
+        Los cambios aplican a las nuevas inscripciones; las existentes conservan su categoría.
+      </p>
+      <div class="flex flex-wrap gap-2 mb-5">${tabs}</div>
+      ${panels}
+    </section>`;
+}
+
+function collectCategoryRows(champId: ChampionshipId): { categories: Category[]; error: string | null } {
+  const rows = Array.from(
+    document.querySelectorAll<HTMLElement>(`[data-cat-panel="${champId}"] .cat-admin-row`)
+  );
+  const categories: Category[] = [];
+  const usedIds = new Set<string>();
+
+  for (const row of rows) {
+    const label = row.querySelector<HTMLInputElement>('.cat-label')?.value.trim() ?? '';
+    const minRaw = row.querySelector<HTMLInputElement>('.cat-min')?.value.trim() ?? '';
+    const maxRaw = row.querySelector<HTMLInputElement>('.cat-max')?.value.trim() ?? '';
+
+    if (!label) return { categories: [], error: 'Hay una categoría sin nombre.' };
+    const minAge = Number(minRaw);
+    if (minRaw === '' || !Number.isFinite(minAge) || minAge < 0) {
+      return { categories: [], error: `Edad mínima inválida en "${label}".` };
+    }
+    const maxAge = maxRaw === '' ? 999 : Number(maxRaw);
+    if (!Number.isFinite(maxAge) || maxAge < minAge) {
+      return { categories: [], error: `Edad máxima inválida en "${label}" (debe ser mayor o igual a la mínima).` };
+    }
+
+    let id = row.getAttribute('data-cat-id') || '';
+    if (!id) {
+      const base = slugifyCategoryId(label);
+      id = base;
+      let n = 2;
+      while (usedIds.has(id) || getCategoryById(id)) id = `${base}-${n++}`;
+    }
+    if (usedIds.has(id)) return { categories: [], error: `Categoría duplicada: "${label}".` };
+    usedIds.add(id);
+
+    categories.push({ id, label, minAge, maxAge });
+  }
+
+  if (categories.length === 0) {
+    return { categories: [], error: 'Debe existir al menos una categoría.' };
+  }
+  return { categories, error: null };
+}
+
+function bindCategoriesAdmin(): void {
+  const section = document.getElementById('categories-admin');
+  if (!section) return;
+
+  section.addEventListener('click', async (e) => {
+    const target = e.target as HTMLElement;
+
+    const tab = target.closest<HTMLElement>('.cat-tab');
+    if (tab) {
+      const id = tab.getAttribute('data-cat-tab');
+      section.querySelectorAll('.cat-tab').forEach((t) => {
+        const active = t.getAttribute('data-cat-tab') === id;
+        t.classList.toggle('ring-2', active);
+        t.classList.toggle('ring-white', active);
+        t.classList.toggle('text-white', active);
+      });
+      section.querySelectorAll('.cat-champ-panel').forEach((p) => {
+        p.classList.toggle('hidden', p.getAttribute('data-cat-panel') !== id);
+      });
+      return;
+    }
+
+    if (target.closest('.cat-delete')) {
+      const row = target.closest('.cat-admin-row');
+      const label =
+        row?.querySelector<HTMLInputElement>('.cat-label')?.value.trim() || 'esta categoría';
+      const confirmed = await confirmAction(
+        'Eliminar categoría',
+        `¿Quitar "${label}" de la lista? Debes pulsar "Guardar categorías" para confirmar el cambio.`
+      );
+      if (confirmed) row?.remove();
+      return;
+    }
+
+    const addBtn = target.closest<HTMLElement>('.cat-add');
+    if (addBtn) {
+      const champId = addBtn.getAttribute('data-champ')!;
+      const list = section.querySelector(`[data-cat-list="${champId}"]`);
+      list?.insertAdjacentHTML('beforeend', renderCategoryAdminRow());
+      (list?.lastElementChild?.querySelector('.cat-label') as HTMLInputElement | null)?.focus();
+      return;
+    }
+
+    const saveBtn = target.closest<HTMLElement>('.cat-save');
+    if (saveBtn) {
+      const champId = saveBtn.getAttribute('data-champ') as ChampionshipId;
+      const { categories, error } = collectCategoryRows(champId);
+      if (error) {
+        await showError('Categorías', error);
+        return;
+      }
+
+      const otherId: ChampionshipId = champId === 'mx' ? 'enduro' : 'mx';
+      const rows: StoredCategory[] = [
+        ...categories.map((c) => ({ ...c, championshipId: champId })),
+        ...getChampionshipCategories(otherId).map((c) => ({ ...c, championshipId: otherId })),
+      ];
+
+      showSaving('Guardando categorías...');
+      const cloud = await saveStoredCategories(rows);
+      Swal.close();
+      if (cloud) {
+        await showSuccess('Categorías guardadas', 'Los cambios se sincronizaron con Google Sheets.');
+      } else {
+        await showSuccess(
+          'Categorías guardadas localmente',
+          'No se pudo sincronizar con Google Sheets (verifica que el Apps Script esté actualizado). Los cambios aplican en este navegador.'
+        );
+      }
+      await refreshAdmin();
+    }
+  });
+}
+
 function renderAdminPanel(events: Event[], registrations: Registration[]): string {
   const activeEvents = events.filter((e) => e.active);
 
@@ -370,6 +558,8 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
           </form>
         </section>
 
+        ${renderCategoriesAdminSection()}
+
         <section class="card">
           <h2 class="font-title text-2xl text-secondary mb-4">Inscripciones por evento</h2>
           <p class="text-xs text-muted uppercase tracking-widest font-semibold mb-2">Campeonato</p>
@@ -392,7 +582,11 @@ async function refreshAdmin(showLoading = false): Promise<void> {
   }
 
   try {
-    const [events, registrations] = await Promise.all([loadEvents(), loadRegistrations()]);
+    const [events, registrations] = await Promise.all([
+      loadEvents(),
+      loadRegistrations(),
+      initCategories().catch(() => undefined),
+    ]);
     app.innerHTML = renderAdminPanel(events, registrations);
     bindAdminEvents(events, registrations);
   } catch (err) {
@@ -429,6 +623,8 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
     sessionStorage.removeItem(CONFIG.storageKeys.adminSession);
     initAdminPage();
   });
+
+  bindCategoriesAdmin();
 
   const panels = document.querySelectorAll('.event-panel');
   const tabs = document.querySelectorAll('.event-tab');
