@@ -60,7 +60,7 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
     heroSubtitle: 'AUTOCOLOMBIANA · 1.ª EDICIÓN',
     shortLabel: 'Festival Enduro',
     badge: 'Festival · 1.ª Edición',
-    logo: './logo-enduro.svg',
+    logo: './logo-enduro.png',
     tagline:
       'La primera edición del Festival de Enduro Autocolombiana: competencia contra el cronómetro, clasificación por tiempos y pruebas especiales que exigen todo de ti.',
     categoriesCount: ENDURO_CATEGORIES.length,
