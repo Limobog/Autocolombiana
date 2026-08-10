@@ -8,7 +8,7 @@ import {
   setActiveChampionship,
   type Championship,
 } from '../championships';
-import { getChampionshipCategories, type Category, type ChampionshipId } from '../types';
+import { getEnabledChampionshipCategories, type Category, type ChampionshipId } from '../types';
 
 function formatCategoryAge(category: Category): string {
   if (category.maxAge >= 999) {
@@ -28,7 +28,7 @@ function splitCategoryLabel(category: Category): { name: string; engine: string 
 }
 
 function renderCategoryCards(championshipId: ChampionshipId): string {
-  return getChampionshipCategories(championshipId)
+  return getEnabledChampionshipCategories(championshipId)
     .map((cat) => {
       const { name, engine } = splitCategoryLabel(cat);
       return `
@@ -58,7 +58,7 @@ function renderSplitPanel(champ: Championship, isActive: boolean): string {
         </div>
         <p class="text-muted text-sm md:text-base leading-relaxed max-w-md hidden sm:block">${champ.tagline}</p>
         <div class="flex flex-wrap items-center justify-center gap-2 text-xs font-semibold text-silver">
-          <span class="rounded-full border border-white/15 bg-white/5 px-3 py-1">${getChampionshipCategories(champ.id).length} categorías</span>
+          <span class="rounded-full border border-white/15 bg-white/5 px-3 py-1">${getEnabledChampionshipCategories(champ.id).length} categorías</span>
           <span class="rounded-full border border-white/15 bg-white/5 px-3 py-1">${champ.validasCount} ${champ.validasLabel}</span>
           <span class="rounded-full border border-white/15 bg-white/5 px-3 py-1">${champ.extraStat[0]} ${champ.extraStat[1].toLowerCase()}</span>
         </div>

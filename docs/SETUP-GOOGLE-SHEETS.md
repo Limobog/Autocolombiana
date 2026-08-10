@@ -93,6 +93,7 @@ Las categorias de cada campeonato se gestionan desde el panel (seccion "Categori
 | label | Nombre visible, ej: `85cc A — hasta 85cc 2T` |
 | minAge | Edad minima (numero) |
 | maxAge | Edad maxima (numero; 999 = sin limite) |
+| active | `true` / `false`. Si es `false`, la categoria queda inhabilitada para nuevas inscripciones (no se elimina si ya hay inscritos) |
 
 Si agregaste columnas manualmente, ejecuta **repairEventsSheet** o **repairAllSheets** en Apps Script (deben aparecer en el selector de funciones tras pegar el script actualizado).
 

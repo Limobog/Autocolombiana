@@ -20,6 +20,8 @@ import {
   getCategoriesForAge,
   getCategoryById,
   getChampionshipCategories,
+  isCategoryEnabled,
+  resolveCategoryId,
 } from '../types';
 import type { Category, ChampionshipId, Event, EventSavePayload, Registration, StoredCategory } from '../types';
 import { CHAMPIONSHIPS } from '../championships';
@@ -121,7 +123,7 @@ function parseCategoryIds(value: string): string[] {
 }
 
 function renderCategoryCheckboxes(age: number, championshipId: ChampionshipId, selected: string[] = []): string {
-  const categories = getCategoriesForAge(age, championshipId);
+  const categories = getCategoriesForAge(age, championshipId, { includeIds: selected });
   if (categories.length === 0) {
     return '<p class="text-sm text-muted">Sin categorias disponibles para esta edad.</p>';
   }
@@ -131,11 +133,23 @@ function renderCategoryCheckboxes(age: number, championshipId: ChampionshipId, s
         (c) => `
       <label class="flex items-center gap-3 rounded-lg border border-white/20 bg-surface-raised px-3 py-2 cursor-pointer hover:border-white/50">
         <input type="checkbox" name="categoriaIds" value="${c.id}" class="accent-white h-4 w-4" ${selected.includes(c.id) ? 'checked' : ''} />
-        <span class="text-sm font-medium">${formatCategoryOptionLabel(c)}</span>
+        <span class="text-sm font-medium">${formatCategoryOptionLabel(c)}${
+          isCategoryEnabled(c) ? '' : ' <span class="text-xs text-muted">(inhabilitada)</span>'
+        }</span>
       </label>`
       )
       .join('')}
   </div>`;
+}
+
+function getUsedCategoryIds(registrations: Registration[]): Set<string> {
+  const used = new Set<string>();
+  for (const reg of registrations) {
+    for (const id of parseCategoryIds(reg.categoriaId)) {
+      used.add(resolveCategoryId(id));
+    }
+  }
+  return used;
 }
 
 function refreshEditFormCategories(form: HTMLFormElement): void {
@@ -233,30 +247,73 @@ function slugifyCategoryId(label: string): string {
   return base || 'categoria';
 }
 
-function renderCategoryAdminRow(cat?: Category): string {
+function setCategoryRowActiveState(row: HTMLElement, enabled: boolean): void {
+  row.setAttribute('data-cat-active', enabled ? 'true' : 'false');
+  row.classList.toggle('opacity-60', !enabled);
+  row.classList.toggle('border-white/10', !enabled);
+  const badge = row.querySelector<HTMLElement>('.cat-status-badge');
+  if (badge) {
+    badge.textContent = enabled ? 'Habilitada' : 'Inhabilitada';
+    badge.className = `cat-status-badge inline-block rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+      enabled
+        ? 'bg-white/10 text-silver border border-white/20'
+        : 'bg-silver/20 text-white border border-white/30'
+    }`;
+  }
+  const toggleBtn = row.querySelector<HTMLElement>('.cat-toggle-active');
+  if (toggleBtn) {
+    toggleBtn.textContent = enabled ? 'Inhabilitar' : 'Habilitar';
+    toggleBtn.className = `cat-toggle-active text-sm shrink-0 ${
+      enabled ? 'text-silver hover:text-white' : 'text-secondary hover:text-white'
+    }`;
+  }
+}
+
+function renderCategoryAdminRow(cat?: Category, used = false): string {
   const maxVal = cat && cat.maxAge < 999 ? String(cat.maxAge) : '';
+  const enabled = cat ? isCategoryEnabled(cat) : true;
+  const id = cat?.id ?? '';
+  const statusBadge = enabled
+    ? '<span class="cat-status-badge inline-block rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-white/10 text-silver border border-white/20">Habilitada</span>'
+    : '<span class="cat-status-badge inline-block rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-silver/20 text-white border border-white/30">Inhabilitada</span>';
+
+  const actions = used
+    ? `<button type="button" class="cat-toggle-active text-sm shrink-0 ${
+        enabled ? 'text-silver hover:text-white' : 'text-secondary hover:text-white'
+      }">${enabled ? 'Inhabilitar' : 'Habilitar'}</button>
+       <span class="text-[10px] text-muted shrink-0 max-w-[9rem] leading-tight">En uso por inscritos — no se puede eliminar</span>`
+    : `<button type="button" class="cat-delete text-silver text-sm hover:text-white shrink-0">Eliminar</button>`;
+
   return `
-    <div class="cat-admin-row flex flex-wrap items-center gap-3 rounded-lg border border-white/15 bg-surface-raised p-3" data-cat-id="${cat?.id ?? ''}">
-      <input type="text" class="cat-label input-field text-sm flex-1 min-w-[240px]" value="${cat ? escapeAttr(cat.label) : ''}"
-             placeholder="Nombre — detalle (ej: 85cc A — hasta 85cc 2T)" />
+    <div class="cat-admin-row flex flex-wrap items-center gap-3 rounded-lg border border-white/15 bg-surface-raised p-3 ${
+      enabled ? '' : 'opacity-60 border-white/10'
+    }" data-cat-id="${id}" data-cat-active="${enabled ? 'true' : 'false'}" data-cat-used="${used ? 'true' : 'false'}">
+      <div class="flex flex-col gap-1 flex-1 min-w-[240px]">
+        <div class="flex items-center gap-2 flex-wrap">${statusBadge}${
+          used ? '<span class="text-[10px] text-muted uppercase tracking-wider">Con inscritos</span>' : ''
+        }</div>
+        <input type="text" class="cat-label input-field text-sm" value="${cat ? escapeAttr(cat.label) : ''}"
+               placeholder="Nombre — detalle (ej: 85cc A — hasta 85cc 2T)" />
+      </div>
       <label class="flex items-center gap-2 text-xs text-muted">
         Edad
         <input type="number" class="cat-min input-field text-sm w-20 py-2" min="0" max="120" value="${cat?.minAge ?? ''}" placeholder="min" required />
         a
         <input type="number" class="cat-max input-field text-sm w-20 py-2" min="0" max="120" value="${maxVal}" placeholder="Sin lím." />
       </label>
-      <button type="button" class="cat-delete text-silver text-sm hover:text-white shrink-0">Eliminar</button>
+      <div class="flex flex-col items-end gap-1">${actions}</div>
     </div>`;
 }
 
-function renderCategoriesAdminSection(): string {
+function renderCategoriesAdminSection(usedIds: Set<string>): string {
   const tabs = (['mx', 'enduro'] as ChampionshipId[])
-    .map(
-      (id) =>
-        `<button type="button" class="cat-tab px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wide transition-all bg-surface-raised text-muted border border-white/10 ${
-          id === 'mx' ? 'ring-2 ring-white text-white' : ''
-        }" data-cat-tab="${id}">${CHAMPIONSHIPS[id].shortLabel} (${getChampionshipCategories(id).length})</button>`
-    )
+    .map((id) => {
+      const cats = getChampionshipCategories(id);
+      const enabledCount = cats.filter(isCategoryEnabled).length;
+      return `<button type="button" class="cat-tab px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wide transition-all bg-surface-raised text-muted border border-white/10 ${
+        id === 'mx' ? 'ring-2 ring-white text-white' : ''
+      }" data-cat-tab="${id}">${CHAMPIONSHIPS[id].shortLabel} (${enabledCount}/${cats.length})</button>`;
+    })
     .join('');
 
   const panels = (['mx', 'enduro'] as ChampionshipId[])
@@ -264,7 +321,9 @@ function renderCategoriesAdminSection(): string {
       (id) => `
       <div class="cat-champ-panel ${id === 'mx' ? '' : 'hidden'}" data-cat-panel="${id}">
         <div class="space-y-2" data-cat-list="${id}">
-          ${getChampionshipCategories(id).map((c) => renderCategoryAdminRow(c)).join('')}
+          ${getChampionshipCategories(id)
+            .map((c) => renderCategoryAdminRow(c, usedIds.has(c.id)))
+            .join('')}
         </div>
         <div class="flex flex-wrap gap-2 mt-4">
           <button type="button" class="cat-add btn-outline text-sm py-2 px-4" data-champ="${id}">+ Agregar categoría</button>
@@ -278,25 +337,29 @@ function renderCategoriesAdminSection(): string {
     <section class="card" id="categories-admin">
       <h2 class="font-title text-2xl text-secondary mb-1">Categorías por campeonato</h2>
       <p class="text-sm text-muted mb-4">
-        Edita el nombre y el rango de edad, elimina o agrega categorías. Deja la edad máxima vacía para "sin límite".
-        Los cambios aplican a las nuevas inscripciones; las existentes conservan su categoría.
+        Edita el nombre y el rango de edad, o agrega categorías. Deja la edad máxima vacía para "sin límite".
+        Si una categoría ya tiene pilotos inscritos no se puede eliminar: inhabilítala para que no aparezca en eventos futuros.
       </p>
       <div class="flex flex-wrap gap-2 mb-5">${tabs}</div>
       ${panels}
     </section>`;
 }
 
-function collectCategoryRows(champId: ChampionshipId): { categories: Category[]; error: string | null } {
+function collectCategoryRows(
+  champId: ChampionshipId,
+  usedIds: Set<string>
+): { categories: Category[]; error: string | null } {
   const rows = Array.from(
     document.querySelectorAll<HTMLElement>(`[data-cat-panel="${champId}"] .cat-admin-row`)
   );
   const categories: Category[] = [];
-  const usedIds = new Set<string>();
+  const collectedIds = new Set<string>();
 
   for (const row of rows) {
     const label = row.querySelector<HTMLInputElement>('.cat-label')?.value.trim() ?? '';
     const minRaw = row.querySelector<HTMLInputElement>('.cat-min')?.value.trim() ?? '';
     const maxRaw = row.querySelector<HTMLInputElement>('.cat-max')?.value.trim() ?? '';
+    const active = row.getAttribute('data-cat-active') !== 'false';
 
     if (!label) return { categories: [], error: 'Hay una categoría sin nombre.' };
     const minAge = Number(minRaw);
@@ -313,21 +376,34 @@ function collectCategoryRows(champId: ChampionshipId): { categories: Category[];
       const base = slugifyCategoryId(label);
       id = base;
       let n = 2;
-      while (usedIds.has(id) || getCategoryById(id)) id = `${base}-${n++}`;
+      while (collectedIds.has(id) || getCategoryById(id)) id = `${base}-${n++}`;
     }
-    if (usedIds.has(id)) return { categories: [], error: `Categoría duplicada: "${label}".` };
-    usedIds.add(id);
+    if (collectedIds.has(id)) return { categories: [], error: `Categoría duplicada: "${label}".` };
+    collectedIds.add(id);
 
-    categories.push({ id, label, minAge, maxAge });
+    categories.push({ id, label, minAge, maxAge, active });
   }
 
   if (categories.length === 0) {
     return { categories: [], error: 'Debe existir al menos una categoría.' };
   }
+  if (!categories.some(isCategoryEnabled)) {
+    return { categories: [], error: 'Debe haber al menos una categoría habilitada.' };
+  }
+
+  for (const existing of getChampionshipCategories(champId)) {
+    if (usedIds.has(existing.id) && !collectedIds.has(existing.id)) {
+      return {
+        categories: [],
+        error: `No se puede eliminar "${existing.label}": hay pilotos inscritos. Inhabilítala en su lugar.`,
+      };
+    }
+  }
+
   return { categories, error: null };
 }
 
-function bindCategoriesAdmin(): void {
+function bindCategoriesAdmin(usedIds: Set<string>): void {
   const section = document.getElementById('categories-admin');
   if (!section) return;
 
@@ -349,15 +425,51 @@ function bindCategoriesAdmin(): void {
       return;
     }
 
-    if (target.closest('.cat-delete')) {
-      const row = target.closest('.cat-admin-row');
+    const toggleBtn = target.closest<HTMLElement>('.cat-toggle-active');
+    if (toggleBtn) {
+      const row = toggleBtn.closest<HTMLElement>('.cat-admin-row');
+      if (!row) return;
+      const currentlyEnabled = row.getAttribute('data-cat-active') !== 'false';
       const label =
-        row?.querySelector<HTMLInputElement>('.cat-label')?.value.trim() || 'esta categoría';
+        row.querySelector<HTMLInputElement>('.cat-label')?.value.trim() || 'esta categoría';
+      if (currentlyEnabled) {
+        const confirmed = await confirmAction(
+          'Inhabilitar categoría',
+          `"${label}" dejará de aparecer en nuevas inscripciones, pero se conservará para los pilotos ya inscritos. Debes pulsar "Guardar categorías" para confirmar.`
+        );
+        if (confirmed) setCategoryRowActiveState(row, false);
+      } else {
+        setCategoryRowActiveState(row, true);
+      }
+      return;
+    }
+
+    if (target.closest('.cat-delete')) {
+      const row = target.closest<HTMLElement>('.cat-admin-row');
+      if (!row) return;
+      const catId = row.getAttribute('data-cat-id') || '';
+      const label =
+        row.querySelector<HTMLInputElement>('.cat-label')?.value.trim() || 'esta categoría';
+
+      if (catId && usedIds.has(catId)) {
+        const result = await Swal.fire({
+          icon: 'warning',
+          title: 'No se puede eliminar',
+          text: `Hay pilotos inscritos en "${label}". Puedes inhabilitarla para que no aparezca en eventos futuros.`,
+          showCancelButton: true,
+          confirmButtonText: 'Inhabilitar',
+          cancelButtonText: 'Cancelar',
+          confirmButtonColor: '#f97316',
+        });
+        if (result.isConfirmed) setCategoryRowActiveState(row, false);
+        return;
+      }
+
       const confirmed = await confirmAction(
         'Eliminar categoría',
         `¿Quitar "${label}" de la lista? Debes pulsar "Guardar categorías" para confirmar el cambio.`
       );
-      if (confirmed) row?.remove();
+      if (confirmed) row.remove();
       return;
     }
 
@@ -373,7 +485,7 @@ function bindCategoriesAdmin(): void {
     const saveBtn = target.closest<HTMLElement>('.cat-save');
     if (saveBtn) {
       const champId = saveBtn.getAttribute('data-champ') as ChampionshipId;
-      const { categories, error } = collectCategoryRows(champId);
+      const { categories, error } = collectCategoryRows(champId, usedIds);
       if (error) {
         await showError('Categorías', error);
         return;
@@ -402,6 +514,7 @@ function bindCategoriesAdmin(): void {
 }
 
 function renderAdminPanel(events: Event[], registrations: Registration[]): string {
+  const usedCategoryIds = getUsedCategoryIds(registrations);
   const activeEvents = events.filter((e) => e.active);
 
   const champTabs = (['mx', 'enduro'] as ChampionshipId[])
@@ -558,7 +671,7 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
           </form>
         </section>
 
-        ${renderCategoriesAdminSection()}
+        ${renderCategoriesAdminSection(usedCategoryIds)}
 
         <section class="card">
           <h2 class="font-title text-2xl text-secondary mb-4">Inscripciones por evento</h2>
@@ -624,7 +737,7 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
     initAdminPage();
   });
 
-  bindCategoriesAdmin();
+  bindCategoriesAdmin(getUsedCategoryIds(registrations));
 
   const panels = document.querySelectorAll('.event-panel');
   const tabs = document.querySelectorAll('.event-tab');
@@ -903,7 +1016,9 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
       const categoriaIds = fd.getAll('categoriaIds').map(String);
       const registration = registrations.find((r) => r.id === id);
       const championshipId = registration ? getEventChampionshipId(events, registration.eventId) : 'mx';
-      const validCategories = getCategoriesForAge(calculateAge(fechaNacimiento), championshipId);
+      const validCategories = getCategoriesForAge(calculateAge(fechaNacimiento), championshipId, {
+        includeIds: categoriaIds,
+      });
 
       if (!fechaNacimiento) {
         await showError('Fecha invalida', 'Revisa la fecha de nacimiento.');

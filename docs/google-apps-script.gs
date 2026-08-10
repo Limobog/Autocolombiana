@@ -11,7 +11,7 @@ const SPREADSHEET_ID = '1kAlC3MP2DqH5KXkQQLVZF0SbHV6X8DY3nAyLxO81654';
 const DRIVE_FOLDER_ID = '1TQAM3BE93OjiaODNgI_2SkXLFQ2uqQqM';
 
 const EVENT_HEADERS = ['id', 'name', 'date', 'location', 'city', 'description', 'active', 'reglamentoUrl', 'finished', 'valorInscripcion', 'championshipId'];
-const CATEGORY_HEADERS = ['id', 'championshipId', 'label', 'minAge', 'maxAge'];
+const CATEGORY_HEADERS = ['id', 'championshipId', 'label', 'minAge', 'maxAge', 'active'];
 const REG_HEADERS = [
   'id', 'eventId', 'eventName', 'nombre', 'apellido', 'identificacion',
   'identificacionArchivo', 'identificacionFileName', 'identificacionFileType',
@@ -392,12 +392,22 @@ function getCategoriesSheet_(ss) {
 function normalizeCategoryRow_(row) {
   var maxAge = Number(row.maxAge);
   var minAge = Number(row.minAge);
+  var activeRaw = row.active;
+  var active =
+    activeRaw === undefined || activeRaw === null || activeRaw === ''
+      ? true
+      : activeRaw === true ||
+        activeRaw === 'TRUE' ||
+        activeRaw === 'true' ||
+        activeRaw === 1 ||
+        activeRaw === '1';
   return {
     id: String(row.id || '').trim(),
     championshipId: String(row.championshipId || '').trim().toLowerCase() === 'enduro' ? 'enduro' : 'mx',
     label: String(row.label || '').trim(),
     minAge: isFinite(minAge) && minAge >= 0 ? minAge : 0,
     maxAge: isFinite(maxAge) && maxAge > 0 ? maxAge : 999,
+    active: active,
   };
 }
 

@@ -10,7 +10,7 @@ import {
   type ReglamentoSection,
 } from '../content/reglamento-sections';
 import { REGLAMENTO_ENDURO_SECTIONS } from '../content/reglamento-enduro-sections';
-import { getChampionshipCategories } from '../types';
+import { getEnabledChampionshipCategories } from '../types';
 import { initCategories } from '../utils/storage';
 
 function formatCategoryAgeRow(minAge: number, maxAge: number): string {
@@ -30,7 +30,7 @@ function fondoNumeroForCategory(id: string): string {
 
 /** Reconstruye la tabla de categorías MX con lo configurado en el panel. */
 function buildMxSections(): ReglamentoSection[] {
-  const categories = getChampionshipCategories('mx');
+  const categories = getEnabledChampionshipCategories('mx');
   return REGLAMENTO_SECTIONS.map((section) => {
     if (section.id !== 'categorias' || !section.table) return section;
     const rows = categories.map((c) => [
@@ -44,7 +44,7 @@ function buildMxSections(): ReglamentoSection[] {
 
 /** Reconstruye la tabla de categorías del Festival con lo configurado en el panel. */
 function buildEnduroSections(): ReglamentoSection[] {
-  const categories = getChampionshipCategories('enduro');
+  const categories = getEnabledChampionshipCategories('enduro');
   return REGLAMENTO_ENDURO_SECTIONS.map((section) => {
     if (section.id !== 'categorias' || !section.table) return section;
     const rows = categories.map((c) => {

@@ -8,6 +8,11 @@ export interface Category {
   label: string;
   minAge: number;
   maxAge: number;
+  /**
+   * false = inhabilitada para nuevas inscripciones / eventos futuros.
+   * Si se omite se considera habilitada. No se elimina si ya hay inscritos.
+   */
+  active?: boolean;
 }
 
 /** IDs legacy → categorías actuales Copa Autocolombiana. */
@@ -89,6 +94,15 @@ export function getChampionshipCategories(championshipId: ChampionshipId): Categ
   return categoryStore[championshipId];
 }
 
+/** Categorías habilitadas (aparecen en home, reglamento e inscripciones nuevas). */
+export function getEnabledChampionshipCategories(championshipId: ChampionshipId): Category[] {
+  return getChampionshipCategories(championshipId).filter(isCategoryEnabled);
+}
+
+export function isCategoryEnabled(category: Category): boolean {
+  return category.active !== false;
+}
+
 export function resolveCategoryId(id: string): string {
   return LEGACY_CATEGORY_IDS[id] ?? id;
 }
@@ -128,9 +142,22 @@ export function getCategoryById(id: string): Category | undefined {
   );
 }
 
-export function getCategoriesForAge(age: number, championshipId: ChampionshipId = 'mx'): Category[] {
+/**
+ * Categorías elegibles por edad.
+ * Por defecto solo habilita las activas; `includeIds` permite mostrar
+ * categorías inhabilitadas ya seleccionadas (edición de inscripciones).
+ */
+export function getCategoriesForAge(
+  age: number,
+  championshipId: ChampionshipId = 'mx',
+  options?: { includeIds?: string[] }
+): Category[] {
   if (age < 0) return [];
-  return getChampionshipCategories(championshipId).filter((c) => age >= c.minAge && age <= c.maxAge);
+  const include = new Set((options?.includeIds ?? []).map(resolveCategoryId));
+  return getChampionshipCategories(championshipId).filter((c) => {
+    if (age < c.minAge || age > c.maxAge) return false;
+    return isCategoryEnabled(c) || include.has(c.id);
+  });
 }
 
 export interface Event {

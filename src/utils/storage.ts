@@ -110,12 +110,22 @@ function normalizeStoredCategory(raw: Record<string, unknown>): StoredCategory |
   const minAge = Number(raw.minAge ?? 0);
   const maxAgeRaw = Number(raw.maxAge ?? 999);
   if (!id || !label) return null;
+  const activeRaw = raw.active;
+  const active =
+    activeRaw === undefined || activeRaw === null || activeRaw === ''
+      ? true
+      : activeRaw === true ||
+        activeRaw === 'TRUE' ||
+        activeRaw === 'true' ||
+        activeRaw === 1 ||
+        activeRaw === '1';
   return {
     id,
     label,
     championshipId,
     minAge: Number.isFinite(minAge) && minAge >= 0 ? minAge : 0,
     maxAge: Number.isFinite(maxAgeRaw) && maxAgeRaw > 0 ? maxAgeRaw : 999,
+    active,
   };
 }
 
@@ -123,7 +133,13 @@ function groupCategories(rows: StoredCategory[]): Partial<Record<ChampionshipId,
   const store: Partial<Record<ChampionshipId, Category[]>> = {};
   for (const row of rows) {
     const list = (store[row.championshipId] ??= []);
-    list.push({ id: row.id, label: row.label, minAge: row.minAge, maxAge: row.maxAge });
+    list.push({
+      id: row.id,
+      label: row.label,
+      minAge: row.minAge,
+      maxAge: row.maxAge,
+      active: row.active !== false,
+    });
   }
   return store;
 }
