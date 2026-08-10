@@ -1,7 +1,7 @@
 /**
  * Configuracion del sitio Minicross Colombia 2026
  *
- * PANEL: /panel-minicross-gestion-2026.html
+ * PANEL: /panel-autocolombiana-gestion-2026.html
  * Clave: minicross2026
  */
 export const CONFIG = {

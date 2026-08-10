@@ -1,4 +1,4 @@
-// Panel admin oculto: panel-minicross-gestion-2026.html
+// Panel admin oculto: panel-autocolombiana-gestion-2026.html
 
 import { getActiveChampionship } from '../championships';
 import { renderChampionshipSwitcher, initChampionshipSwitcher } from './championship';

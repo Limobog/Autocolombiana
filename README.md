@@ -38,7 +38,7 @@ Plataforma web del **Campeonato Junior Minicross Colombia 2026**: portal de insc
 
 ### Panel de administración (ruta oculta)
 
-> **`/panel-minicross-gestion-2026.html`** — contraseña en `src/config.ts` (`adminPassword`)
+> **`/panel-autocolombiana-gestion-2026.html`** — contraseña en `src/config.ts` (`adminPassword`)
 
 - Inscripciones agrupadas por evento (pestañas)
 - Ver, editar y eliminar inscripciones (con confirmación SweetAlert2)
@@ -100,7 +100,7 @@ Si `apiUrl` está vacío en `src/config.ts`, los datos se guardan en **localStor
 
 ```
 ├── index.html / eventos.html / inscripcion.html / reglamento.html / resultados.html
-├── panel-minicross-gestion-2026.html   # Admin (no enlazado en menú público)
+├── panel-autocolombiana-gestion-2026.html   # Admin (no enlazado en menú público)
 ├── src/
 │   ├── main.ts, eventos-main.ts, inscripcion-main.ts, reglamento-main.ts, …
 │   ├── pages/          # Lógica por página (home, events, registration, admin, …)
@@ -127,7 +127,7 @@ Si `apiUrl` está vacío en `src/config.ts`, los datos se guardan en **localStor
 | Inscripción | `inscripcion.html` | `src/inscripcion-main.ts` |
 | Reglamento | `reglamento.html` | `src/reglamento-main.ts` |
 | Resultados | `resultados.html` | `src/resultados-main.ts` |
-| Admin | `panel-minicross-gestion-2026.html` | `src/admin-main.ts` |
+| Admin | `panel-autocolombiana-gestion-2026.html` | `src/admin-main.ts` |
 
 Menú público: Inicio · Eventos · Inscripción · Reglamento.
 

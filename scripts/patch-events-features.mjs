@@ -327,8 +327,8 @@ console.log('wrote resultados pages');
 // ─── vite.config.ts ───────────────────────────────────────────────────────────
 patch('vite.config.ts', [
   [
-    `        admin: resolve(__dirname, 'panel-minicross-gestion-2026.html'),`,
-    `        admin: resolve(__dirname, 'panel-minicross-gestion-2026.html'),
+    `        admin: resolve(__dirname, 'panel-autocolombiana-gestion-2026.html'),`,
+    `        admin: resolve(__dirname, 'panel-autocolombiana-gestion-2026.html'),
         resultados: resolve(__dirname, 'resultados.html'),`,
   ],
 ]);
