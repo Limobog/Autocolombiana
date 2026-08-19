@@ -61,6 +61,49 @@ function renderPilotOptions(numbers: number[], selected?: number): string {
   );
 }
 
+function renderBankDetails(): string {
+  const bank = getActiveChampionship().bankDetails;
+  const paymentKeyRow = bank.paymentKey
+    ? `<div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5 sm:col-span-2">
+        <dt class="text-xs text-muted mb-0.5">Llave</dt>
+        <dd class="font-medium text-white font-mono text-base tracking-wide">${bank.paymentKey}</dd>
+      </div>`
+    : '';
+
+  return `
+    <div class="rounded-xl border border-white/25 bg-surface-raised p-4 space-y-3">
+      <p class="text-sm font-semibold text-silver uppercase tracking-wide">
+        Datos bancarios para consignar
+      </p>
+      <p class="text-xs text-muted">
+        Transfiere el total indicado a la siguiente cuenta de ahorros y adjunta el comprobante más abajo.
+      </p>
+      <dl class="grid gap-2 sm:grid-cols-2 text-sm">
+        <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
+          <dt class="text-xs text-muted mb-0.5">Banco</dt>
+          <dd class="font-medium text-foreground">${bank.bank}</dd>
+        </div>
+        <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
+          <dt class="text-xs text-muted mb-0.5">A nombre de</dt>
+          <dd class="font-medium text-foreground">${bank.accountHolder}</dd>
+        </div>
+        <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
+          <dt class="text-xs text-muted mb-0.5">${bank.idLabel}</dt>
+          <dd class="font-medium text-foreground font-mono">${bank.idValue}</dd>
+        </div>
+        <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
+          <dt class="text-xs text-muted mb-0.5">Tipo de cuenta</dt>
+          <dd class="font-medium text-foreground">${bank.accountType}</dd>
+        </div>
+        <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5 sm:col-span-2">
+          <dt class="text-xs text-muted mb-0.5">Número de cuenta</dt>
+          <dd class="font-medium text-white font-mono text-base tracking-wide">${bank.accountNumber}</dd>
+        </div>
+        ${paymentKeyRow}
+      </dl>
+    </div>`;
+}
+
 function renderLoadingPanel(): string {
   return `
     <div class="flex flex-col items-center justify-center gap-5 py-16 text-center" role="status" aria-live="polite">
@@ -171,36 +214,7 @@ function renderForm(events: Event[], selectedEventId: string | null, pilotNumber
           </p>
         </div>
 
-        <div class="rounded-xl border border-white/25 bg-surface-raised p-4 space-y-3">
-          <p class="text-sm font-semibold text-silver uppercase tracking-wide">
-            Datos bancarios para consignar
-          </p>
-          <p class="text-xs text-muted">
-            Transfiere el total indicado a la siguiente cuenta de ahorros y adjunta el comprobante más abajo.
-          </p>
-          <dl class="grid gap-2 sm:grid-cols-2 text-sm">
-            <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
-              <dt class="text-xs text-muted mb-0.5">Banco</dt>
-              <dd class="font-medium text-foreground">Bancolombia</dd>
-            </div>
-            <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
-              <dt class="text-xs text-muted mb-0.5">A nombre de</dt>
-              <dd class="font-medium text-foreground">LIMOBOG</dd>
-            </div>
-            <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
-              <dt class="text-xs text-muted mb-0.5">NIT</dt>
-              <dd class="font-medium text-foreground font-mono">860080966</dd>
-            </div>
-            <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
-              <dt class="text-xs text-muted mb-0.5">Tipo de cuenta</dt>
-              <dd class="font-medium text-foreground">Ahorros</dd>
-            </div>
-            <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5 sm:col-span-2">
-              <dt class="text-xs text-muted mb-0.5">Número de cuenta</dt>
-              <dd class="font-medium text-white font-mono text-base tracking-wide">20531257354</dd>
-            </div>
-          </dl>
-        </div>
+        ${renderBankDetails()}
       </div>
 
       <div id="payment-section" class="hidden">

@@ -8,6 +8,18 @@ export interface ChampionshipValida {
   details: string[];
 }
 
+export interface ChampionshipBankDetails {
+  bank: string;
+  accountHolder: string;
+  /** NIT o cédula */
+  idLabel: string;
+  idValue: string;
+  accountType: string;
+  accountNumber: string;
+  /** Llave de pagos (Bre-B / Nequi / etc.), opcional */
+  paymentKey?: string;
+}
+
 export interface Championship {
   id: ChampionshipId;
   /** Nombre completo, ej: "Copa Autocolombiana de Clubes MX" */
@@ -30,6 +42,8 @@ export interface Championship {
   extraStat: [string, string];
   /** Calendario informativo (se muestra si aún no hay eventos creados) */
   calendar: ChampionshipValida[];
+  /** Datos bancarios para consignar la inscripción */
+  bankDetails: ChampionshipBankDetails;
 }
 
 export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
@@ -48,6 +62,14 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
     validasLabel: 'válidas',
     extraStat: ['$20M', 'Premiación'],
     calendar: [],
+    bankDetails: {
+      bank: 'Bancolombia',
+      accountHolder: 'LIMOBOG',
+      idLabel: 'NIT',
+      idValue: '860080966',
+      accountType: 'Ahorros',
+      accountNumber: '20531257354',
+    },
   },
   enduro: {
     id: 'enduro',
@@ -79,6 +101,15 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
         details: ['Competencia contra el cronómetro', 'Clasificación por tiempos', '1 prueba especial'],
       },
     ],
+    bankDetails: {
+      bank: 'BBVA',
+      accountHolder: 'Wilman Esteban Chivata Corredor',
+      idLabel: 'Cédula',
+      idValue: '1010234134',
+      accountType: 'Ahorros',
+      accountNumber: '0021357124',
+      paymentKey: '@bbva3146105217',
+    },
   },
 };
 
