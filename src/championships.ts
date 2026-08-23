@@ -83,10 +83,10 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
     badge: 'Festival · 1.ª Edición',
     logo: 'logo-enduro.png',
     tagline:
-      'La primera edición del Festival de Enduro Autocolombiana: competencia contra el cronómetro, clasificación por tiempos y pruebas especiales que exigen todo de ti.',
+      'La primera edición del Festival de Enduro Autocolombiana: competencia contra el cronómetro, 2 pruebas especiales en Sprint Enduro y un Hard Scramble que exigen todo de ti.',
     validasCount: 2,
     validasLabel: 'ediciones',
-    extraStat: ['3', 'Pruebas especiales'],
+    extraStat: ['2+1', 'Pruebas + Hard Scramble'],
     calendar: [
       {
         edition: '1.ª Edición',
@@ -97,10 +97,10 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
       },
       {
         edition: '2.ª Edición',
-        format: 'Hard Scrambler',
+        format: 'Hard Scramble',
         date: '11 de octubre',
         location: 'La Pista Off Road',
-        details: ['Competencia contra el cronómetro', 'Clasificación por tiempos', '1 prueba especial'],
+        details: ['Competencia contra el cronómetro', 'Clasificación por tiempos', 'Hard Scramble'],
       },
     ],
     bankDetails: {

@@ -136,7 +136,7 @@ function renderEnduroFormat(champ: Championship): string {
         <div class="text-center mb-10">
           <h2 class="section-title mb-3">Formato del campeonato</h2>
           <p class="text-muted max-w-2xl mx-auto">
-            Dos ediciones contra el cronómetro. La clasificación se define por tiempos en pruebas especiales.
+            Dos ediciones contra el cronómetro: Sprint Enduro con 2 pruebas especiales, y Hard Scramble.
           </p>
         </div>
         <div class="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">${cards}</div>
@@ -165,8 +165,8 @@ function renderAboutSection(champ: Championship): string {
       de la Copa de Clubes MX: eventos serios, seguros y pensados para el piloto.
     </p>
     <p>
-      Aquí no compites rueda a rueda: compites contra el cronómetro. Cada edición tiene pruebas especiales
-      donde tu tiempo define la clasificación — del Sprint Enduro en Cogua Motopark al Hard Scrambler de La Pista Off Road.
+      Aquí no compites rueda a rueda: compites contra el cronómetro. El Sprint Enduro trae 2 pruebas especiales;
+      la segunda edición es Hard Scramble en La Pista Off Road. En ambas, tu tiempo define la clasificación.
     </p>
     <p>
       Desde infantiles hasta expertos: hay una categoría para tu nivel. Inscríbete en línea y vive el enduro.
@@ -179,7 +179,7 @@ function renderAboutSection(champ: Championship): string {
   ];
 
   const cardsEnduro = [
-    ['01', 'Contra el reloj', 'Pruebas especiales cronometradas: tu tiempo es tu resultado. Sin excusas, sin tráfico — solo tú y el terreno.'],
+    ['01', 'Contra el reloj', '2 pruebas especiales en Sprint Enduro y un Hard Scramble: tu tiempo es tu resultado. Sin excusas — solo tú y el terreno.'],
     ['02', 'Para todos los niveles', 'De Enduro 1 Infantil a la categoría Oro: novatos, intermedios y expertos tienen su propia clasificación.'],
     ['03', 'Sin complicaciones', 'Inscríbete, revisa las ediciones, lee el reglamento y consulta resultados. Todo desde aquí, en pocos clics.'],
   ];
