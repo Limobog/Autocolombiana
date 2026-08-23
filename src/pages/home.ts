@@ -1,14 +1,9 @@
 import { renderFooter } from '../components/footer';
 import { renderNavbar, initNavbar } from '../components/navbar';
 import { initCategories } from '../utils/storage';
-import {
-  CHAMPIONSHIPS,
-  getActiveChampionship,
-  onChampionshipChange,
-  setActiveChampionship,
-  type Championship,
-} from '../championships';
+import { getActiveChampionship, type Championship } from '../championships';
 import { getEnabledChampionshipCategories, type Category, type ChampionshipId } from '../types';
+import { asset } from '../utils/site-context';
 
 function formatCategoryAge(category: Category): string {
   if (category.maxAge >= 999) {
@@ -41,43 +36,55 @@ function renderCategoryCards(championshipId: ChampionshipId): string {
     .join('');
 }
 
-function renderSplitPanel(champ: Championship, isActive: boolean): string {
+function renderHero(champ: Championship): string {
   return `
-    <button type="button" class="split-panel split-panel--${champ.id} ${isActive ? 'is-active' : ''}"
-            data-champ-panel="${champ.id}" aria-label="Ver ${champ.name}">
-      <div class="split-inner">
-        <span class="split-active-badge items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1 text-[11px] font-bold uppercase tracking-widest text-white">
-          <span class="h-1.5 w-1.5 rounded-full bg-white animate-pulse"></span> Viendo ahora
-        </span>
-        <img src="${champ.logo}" alt="${champ.name}" class="split-logo" />
-        <div>
-          <p class="font-title text-3xl md:text-4xl lg:text-5xl leading-none tracking-wider text-white">
-            ${champ.heroTitleHtml}
-          </p>
-          <p class="mt-1 font-title text-lg md:text-xl tracking-widest text-white/80">${champ.heroSubtitle}</p>
-        </div>
-        <p class="text-muted text-sm md:text-base leading-relaxed max-w-md hidden sm:block">${champ.tagline}</p>
-        <div class="flex flex-wrap items-center justify-center gap-2 text-xs font-semibold text-silver">
-          <span class="rounded-full border border-white/15 bg-white/5 px-3 py-1">${getEnabledChampionshipCategories(champ.id).length} categorías</span>
-          <span class="rounded-full border border-white/15 bg-white/5 px-3 py-1">${champ.validasCount} ${champ.validasLabel}</span>
-          <span class="rounded-full border border-white/15 bg-white/5 px-3 py-1">${champ.extraStat[0]} ${champ.extraStat[1].toLowerCase()}</span>
-        </div>
-        <span class="split-cta inline-flex items-center gap-2 rounded-lg bg-white px-6 py-2.5 font-bold text-ink text-sm">
-          Explorar campeonato
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-          </svg>
-        </span>
+    <section class="hero-geo relative">
+      <div class="geo-shapes" aria-hidden="true">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
       </div>
-    </button>`;
-}
-
-function renderSplitHero(active: Championship): string {
-  return `
-    <section class="split-hero" aria-label="Elige tu campeonato">
-      ${renderSplitPanel(CHAMPIONSHIPS.mx, active.id === 'mx')}
-      <div class="split-divider" aria-hidden="true"></div>
-      ${renderSplitPanel(CHAMPIONSHIPS.enduro, active.id === 'enduro')}
+      <div class="geo-grid absolute inset-0 opacity-40 pointer-events-none" aria-hidden="true"></div>
+      <div class="mx-auto max-w-7xl px-4 py-16 md:py-24 relative z-10">
+        <div class="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+          <div class="animate-fade-in-up order-2 lg:order-1 text-center lg:text-left">
+            <span class="badge-tag mb-6">${champ.badge}</span>
+            <h1 class="font-title text-4xl leading-none tracking-wider text-white sm:text-5xl md:text-6xl lg:text-7xl">
+              ${champ.heroTitleHtml}
+            </h1>
+            <p class="mt-2 font-title text-2xl md:text-3xl tracking-widest text-white/80">${champ.heroSubtitle}</p>
+            <p class="mt-6 text-base md:text-lg text-muted leading-relaxed max-w-xl mx-auto lg:mx-0">
+              ${champ.tagline}<br/>
+              <strong class="text-white">Hay un lugar para ti en la pista.</strong>
+            </p>
+            <div class="mt-8 flex flex-wrap gap-4 justify-center lg:justify-start">
+              <a href="./inscripcion.html" class="btn-primary text-base px-8">Inscríbete ahora</a>
+              <a href="./eventos.html" class="btn-outline text-base px-8">Ver eventos</a>
+            </div>
+            <div class="mt-10 flex flex-wrap gap-3 justify-center lg:justify-start">
+              <div class="stat-pill">
+                <span class="font-title text-3xl text-white leading-none">${getEnabledChampionshipCategories(champ.id).length}</span>
+                <span class="text-xs font-semibold text-muted mt-1">Categorías</span>
+              </div>
+              <div class="stat-pill">
+                <span class="font-title text-3xl text-white leading-none">${champ.validasCount}</span>
+                <span class="text-xs font-semibold text-muted mt-1">${champ.validasLabel.charAt(0).toUpperCase()}${champ.validasLabel.slice(1)}</span>
+              </div>
+              <div class="stat-pill">
+                <span class="font-title text-2xl text-white leading-none">${champ.extraStat[0]}</span>
+                <span class="text-xs font-semibold text-muted mt-1">${champ.extraStat[1]}</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-center animate-fade-in-up order-1 lg:order-2">
+            <div class="relative">
+              <div class="absolute inset-0 bg-white/5 blur-3xl rounded-full scale-75" aria-hidden="true"></div>
+              <img src="${asset(champ.logo)}" alt="${champ.name}"
+                   class="relative max-w-[280px] sm:max-w-xs md:max-w-sm lg:max-w-md w-full object-contain drop-shadow-glow-strong" />
+            </div>
+          </div>
+        </div>
+      </div>
     </section>`;
 }
 
@@ -103,8 +110,8 @@ function renderMxHighlights(): string {
     </section>`;
 }
 
-function renderEnduroFormat(): string {
-  const cards = CHAMPIONSHIPS.enduro.calendar
+function renderEnduroFormat(champ: Championship): string {
+  const cards = champ.calendar
     .map(
       (v) => `
       <div class="card-featured">
@@ -265,16 +272,13 @@ function renderCta(champ: Championship): string {
     </section>`;
 }
 
-function renderHomeContent(champ: Championship): string {
-  return `
-    ${champ.id === 'mx' ? renderMxHighlights() : renderEnduroFormat()}
-    ${renderAboutSection(champ)}
-    ${renderCategoriesSection(champ)}
-    ${renderQuickAccess(champ)}
-    ${renderCta(champ)}`;
-}
+export async function initHomePage(): Promise<void> {
+  try {
+    await initCategories();
+  } catch {
+    /* se usan las categorías por defecto */
+  }
 
-function renderPage(): void {
   const app = document.getElementById('app');
   if (!app) return;
 
@@ -282,31 +286,14 @@ function renderPage(): void {
 
   app.innerHTML = `
     ${renderNavbar('home')}
-    ${renderSplitHero(champ)}
-    <div id="home-content">
-      ${renderHomeContent(champ)}
-    </div>
+    ${renderHero(champ)}
+    ${champ.id === 'mx' ? renderMxHighlights() : renderEnduroFormat(champ)}
+    ${renderAboutSection(champ)}
+    ${renderCategoriesSection(champ)}
+    ${renderQuickAccess(champ)}
+    ${renderCta(champ)}
     ${renderFooter()}
   `;
 
   initNavbar();
-
-  document.querySelectorAll<HTMLButtonElement>('[data-champ-panel]').forEach((panel) => {
-    panel.addEventListener('click', () => {
-      const id = panel.getAttribute('data-champ-panel') as ChampionshipId;
-      setActiveChampionship(id);
-      // Tras el re-render (síncrono) llevamos al usuario al contenido del campeonato.
-      document.getElementById('home-content')?.scrollIntoView({ behavior: 'smooth' });
-    });
-  });
-}
-
-export async function initHomePage(): Promise<void> {
-  try {
-    await initCategories();
-  } catch {
-    /* se usan las categorías por defecto */
-  }
-  renderPage();
-  onChampionshipChange(() => renderPage());
 }

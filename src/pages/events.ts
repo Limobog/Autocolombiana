@@ -1,10 +1,6 @@
 import { renderFooter } from '../components/footer';
 import { renderNavbar, initNavbar } from '../components/navbar';
-import {
-  renderChampionshipModal,
-  initChampionshipModal,
-} from '../components/championship';
-import { getActiveChampionship, onChampionshipChange, type Championship } from '../championships';
+import { getActiveChampionship, type Championship } from '../championships';
 import { loadEvents } from '../utils/storage';
 import { formatDate } from '../utils/age';
 import type { Event } from '../types';
@@ -117,11 +113,9 @@ async function renderPage(): Promise<void> {
       </div>
     </main>
     ${renderFooter()}
-    ${renderChampionshipModal()}
   `;
 
   initNavbar();
-  initChampionshipModal();
 
   const list = document.getElementById('events-list');
   if (!list) return;
@@ -148,7 +142,4 @@ async function renderPage(): Promise<void> {
 
 export async function initEventsPage(): Promise<void> {
   await renderPage();
-  onChampionshipChange(() => {
-    void renderPage();
-  });
 }

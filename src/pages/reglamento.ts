@@ -1,10 +1,6 @@
 import { renderFooter } from '../components/footer';
 import { renderNavbar, initNavbar } from '../components/navbar';
-import {
-  renderChampionshipModal,
-  initChampionshipModal,
-} from '../components/championship';
-import { getActiveChampionship, onChampionshipChange } from '../championships';
+import { getActiveChampionship } from '../championships';
 import {
   REGLAMENTO_SECTIONS,
   type ReglamentoSection,
@@ -12,6 +8,7 @@ import {
 import { REGLAMENTO_ENDURO_SECTIONS } from '../content/reglamento-enduro-sections';
 import { getEnabledChampionshipCategories } from '../types';
 import { initCategories } from '../utils/storage';
+import { asset } from '../utils/site-context';
 
 function formatCategoryAgeRow(minAge: number, maxAge: number): string {
   if (maxAge >= 999) {
@@ -165,7 +162,7 @@ function renderPage(): void {
 
   const pdfButton =
     champ.id === 'mx'
-      ? `<a href="./reglamento-oficial-copa-mx-autocolombiana.pdf" target="_blank" rel="noopener noreferrer"
+      ? `<a href="${asset('reglamento-oficial-copa-mx-autocolombiana.pdf')}" target="_blank" rel="noopener noreferrer"
            class="btn-outline inline-flex items-center gap-2 mt-6">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -203,11 +200,9 @@ function renderPage(): void {
       </div>
     </main>
     ${renderFooter()}
-    ${renderChampionshipModal()}
   `;
 
   initNavbar();
-  initChampionshipModal();
 }
 
 export async function initReglamentoPage(): Promise<void> {
@@ -217,5 +212,4 @@ export async function initReglamentoPage(): Promise<void> {
     /* se usan las categorías por defecto */
   }
   renderPage();
-  onChampionshipChange(() => renderPage());
 }

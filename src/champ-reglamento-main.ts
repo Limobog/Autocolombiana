@@ -1,4 +1,5 @@
+import './bootstrap';
 import './styles/main.css';
 import { initReglamentoPage } from './pages/reglamento';
 
-initReglamentoPage();
+void initReglamentoPage();

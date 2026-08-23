@@ -1,4 +1,5 @@
 import type { ChampionshipId } from './types';
+import { detectChampionshipFromPath } from './utils/site-context';
 
 export interface ChampionshipValida {
   edition: string;
@@ -33,6 +34,7 @@ export interface Championship {
   /** Etiqueta corta para switcher y badges */
   shortLabel: string;
   badge: string;
+  /** Nombre del archivo en public/ (sin ./) */
   logo: string;
   tagline: string;
   validasCount: number;
@@ -55,7 +57,7 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
     heroSubtitle: 'DE CLUBES MX',
     shortLabel: 'Clubes MX',
     badge: 'De Clubes · MX',
-    logo: './logo-copa-mx.png',
+    logo: 'logo-copa-mx.png',
     tagline:
       'El motocross por clubes que reúne a pilotos de todo Colombia. Cuatro válidas, dos mangas por categoría y puntos que cuentan en cada fecha.',
     validasCount: 4,
@@ -79,7 +81,7 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
     heroSubtitle: 'AUTOCOLOMBIANA · 1.ª EDICIÓN',
     shortLabel: 'Festival Enduro',
     badge: 'Festival · 1.ª Edición',
-    logo: './logo-enduro.png',
+    logo: 'logo-enduro.png',
     tagline:
       'La primera edición del Festival de Enduro Autocolombiana: competencia contra el cronómetro, clasificación por tiempos y pruebas especiales que exigen todo de ti.',
     validasCount: 2,
@@ -126,8 +128,25 @@ export function getStoredChampionshipId(): ChampionshipId | null {
   }
 }
 
+/**
+ * Campeonato activo: la URL (/mx o /enduro) manda;
+ * si estamos en la raíz (panel / puerta), se usa lo guardado o MX.
+ */
 export function getActiveChampionship(): Championship {
-  return CHAMPIONSHIPS[getStoredChampionshipId() ?? 'mx'];
+  const fromPath = detectChampionshipFromPath();
+  return CHAMPIONSHIPS[fromPath ?? getStoredChampionshipId() ?? 'mx'];
+}
+
+/** Fija el campeonato según la carpeta de la URL y lo recuerda en localStorage. */
+export function lockChampionshipFromPath(): ChampionshipId | null {
+  const fromPath = detectChampionshipFromPath();
+  if (!fromPath) return null;
+  try {
+    localStorage.setItem(STORAGE_KEY, fromPath);
+  } catch {
+    /* modo incógnito */
+  }
+  return fromPath;
 }
 
 export function setActiveChampionship(id: ChampionshipId): void {

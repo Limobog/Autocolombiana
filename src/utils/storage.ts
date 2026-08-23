@@ -12,6 +12,7 @@ import type {
 import { calculateAge, generateId, parseSheetDate } from './age';
 import { getCategoryById, formatCategoryOptionLabel, setCategoryStore, validateCategorySelection } from '../types';
 import { computeRegistrationTotal } from './registration-total';
+import { asset } from './site-context';
 import {
   apiGet,
   apiPost,
@@ -208,7 +209,7 @@ export async function loadEvents(): Promise<Event[]> {
   const fromLocal = readLocal<Event[]>(CONFIG.storageKeys.events);
   if (fromLocal?.length) return fromLocal.map((e) => normalizeEvent(e as unknown as Record<string, unknown>));
 
-  const fromFile = await fetchJson<Event[]>('./data/events.json');
+  const fromFile = await fetchJson<Event[]>(asset('data/events.json'));
   return (fromFile ?? []).map((e) => normalizeEvent(e as unknown as Record<string, unknown>));
 }
 
@@ -233,7 +234,7 @@ export async function loadRegistrations(): Promise<Registration[]> {
   }
 
   const fromLocal = readLocal<Registration[]>(CONFIG.storageKeys.registrations);
-  const fromFile = await fetchJson<Registration[]>('./data/registrations.json');
+  const fromFile = await fetchJson<Registration[]>(asset('data/registrations.json'));
 
   const merged = new Map<string, Registration>();
   for (const reg of fromFile ?? []) merged.set(reg.id, normalizeRegistration(reg as unknown as Record<string, unknown>));

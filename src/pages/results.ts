@@ -1,10 +1,5 @@
 import { renderFooter } from '../components/footer';
 import { renderNavbar, initNavbar } from '../components/navbar';
-import {
-  renderChampionshipModal,
-  initChampionshipModal,
-} from '../components/championship';
-import { onChampionshipChange } from '../championships';
 import { loadEvents } from '../utils/storage';
 import { formatDate } from '../utils/age';
 
@@ -27,11 +22,9 @@ async function renderPage(): Promise<void> {
       </div>
     </main>
     ${renderFooter()}
-    ${renderChampionshipModal()}
   `;
 
   initNavbar();
-  initChampionshipModal();
 
   const content = document.getElementById('results-content');
   if (!content) return;
@@ -77,7 +70,4 @@ async function renderPage(): Promise<void> {
 
 export async function initResultsPage(): Promise<void> {
   await renderPage();
-  onChampionshipChange(() => {
-    void renderPage();
-  });
 }

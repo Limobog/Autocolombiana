@@ -1,6 +1,12 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './eventos.html', './inscripcion.html', './panel-autocolombiana-gestion-2026.html', './src/**/*.{js,ts}'],
+  content: [
+    './index.html',
+    './mx/**/*.html',
+    './enduro/**/*.html',
+    './panel-autocolombiana-gestion-2026.html',
+    './src/**/*.{js,ts}',
+  ],
   theme: {
     extend: {
       colors: {

@@ -99,37 +99,40 @@ Si `apiUrl` está vacío en `src/config.ts`, los datos se guardan en **localStor
 ## Estructura del proyecto
 
 ```
-├── index.html / eventos.html / inscripcion.html / reglamento.html / resultados.html
-├── panel-autocolombiana-gestion-2026.html   # Admin (no enlazado en menú público)
+├── index.html              # Puerta: elige MX o Festival Enduro
+├── mx/                     # Sitio Clubes MX (/mx/…)
+│   └── index.html, eventos.html, inscripcion.html, reglamento.html, resultados.html
+├── enduro/                 # Sitio Festival Enduro (/enduro/…)
+│   └── (mismas páginas)
+├── panel-autocolombiana-gestion-2026.html   # Admin (raíz; no enlazado en menú público)
 ├── src/
-│   ├── main.ts, eventos-main.ts, inscripcion-main.ts, reglamento-main.ts, …
-│   ├── pages/          # Lógica por página (home, events, registration, admin, …)
-│   ├── components/     # navbar, etc.
-│   ├── content/        # reglamento-sections.ts (texto oficial)
-│   ├── utils/          # api.ts, storage.ts, age.ts
-│   ├── types/          # Event, Registration, categorías
-│   ├── styles/main.css # Tailwind + tokens de marca
-│   └── config.ts       # apiUrl, contraseña admin, límites
+│   ├── main.ts             # Gateway (raíz)
+│   ├── champ-*-main.ts     # Entradas de páginas /mx y /enduro
+│   ├── pages/              # home, gateway, events, registration, admin, …
+│   ├── components/         # navbar, footer, allies
+│   ├── content/            # reglamentos
+│   ├── utils/              # api, storage, site-context (rutas /mx|/enduro)
+│   ├── types/
+│   ├── styles/main.css
+│   └── config.ts
 ├── docs/
-│   ├── google-apps-script.gs   # Backend completo
-│   ├── SETUP-GOOGLE-SHEETS.md  # Guía de configuración
-│   └── ENCODING.md
-├── public/             # logo, PDF reglamento, data de ejemplo
-└── scripts/            # UTF-8, parches, git hooks
+├── public/
+└── scripts/
 ```
 
 ## Páginas
 
-| Página | Archivo | Entrada TS |
-|--------|---------|------------|
-| Inicio | `index.html` | `src/main.ts` |
-| Eventos | `eventos.html` | `src/eventos-main.ts` |
-| Inscripción | `inscripcion.html` | `src/inscripcion-main.ts` |
-| Reglamento | `reglamento.html` | `src/reglamento-main.ts` |
-| Resultados | `resultados.html` | `src/resultados-main.ts` |
+| Página | Ruta | Entrada TS |
+|--------|------|------------|
+| Elegir campeonato | `index.html` | `src/main.ts` |
+| Inicio MX | `mx/index.html` | `src/champ-home-main.ts` |
+| Inicio Enduro | `enduro/index.html` | `src/champ-home-main.ts` |
+| Eventos / Inscripción / Reglamento / Resultados | `mx/…` o `enduro/…` | `src/champ-*-main.ts` |
 | Admin | `panel-autocolombiana-gestion-2026.html` | `src/admin-main.ts` |
 
-Menú público: Inicio · Eventos · Inscripción · Reglamento.
+Las URLs antiguas en la raíz (`eventos.html`, etc.) redirigen al inicio para elegir campeonato.
+
+Menú dentro de cada sitio: Inicio · Eventos · Inscripción · Reglamento · switcher MX/Enduro.
 
 ## Almacenamiento de datos
 

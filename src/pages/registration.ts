@@ -1,11 +1,7 @@
 import { CONFIG } from '../config';
 import { renderFooter } from '../components/footer';
 import { renderNavbar, initNavbar } from '../components/navbar';
-import {
-  renderChampionshipModal,
-  initChampionshipModal,
-} from '../components/championship';
-import { getActiveChampionship, onChampionshipChange, setActiveChampionship } from '../championships';
+import { getActiveChampionship } from '../championships';
 import {
   createRegistration,
   initCategories,
@@ -28,8 +24,6 @@ let paymentFileType = '';
 function getEventIdFromUrl(): string | null {
   return new URLSearchParams(window.location.search).get('evento');
 }
-
-let urlChampionshipChecked = false;
 
 function renderCategoryCheckboxes(age: number, championshipId: ChampionshipId, selected: string[] = []): string {
   const categories = getCategoriesForAge(age, championshipId);
@@ -525,11 +519,9 @@ async function renderPage(): Promise<void> {
       </div>
     </main>
     ${renderFooter()}
-    ${renderChampionshipModal()}
   `;
 
   initNavbar();
-  initChampionshipModal();
 
   const card = document.getElementById('registration-card');
   if (!card) return;
@@ -538,15 +530,13 @@ async function renderPage(): Promise<void> {
     const [allEvents] = await Promise.all([loadEvents(), initCategories().catch(() => undefined)]);
     const eventIdFromUrl = getEventIdFromUrl();
 
-    // Enlace directo a un evento del otro campeonato: se adopta ese campeonato (solo al cargar).
-    if (!urlChampionshipChecked) {
-      urlChampionshipChecked = true;
-      const urlEvent = eventIdFromUrl ? allEvents.find((e) => e.id === eventIdFromUrl) : undefined;
-      if (urlEvent && urlEvent.championshipId !== champ.id) {
-        setActiveChampionship(urlEvent.championshipId);
-        await renderPage();
-        return;
-      }
+    // Enlace a un evento del otro campeonato → redirige a la carpeta correcta.
+    const urlEvent = eventIdFromUrl ? allEvents.find((e) => e.id === eventIdFromUrl) : undefined;
+    if (urlEvent && urlEvent.championshipId !== champ.id) {
+      window.location.replace(
+        `../${urlEvent.championshipId}/inscripcion.html?evento=${encodeURIComponent(urlEvent.id)}`
+      );
+      return;
     }
 
     const events = allEvents.filter((e) => e.active && e.championshipId === champ.id);
@@ -571,7 +561,4 @@ async function renderPage(): Promise<void> {
 
 export async function initRegistrationPage(): Promise<void> {
   await renderPage();
-  onChampionshipChange(() => {
-    void renderPage();
-  });
 }

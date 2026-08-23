@@ -1,4 +1,4 @@
 import './styles/main.css';
-import { initHomePage } from './pages/home';
+import { initGatewayPage } from './pages/gateway';
 
-initHomePage();
+initGatewayPage();
