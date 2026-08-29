@@ -1,0 +1,249 @@
+From e2e87daa1ec3918293592cf4219afb632662c6fc Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mauricio=20S=C3=A1nchez?=
+ <sanchezaguilarmauricio56@gmail.com>
+Date: Sat, 29 Aug 2026 11:53:57 -0500
+Subject: [PATCH] feat: implement admin panel and configuration for 2026
+ championship management
+
+---
+ docs/SETUP-GOOGLE-SHEETS.md | 12 ++++++--
+ docs/google-apps-script.gs  | 59 +++++++++++++++++++++++++++++--------
+ src/config.ts               |  2 --
+ src/pages/admin.ts          | 26 ++++++++++++----
+ src/utils/api.ts            | 18 +++++++++--
+ 5 files changed, 91 insertions(+), 26 deletions(-)
+
+diff --git a/docs/SETUP-GOOGLE-SHEETS.md b/docs/SETUP-GOOGLE-SHEETS.md
+index a94f5db..e64812d 100644
+--- a/docs/SETUP-GOOGLE-SHEETS.md
++++ b/docs/SETUP-GOOGLE-SHEETS.md
+@@ -29,9 +29,15 @@ Con esta configuracion, las inscripciones se guardan directamente en una Google
+    const DRIVE_FOLDER_ID = 'tu-id-de-la-carpeta-drive';//1oImoS0x__kgBBXaL9HAg3Qf-4Zj0Xz0l
+    ```
+ 4. Guarda el proyecto (Ctrl+S)
+-5. En el selector de funciones (arriba), elige **`setupSheets`** — NO elijas `doGet` ni `doPost`
+-6. Clic en **Ejecutar** y autoriza los permisos (Sheets + Drive)
+-7. Revisa tu Google Sheet: deben aparecer las pestanas `Events` y `Registrations`
++5. En el menú lateral izquierdo, ve a **Configuración del proyecto** (el ícono del engranaje).
++6. Desplázate hacia abajo hasta **Propiedades de la secuencia de comandos**.
++7. Haz clic en **Añadir propiedad del script**.
++8. Escribe `ADMIN_PASSWORD` en el campo Propiedad y escribe la contraseña deseada en el campo Valor (ej: `minicross2026`).
++9. Haz clic en **Guardar propiedades de la secuencia de comandos**.
++10. Vuelve al Editor (ícono `< >`).
++11. En el selector de funciones (arriba), elige **`setupSheets`** — NO elijas `doGet` ni `doPost`
++12. Clic en **Ejecutar** y autoriza los permisos (Sheets + Drive)
++13. Revisa tu Google Sheet: deben aparecer las pestanas `Events` y `Registrations`
+ 
+ > **Nota:** Si ejecutas `doGet` desde el editor veras un error o respuesta vacia. Esa funcion solo funciona cuando la Web App recibe peticiones HTTP desde la pagina web.
+ 
+diff --git a/docs/google-apps-script.gs b/docs/google-apps-script.gs
+index 9aed9aa..9e815df 100644
+--- a/docs/google-apps-script.gs
++++ b/docs/google-apps-script.gs
+@@ -20,14 +20,17 @@ const REG_HEADERS = [
+ ];
+ const HEAT_KEYS = ['manga1', 'manga2', 'manga3', 'final'];
+ 
++const ADMIN_PASSWORD = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD');
++
+ // ─── HTTP handlers ───────────────────────────────────────────────────────────
+ 
+ function doGet(e) {
+   e = e || { parameter: {} };
+-  const action = (e.parameter.action || 'all').toString();
++  const action = (e.parameter.action || '').toString();
+   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
++  const password = (e.parameter.password || '').toString();
+ 
+-  
++  // Acciones Públicas (GET)
+   if (action === 'availablePilots') {
+     const eventId = e.parameter.eventId;
+     return jsonResponse({ numbers: getAvailablePilotNumbers_(ss, eventId) });
+@@ -45,19 +48,31 @@ function doGet(e) {
+     return jsonResponse({ events: getEvents_(ss) });
+   }
+ 
++  if (action === 'results') {
++    const eventId = (e.parameter.eventId || '').toString();
++    return jsonResponse({ results: getEventResults_(ss, eventId) });
++  }
++
++  // Acciones Protegidas (GET) - Requieren contraseña
+   if (action === 'registrations') {
++    if (password !== ADMIN_PASSWORD) {
++      return jsonResponse({ success: false, error: 'No autorizado' });
++    }
+     return jsonResponse({ registrations: getRegistrations_(ss) });
+   }
+ 
+-  if (action === 'results') {
+-    const eventId = (e.parameter.eventId || '').toString();
+-    return jsonResponse({ results: getEventResults_(ss, eventId) });
++  if (action === 'all') {
++    if (password === ADMIN_PASSWORD) {
++      return jsonResponse({
++        events: getEvents_(ss),
++        registrations: getRegistrations_(ss),
++      });
++    }
++    // Si no está autorizado para ver todo, solo devolvemos los eventos
++    return jsonResponse({ events: getEvents_(ss) });
+   }
+ 
+-  return jsonResponse({
+-    events: getEvents_(ss),
+-    registrations: getRegistrations_(ss),
+-  });
++  return jsonResponse({ success: false, error: 'Accion desconocida o requiere autorizacion' });
+ }
+ 
+ function doPost(e) {
+@@ -69,10 +84,29 @@ function doPost(e) {
+   }
+   const body = JSON.parse(e.postData.contents);
+   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
++  const password = body.password || '';
++
++  // Acciones Públicas (POST)
++  if (body.action === 'createRegistration') {
++    return jsonResponse(createRegistration_(ss, body.data));
++  }
++
++  // Acciones Protegidas (POST) - Requieren contraseña
++  const adminActions = [
++    'updateRegistration',
++    'deleteRegistration',
++    'saveEvents',
++    'saveResults',
++    'saveRegistrations'
++  ];
++
++  if (adminActions.indexOf(body.action) !== -1) {
++    if (password !== ADMIN_PASSWORD) {
++      return jsonResponse({ success: false, error: 'No autorizado' });
++    }
++  }
+ 
+   switch (body.action) {
+-    case 'createRegistration':
+-      return jsonResponse(createRegistration_(ss, body.data));
+     case 'updateRegistration':
+       return jsonResponse(updateRegistration_(ss, body.id, body.data));
+     case 'deleteRegistration':
+@@ -94,10 +128,11 @@ function doPost(e) {
+         return jsonResponse({ success: false, error: err.message || String(err) });
+       }
+     default:
+-      return jsonResponse({ success: false, error: 'Accion desconocida' });
++      return jsonResponse({ success: false, error: 'Accion desconocida o requiere autorizacion' });
+   }
+ }
+ 
++
+ // ─── Registrations CRUD ──────────────────────────────────────────────────────
+ 
+ function createRegistration_(ss, data) {
+diff --git a/src/config.ts b/src/config.ts
+index 4bb0ec6..2460f20 100644
+--- a/src/config.ts
++++ b/src/config.ts
+@@ -2,10 +2,8 @@
+  * Configuracion del sitio Minicross 2026
+  *
+  * PANEL: /panel-minicross-gestion-2026.html
+- * Clave: minicross2026
+  */
+ export const CONFIG = {
+-  adminPassword: 'minicross2026',
+ 
+   /** Año del campeonato; la edad para categorías se calcula al 1 de enero de este año. */
+   championshipYear: 2026,
+diff --git a/src/pages/admin.ts b/src/pages/admin.ts
+index 1b843ba..0ba2baa 100644
+--- a/src/pages/admin.ts
++++ b/src/pages/admin.ts
+@@ -23,7 +23,10 @@ import Swal from 'sweetalert2';
+ import { openResultsModal } from './admin-results-modal';
+ 
+ function isAuthenticated(): boolean {
+-  return sessionStorage.getItem(CONFIG.storageKeys.adminSession) === 'true';
++  return (
++    sessionStorage.getItem(CONFIG.storageKeys.adminSession) === 'true' &&
++    Boolean(sessionStorage.getItem('minicross_admin_password'))
++  );
+ }
+ 
+ function isHttpUrl(value: string): boolean {
+@@ -715,16 +718,27 @@ export async function initAdminPage(): Promise<void> {
+ 
+   if (!isAuthenticated()) {
+     app.innerHTML = renderLogin();
+-    document.getElementById('login-form')?.addEventListener('submit', (e) => {
++    document.getElementById('login-form')?.addEventListener('submit', async (e) => {
+       e.preventDefault();
+       const password = (document.getElementById('password') as HTMLInputElement).value;
+       const errorEl = document.getElementById('login-error');
+-      if (password === CONFIG.adminPassword) {
++
++      sessionStorage.setItem('minicross_admin_password', password);
++
++      try {
++        showSaving('Verificando credenciales...');
++        await loadRegistrations();
+         sessionStorage.setItem(CONFIG.storageKeys.adminSession, 'true');
++        Swal.close();
+         initAdminPage();
+-      } else if (errorEl) {
+-        errorEl.textContent = 'Contrasena incorrecta.';
+-        errorEl.classList.remove('hidden');
++      } catch (err) {
++        sessionStorage.removeItem('minicross_admin_password');
++        sessionStorage.removeItem(CONFIG.storageKeys.adminSession);
++        Swal.close();
++        if (errorEl) {
++          errorEl.textContent = 'Contrasena incorrecta o error de conexion.';
++          errorEl.classList.remove('hidden');
++        }
+       }
+     });
+     return;
+diff --git a/src/utils/api.ts b/src/utils/api.ts
+index 640eb1f..b4bd644 100644
+--- a/src/utils/api.ts
++++ b/src/utils/api.ts
+@@ -12,16 +12,28 @@ function buildUrl(params: Record<string, string>): string {
+ }
+ 
+ export async function apiGet<T>(params: Record<string, string> = {}): Promise<T> {
+-  const res = await fetch(buildUrl(params));
++  const password = sessionStorage.getItem('minicross_admin_password');
++  const finalParams = { ...params };
++  if (password) {
++    finalParams.password = password;
++  }
++  const res = await fetch(buildUrl(finalParams));
+   if (!res.ok) throw new Error('No se pudo conectar con Google Sheets.');
+-  return (await res.json()) as T;
++  const data = (await res.json()) as T & { success?: boolean; error?: string };
++  if (data.success === false && data.error) throw new Error(data.error);
++  return data;
+ }
+ 
+ export async function apiPost<T>(body: unknown): Promise<T> {
++  const password = sessionStorage.getItem('minicross_admin_password');
++  let finalBody = body;
++  if (password && typeof body === 'object' && body !== null) {
++    finalBody = { ...body, password };
++  }
+   const res = await fetch(CONFIG.apiUrl, {
+     method: 'POST',
+     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+-    body: JSON.stringify(body),
++    body: JSON.stringify(finalBody),
+     redirect: 'follow',
+   });
+   if (!res.ok) throw new Error('Error al enviar datos a Google Sheets.');
+-- 
+2.46.0.windows.1
+

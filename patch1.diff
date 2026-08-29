@@ -1,0 +1,1556 @@
+From 6be05d3fb40ce45edb350e4382d67b7eab7a6e54 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mauricio=20S=C3=A1nchez?=
+ <sanchezaguilarmauricio56@gmail.com>
+Date: Sun, 19 Jul 2026 20:23:37 -0500
+Subject: [PATCH] Add results management functionality, including CSV and PDF
+ uploads for event categories, and update event results URL handling.
+
+---
+ 2 - 125 CC - SEGUNDA MANGA - Resultados.csv |  10 +
+ 2 - 125 CC - TERCERA MANGA - Resultados.csv |  11 +
+ 2 - 125 cc - final - resultados.csv         |  10 +
+ 2 - 125 cc - primera manga - resultados.csv |  10 +
+ docs/SETUP-GOOGLE-SHEETS.md                 |   5 +-
+ docs/google-apps-script.gs                  | 205 +++++++++++-
+ public/data/events.json                     |   2 +
+ src/config.ts                               |   1 +
+ src/pages/admin-results-modal.ts            | 346 ++++++++++++++++++++
+ src/pages/admin.ts                          |  17 +-
+ src/pages/events.ts                         |   4 +-
+ src/pages/results.ts                        | 253 ++++++++++++--
+ src/types/index.ts                          |  59 ++++
+ src/utils/parse-results-csv.ts              | 207 ++++++++++++
+ src/utils/storage.ts                        | 100 +++++-
+ 15 files changed, 1209 insertions(+), 31 deletions(-)
+ create mode 100644 2 - 125 CC - SEGUNDA MANGA - Resultados.csv
+ create mode 100644 2 - 125 CC - TERCERA MANGA - Resultados.csv
+ create mode 100644 2 - 125 cc - final - resultados.csv
+ create mode 100644 2 - 125 cc - primera manga - resultados.csv
+ create mode 100644 src/pages/admin-results-modal.ts
+ create mode 100644 src/utils/parse-results-csv.ts
+
+diff --git a/2 - 125 CC - SEGUNDA MANGA - Resultados.csv b/2 - 125 CC - SEGUNDA MANGA - Resultados.csv
+new file mode 100644
+index 0000000..ae2b530
+--- /dev/null
++++ b/2 - 125 CC - SEGUNDA MANGA - Resultados.csv	
+@@ -0,0 +1,10 @@
++﻿"Pos.","N°","Nombre","Clase","MOTO","Mejor Tm","Vueltas","En Vuelta","Puntos","Dif. resp. 1°","Dif. resp. anterior","Comentario"
++"1","#114","Miguel Angel Lopez","125cc Junior (12 – 17 años)","YAMAHA","2:03.767","8","1","25","","",""
++"2","#120","MATIAS GOMEZ ORJUELA","125cc Junior (12 – 17 años)","KTM","2:14.680","8","3","22","50.995","50.995",""
++"3","#130","Santiago Gutierrez Castillo","125cc Junior (12 – 17 años)","GasGas","2:14.438","8","4","20","1:03.806","12.811",""
++"4","#818","Santigo Ferro","125cc Junior (12 – 17 años)","Yamaha 125","2:23.318","7","2","18","1 Vuelta","1 Vuelta",""
++"5","#10","Matias Ospina","125cc Junior (12 – 17 años)","Husqvarna","2:41.580","6","3","16","2 Vueltas","1 Vuelta",""
++"6","#56","Nicolás Acosta Solano","125cc Junior (12 – 17 años)","KTM 125sx","2:42.629","6","3","15","2 Vueltas","44.126",""
++"7","#222","Maximiliano Ramirez","125cc Junior (12 – 17 años)","Yamaha","2:21.877","6","3","14","2 Vueltas","2:24.446",""
++"8","#111","Martin Ospina Cuello","125cc Junior (12 – 17 años)","Yamaha","2:08.800","5","1","13","3 Vueltas","1 Vuelta",""
++"NE","#301","Sebastián Sandoval","125cc Junior (12 – 17 años)","KTM","","","0","0","NE","",""
+diff --git a/2 - 125 CC - TERCERA MANGA - Resultados.csv b/2 - 125 CC - TERCERA MANGA - Resultados.csv
+new file mode 100644
+index 0000000..c18f421
+--- /dev/null
++++ b/2 - 125 CC - TERCERA MANGA - Resultados.csv	
+@@ -0,0 +1,11 @@
++﻿"Pos.","N°","Nombre","Clase","MOTO","Mejor Tm","Vueltas","En Vuelta","Puntos","Dif. resp. 1°","Dif. resp. anterior","Comentario"
++"1","#111","Martin Ospina Cuello","125cc Junior (12 – 17 años)","Yamaha","2:00.626","9","1","25","","",""
++"2","#222","Maximiliano Ramirez","125cc Junior (12 – 17 años)","Yamaha","2:04.352","9","2","22","1:01.431","1:01.431",""
++"3","#120","MATIAS GOMEZ ORJUELA","125cc Junior (12 – 17 años)","KTM","2:09.307","9","2","20","1:27.679","26.248",""
++"4","#130","Santiago Gutierrez Castillo","125cc Junior (12 – 17 años)","GasGas","2:11.190","9","2","18","1:59.557","31.878",""
++"5","#818","Santigo Ferro","125cc Junior (12 – 17 años)","Yamaha 125","2:16.769","8","2","16","1 Vuelta","1 Vuelta",""
++"6","#56","Nicolás Acosta Solano","125cc Junior (12 – 17 años)","KTM 125sx","2:23.457","8","2","15","1 Vuelta","1:03.344",""
++"7","#10","Matias Ospina","125cc Junior (12 – 17 años)","Husqvarna","2:32.928","7","2","14","2 Vueltas","1 Vuelta",""
++"8","#114","Miguel Angel Lopez","125cc Junior (12 – 17 años)","YAMAHA","1:58.784","7","3","13","2 Vueltas","37.538",""
++"NT","#120","MATIAS GOMEZ ORJUELA","125cc Junior (12 – 17 años)","KTM","","","0","0","NT","",""
++"NT","#301","Sebastián Sandoval","125cc Junior (12 – 17 años)","KTM","","","0","0","NT","",""
+diff --git a/2 - 125 cc - final - resultados.csv b/2 - 125 cc - final - resultados.csv
+new file mode 100644
+index 0000000..b9b348f
+--- /dev/null
++++ b/2 - 125 cc - final - resultados.csv	
+@@ -0,0 +1,10 @@
++﻿"Pos.","N°","Nombre","Clase","Total puntos","Dif. resp. 1°","MOTO","R1. ","R2. ","R3. "
++"1","#114","Miguel Angel Lopez","125cc Junior (12 – 17 años)","63","0","YAMAHA","25","25","13"
++"2","#120","MATIAS GOMEZ ORJUELA","125cc Junior (12 – 17 años)","62","1","KTM","20","22","20"
++"3","#111","Martin Ospina Cuello","125cc Junior (12 – 17 años)","60","3","Yamaha","22","13","25"
++"4","#222","Maximiliano Ramirez","125cc Junior (12 – 17 años)","54","9","Yamaha","18","14","22"
++"5","#130","Santiago Gutierrez Castillo","125cc Junior (12 – 17 años)","54","9","GasGas","16","20","18"
++"6","#818","Santigo Ferro","125cc Junior (12 – 17 años)","49","14","Yamaha 125","15","18","16"
++"7","#10","Matias Ospina","125cc Junior (12 – 17 años)","44","19","Husqvarna","14","16","14"
++"8","#56","Nicolás Acosta Solano","125cc Junior (12 – 17 años)","43","20","KTM 125sx","13","15","15"
++"NE","#301","Sebastián Sandoval","125cc Junior (12 – 17 años)","0","63","KTM","0","0","0"
+diff --git a/2 - 125 cc - primera manga - resultados.csv b/2 - 125 cc - primera manga - resultados.csv
+new file mode 100644
+index 0000000..bef3958
+--- /dev/null
++++ b/2 - 125 cc - primera manga - resultados.csv	
+@@ -0,0 +1,10 @@
++﻿"Pos.","N°","Nombre","Clase","MOTO","Mejor Tm","Vueltas","En Vuelta","Puntos","Dif. resp. 1°","Dif. resp. anterior","Comentario"
++"1","#114","Miguel Angel Lopez","125cc Junior (12 – 17 años)","YAMAHA","1:47.011","9","3","25","","",""
++"2","#111","Martin Ospina Cuello","125cc Junior (12 – 17 años)","Yamaha","1:48.924","9","4","22","7.951","7.951",""
++"3","#120","MATIAS GOMEZ ORJUELA","125cc Junior (12 – 17 años)","KTM","1:53.815","9","9","20","1:01.137","53.186",""
++"4","#222","Maximiliano Ramirez","125cc Junior (12 – 17 años)","Yamaha","1:52.077","9","9","18","1:02.705","1.568",""
++"5","#130","Santiago Gutierrez Castillo","125cc Junior (12 – 17 años)","GasGas","1:57.029","9","2","16","1:51.398","48.693",""
++"6","#818","Santigo Ferro","125cc Junior (12 – 17 años)","Yamaha 125","1:58.432","8","1","15","1 Vuelta","1 Vuelta",""
++"7","#10","Matias Ospina","125cc Junior (12 – 17 años)","Husqvarna","2:03.627","8","2","14","1 Vuelta","24.718",""
++"8","#56","Nicolás Acosta Solano","125cc Junior (12 – 17 años)","KTM 125sx","2:03.922","8","2","13","1 Vuelta","11.893",""
++"NE","#301","Sebastián Sandoval","125cc Junior (12 – 17 años)","KTM","","","0","0","NE","",""
+diff --git a/docs/SETUP-GOOGLE-SHEETS.md b/docs/SETUP-GOOGLE-SHEETS.md
+index 3bd0a6d..14eb2ca 100644
+--- a/docs/SETUP-GOOGLE-SHEETS.md
++++ b/docs/SETUP-GOOGLE-SHEETS.md
+@@ -78,8 +78,11 @@ npm run build
+ | description | Descripcion |
+ | active | Habilitado para inscripciones (true/false) |
+ | reglamentoUrl | URL del PDF del reglamento en Drive |
+-| finished | Evento finalizado; habilita boton Ver resultados (true/false) |
++| finished | Evento finalizado (true/false) |
+ | valorInscripcion | Valor de inscripcion por categoria (COP, numero) |
++| resultadosUrl | URL del JSON de resultados en Drive (carpeta Resultados). Si esta vacio, no se muestra Ver resultados |
++
++Tras actualizar el script, vuelve a **Implementar > Administrar implementaciones > Nueva version** y ejecuta **repairEventsSheet** (o **repairAllSheets**) para agregar la columna `resultadosUrl`.
+ 
+ Si agregaste columnas manualmente, ejecuta **repairEventsSheet** o **repairAllSheets** en Apps Script (deben aparecer en el selector de funciones tras pegar el script actualizado).
+ 
+diff --git a/docs/google-apps-script.gs b/docs/google-apps-script.gs
+index ed79e06..2436c69 100644
+--- a/docs/google-apps-script.gs
++++ b/docs/google-apps-script.gs
+@@ -10,7 +10,7 @@
+ const SPREADSHEET_ID = '1g5crmfmbcxyvmLMXxYECxO90gFYiXf7P5JaSze7pmbI';
+ const DRIVE_FOLDER_ID = '1oImoS0x__kgBBXaL9HAg3Qf-4Zj0Xz0l';
+ 
+-const EVENT_HEADERS = ['id', 'name', 'date', 'location', 'city', 'description', 'active', 'reglamentoUrl', 'finished', 'valorInscripcion'];
++const EVENT_HEADERS = ['id', 'name', 'date', 'location', 'city', 'description', 'active', 'reglamentoUrl', 'finished', 'valorInscripcion', 'resultadosUrl'];
+ const REG_HEADERS = [
+   'id', 'eventId', 'eventName', 'nombre', 'apellido', 'identificacion',
+   'identificacionArchivo', 'identificacionFileName', 'identificacionFileType',
+@@ -18,6 +18,7 @@ const REG_HEADERS = [
+   'fechaNacimiento', 'edad', 'email', 'celular', 'ciudad', 'marcaMoto',
+   'numeroPiloto', 'categoriaId', 'categoriaLabel', 'valorTotalInscripcion', 'createdAt', 'updatedAt',
+ ];
++const HEAT_KEYS = ['manga1', 'manga2', 'manga3', 'final'];
+ 
+ // ─── HTTP handlers ───────────────────────────────────────────────────────────
+ 
+@@ -48,6 +49,11 @@ function doGet(e) {
+     return jsonResponse({ registrations: getRegistrations_(ss) });
+   }
+ 
++  if (action === 'results') {
++    const eventId = (e.parameter.eventId || '').toString();
++    return jsonResponse({ results: getEventResults_(ss, eventId) });
++  }
++
+   return jsonResponse({
+     events: getEvents_(ss),
+     registrations: getRegistrations_(ss),
+@@ -74,6 +80,12 @@ function doPost(e) {
+     case 'saveEvents':
+       writeEvents_(ss, body.events);
+       return jsonResponse({ success: true });
++    case 'saveResults':
++      try {
++        return jsonResponse(saveEventResults_(ss, body.data));
++      } catch (err) {
++        return jsonResponse({ success: false, error: err.message || String(err) });
++      }
+     case 'saveRegistrations':
+       try {
+         writeRegistrations_(ss, body.registrations);
+@@ -358,6 +370,7 @@ function getEvents_(ss) {
+     evt.active = parseBoolField_(evt.active);
+     evt.finished = parseBoolField_(evt.finished);
+     if (!evt.reglamentoUrl) evt.reglamentoUrl = '';
++    if (!evt.resultadosUrl) evt.resultadosUrl = '';
+     evt.valorInscripcion = Number(evt.valorInscripcion) || 0;
+     return evt;
+   });
+@@ -463,9 +476,199 @@ function prepareEventRow_(ss, data) {
+   } else if (!row.reglamentoUrl) {
+     row.reglamentoUrl = '';
+   }
++  if (data.resultadosUrl && String(data.resultadosUrl).indexOf('http') === 0) {
++    row.resultadosUrl = data.resultadosUrl;
++  } else if (!row.resultadosUrl) {
++    row.resultadosUrl = '';
++  }
+   return row;
+ }
+ 
++function getOrCreateResultsFolder_() {
++  var root = DriveApp.getFolderById(DRIVE_FOLDER_ID);
++  var name = 'Resultados';
++  var folders = root.getFoldersByName(name);
++  if (folders.hasNext()) return folders.next();
++  return root.createFolder(name);
++}
++
++function uploadResultsBlob_(folder, base64DataUrl, fileName, mimeType) {
++  var parts = String(base64DataUrl || '').split(',');
++  var base64 = parts.length > 1 ? parts[1] : parts[0];
++  var blob = Utilities.newBlob(
++    Utilities.base64Decode(base64),
++    mimeType || 'application/octet-stream',
++    fileName
++  );
++  var file = folder.createFile(blob);
++  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
++  return file.getUrl();
++}
++
++function findDriveFileByUrl_(url) {
++  if (!url || String(url).indexOf('http') !== 0) return null;
++  var match = String(url).match(/[-\w]{25,}/);
++  if (!match) return null;
++  try {
++    return DriveApp.getFileById(match[0]);
++  } catch (err) {
++    return null;
++  }
++}
++
++function processHeatUploads_(folder, eventId, eventName, categoryId, heatKey, heatData) {
++  if (!heatData) return null;
++
++  var result = {
++    columns: heatData.columns || [],
++    rows: heatData.rows || [],
++    commentColumn: heatData.commentColumn || null,
++    pdfUrl: heatData.pdfUrl || '',
++    csvUrl: heatData.csvUrl || '',
++  };
++
++  var suffixBase = sanitizeFileNamePart_(eventId) + '_' + sanitizeFileNamePart_(categoryId) + '_' + heatKey;
++
++  if (heatData.csvUpload && heatData.csvUpload.archivo && String(heatData.csvUpload.archivo).indexOf('data:') === 0) {
++    var csvName = buildDriveFileName_(
++      suffixBase,
++      eventName,
++      'CSV',
++      heatData.csvUpload.fileName || (heatKey + '.csv'),
++      heatData.csvUpload.fileType || 'text/csv'
++    );
++    result.csvUrl = uploadResultsBlob_(
++      folder,
++      heatData.csvUpload.archivo,
++      csvName,
++      heatData.csvUpload.fileType || 'text/csv'
++    );
++  }
++
++  if (heatKey !== 'final' && heatData.pdfUpload && heatData.pdfUpload.archivo && String(heatData.pdfUpload.archivo).indexOf('data:') === 0) {
++    var pdfName = buildDriveFileName_(
++      suffixBase,
++      eventName,
++      'VUELTAS',
++      heatData.pdfUpload.fileName || (heatKey + '.pdf'),
++      heatData.pdfUpload.fileType || 'application/pdf'
++    );
++    result.pdfUrl = uploadResultsBlob_(
++      folder,
++      heatData.pdfUpload.archivo,
++      pdfName,
++      heatData.pdfUpload.fileType || 'application/pdf'
++    );
++  }
++
++  if (!result.pdfUrl) delete result.pdfUrl;
++  if (!result.csvUrl) delete result.csvUrl;
++  return result;
++}
++
++function getEventResults_(ss, eventId) {
++  if (!eventId) return null;
++  var events = getEvents_(ss);
++  var event = null;
++  for (var i = 0; i < events.length; i++) {
++    if (events[i].id === eventId) {
++      event = events[i];
++      break;
++    }
++  }
++  if (!event || !event.resultadosUrl) return null;
++
++  var file = findDriveFileByUrl_(event.resultadosUrl);
++  if (!file) return null;
++
++  try {
++    var parsed = JSON.parse(file.getBlob().getDataAsString('UTF-8'));
++    return parsed;
++  } catch (err) {
++    return null;
++  }
++}
++
++function updateEventResultadosUrl_(ss, eventId, resultadosUrl) {
++  var sheet = getEventsSheet_(ss);
++  var objects = sheetToObjects_(sheet);
++  var changed = false;
++  objects.forEach(function (row) {
++    if (row.id === eventId) {
++      row.resultadosUrl = resultadosUrl;
++      changed = true;
++    }
++  });
++  if (changed) writeObjects_(sheet, EVENT_HEADERS, objects.map(function (row) {
++    return prepareEventRow_(ss, row);
++  }));
++}
++
++function saveEventResults_(ss, data) {
++  if (!data || !data.eventId) {
++    throw new Error('Falta eventId para guardar resultados.');
++  }
++
++  var eventName = data.eventName || getEventNameById_(ss, data.eventId) || data.eventId;
++  var folder = getOrCreateResultsFolder_();
++  var categories = (data.categories || []).map(function (cat) {
++    var out = {
++      categoryId: cat.categoryId,
++      categoryLabel: cat.categoryLabel || cat.categoryId,
++    };
++    HEAT_KEYS.forEach(function (heatKey) {
++      if (!cat[heatKey]) return;
++      out[heatKey] = processHeatUploads_(folder, data.eventId, eventName, cat.categoryId, heatKey, cat[heatKey]);
++    });
++    return out;
++  });
++
++  var results = {
++    eventId: data.eventId,
++    updatedAt: new Date().toISOString(),
++    categories: categories,
++  };
++
++  var jsonName = buildDriveFileName_(
++    data.eventId,
++    eventName,
++    'RESULTADOS',
++    'resultados.json',
++    'application/json'
++  );
++  var jsonBlob = Utilities.newBlob(JSON.stringify(results), 'application/json', jsonName);
++
++  var existingEvents = getEvents_(ss);
++  var existingUrl = '';
++  for (var i = 0; i < existingEvents.length; i++) {
++    if (existingEvents[i].id === data.eventId) {
++      existingUrl = existingEvents[i].resultadosUrl || '';
++      break;
++    }
++  }
++
++  var existingFile = findDriveFileByUrl_(existingUrl);
++  if (existingFile) {
++    try {
++      existingFile.setTrashed(true);
++    } catch (err) {
++      // Si no se puede borrar el JSON anterior, se crea uno nuevo de todas formas.
++    }
++  }
++
++  var created = folder.createFile(jsonBlob);
++  created.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
++  var resultadosUrl = created.getUrl();
++
++  updateEventResultadosUrl_(ss, data.eventId, resultadosUrl);
++
++  return {
++    success: true,
++    results: results,
++    resultadosUrl: resultadosUrl,
++  };
++}
++
+ function getRegistrationsSheet_(ss) {
+   return getOrCreateSheet_(ss, 'Registrations', REG_HEADERS);
+ }
+diff --git a/public/data/events.json b/public/data/events.json
+index 91e10bd..9bb550f 100644
+--- a/public/data/events.json
++++ b/public/data/events.json
+@@ -9,6 +9,7 @@
+     "active": true,
+     "finished": false,
+     "reglamentoUrl": "",
++    "resultadosUrl": "",
+     "valorInscripcion": 0
+   },
+   {
+@@ -21,6 +22,7 @@
+     "active": true,
+     "finished": false,
+     "reglamentoUrl": "",
++    "resultadosUrl": "",
+     "valorInscripcion": 0
+   }
+ ]
+diff --git a/src/config.ts b/src/config.ts
+index ba170e9..4bb0ec6 100644
+--- a/src/config.ts
++++ b/src/config.ts
+@@ -20,6 +20,7 @@ export const CONFIG = {
+   storageKeys: {
+     registrations: 'minicross_registrations_v1',
+     events: 'minicross_events_v1',
++    results: 'minicross_results_v1',
+     adminSession: 'minicross_admin_session',
+   },
+   maxFileSizeMB: 5,
+diff --git a/src/pages/admin-results-modal.ts b/src/pages/admin-results-modal.ts
+new file mode 100644
+index 0000000..ed1dde0
+--- /dev/null
++++ b/src/pages/admin-results-modal.ts
+@@ -0,0 +1,346 @@
++import Swal from 'sweetalert2';
++import { CONFIG } from '../config';
++import {
++  CATEGORIES,
++  formatCategoryOptionLabel,
++  type CategoryResults,
++  type CategoryResultsSavePayload,
++  type Event,
++  type EventResults,
++  type HeatKey,
++  type ResultsHeatSavePayload,
++  type ResultsTable,
++} from '../types';
++import { HEAT_KEYS, HEAT_LABELS, parseResultsCsv, readFileAsText } from '../utils/parse-results-csv';
++import { loadEventResults, readFileAsDataUrl, saveEventResults } from '../utils/storage';
++
++interface HeatDraft {
++  existing?: ResultsTable;
++  csvFile?: File | null;
++  pdfFile?: File | null;
++}
++
++interface CategoryDraft {
++  categoryId: string;
++  categoryLabel: string;
++  heats: Record<HeatKey, HeatDraft>;
++}
++
++function emptyHeats(): Record<HeatKey, HeatDraft> {
++  return { manga1: {}, manga2: {}, manga3: {}, final: {} };
++}
++
++function categoryFromExisting(cat: CategoryResults): CategoryDraft {
++  const heats = emptyHeats();
++  for (const key of HEAT_KEYS) {
++    const table = cat[key];
++    if (table) heats[key] = { existing: table };
++  }
++  return {
++    categoryId: cat.categoryId,
++    categoryLabel: cat.categoryLabel,
++    heats,
++  };
++}
++
++function fileInputHtml(id: string, accept: string, label: string): string {
++  return `
++    <label class="block text-xs text-gray-light mb-1" for="${id}">${label}</label>
++    <input type="file" id="${id}" accept="${accept}"
++      class="w-full rounded-lg border border-dashed border-secondary/40 bg-primary/40 px-3 py-2 text-xs file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:py-1 file:text-xs file:font-semibold file:text-primary" />`;
++}
++
++function heatStatus(draft: HeatDraft, heat: HeatKey): string {
++  if (draft.csvFile) return `<span class="text-secondary">CSV nuevo: ${draft.csvFile.name}</span>`;
++  if (draft.existing) {
++    const pdf =
++      heat !== 'final' && draft.existing.pdfUrl
++        ? ` · <a href="${draft.existing.pdfUrl}" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">PDF actual</a>`
++        : '';
++    return `<span class="text-secondary">Datos cargados (${draft.existing.rows.length} filas)${pdf}</span>`;
++  }
++  return `<span class="text-gray-light">Sin datos</span>`;
++}
++
++function renderCategoryBlock(draft: CategoryDraft, index: number): string {
++  const heatBlocks = HEAT_KEYS.map((heat) => {
++    const draftHeat = draft.heats[heat];
++    return `
++      <div class="rounded-lg border border-secondary/20 bg-primary/30 p-3 space-y-2">
++        <div class="flex items-center justify-between gap-2">
++          <p class="text-sm font-semibold text-white">${HEAT_LABELS[heat]}</p>
++          <div class="text-xs heat-status" data-heat-status="${index}-${heat}">${heatStatus(draftHeat, heat)}</div>
++        </div>
++        ${fileInputHtml(`results-csv-${index}-${heat}`, '.csv,text/csv', 'CSV de resultados')}
++        ${
++          heat === 'final'
++            ? '<p class="text-xs text-gray-light">La final no requiere PDF de vuelta a vuelta.</p>'
++            : fileInputHtml(`results-pdf-${index}-${heat}`, '.pdf,application/pdf', 'PDF vuelta a vuelta (opcional)')
++        }
++      </div>`;
++  }).join('');
++
++  return `
++    <div class="rounded-xl border border-secondary/30 bg-blue-medium/20 p-4 space-y-3" data-category-index="${index}">
++      <div class="flex flex-wrap items-center justify-between gap-2">
++        <h4 class="font-title text-xl tracking-wide text-secondary">${draft.categoryLabel}</h4>
++        <button type="button" class="remove-category-btn text-orange text-sm hover:text-accent" data-index="${index}">Quitar categoria</button>
++      </div>
++      <div class="grid gap-3 sm:grid-cols-2">${heatBlocks}</div>
++    </div>`;
++}
++
++function availableCategories(drafts: CategoryDraft[]) {
++  const used = new Set(drafts.map((d) => d.categoryId));
++  return CATEGORIES.filter((c) => !used.has(c.id));
++}
++
++function renderCategoriesSection(drafts: CategoryDraft[]): string {
++  if (drafts.length === 0) {
++    return '<p class="text-sm text-gray-light text-center py-6">Aun no hay categorias. Agrega al menos una para cargar resultados.</p>';
++  }
++  return drafts.map((d, i) => renderCategoryBlock(d, i)).join('');
++}
++
++function renderAddCategorySelect(drafts: CategoryDraft[]): string {
++  const available = availableCategories(drafts);
++  return `
++    <option value="">Selecciona una categoria...</option>
++    ${available.map((c) => `<option value="${c.id}">${formatCategoryOptionLabel(c)}</option>`).join('')}`;
++}
++
++function assertFileSize(file: File): void {
++  const maxBytes = CONFIG.maxFileSizeMB * 1024 * 1024;
++  if (file.size > maxBytes) {
++    throw new Error(`"${file.name}" supera el maximo de ${CONFIG.maxFileSizeMB} MB.`);
++  }
++}
++
++async function buildHeatPayload(
++  draft: HeatDraft,
++  heat: HeatKey
++): Promise<ResultsHeatSavePayload | undefined> {
++  if (!draft.csvFile && !draft.existing) return undefined;
++
++  let columns = draft.existing?.columns ?? [];
++  let rows = draft.existing?.rows ?? [];
++  let commentColumn = draft.existing?.commentColumn ?? null;
++  let csvUpload: ResultsHeatSavePayload['csvUpload'];
++  let pdfUpload: ResultsHeatSavePayload['pdfUpload'];
++
++  if (draft.csvFile) {
++    assertFileSize(draft.csvFile);
++    const text = await readFileAsText(draft.csvFile);
++    const parsed = parseResultsCsv(text, heat);
++    columns = parsed.columns;
++    rows = parsed.rows;
++    commentColumn = parsed.commentColumn;
++    csvUpload = {
++      archivo: await readFileAsDataUrl(draft.csvFile),
++      fileName: draft.csvFile.name,
++      fileType: draft.csvFile.type || 'text/csv',
++    };
++  }
++
++  if (heat !== 'final' && draft.pdfFile) {
++    assertFileSize(draft.pdfFile);
++    pdfUpload = {
++      archivo: await readFileAsDataUrl(draft.pdfFile),
++      fileName: draft.pdfFile.name,
++      fileType: draft.pdfFile.type || 'application/pdf',
++    };
++  }
++
++  return {
++    columns,
++    rows,
++    commentColumn,
++    pdfUrl: draft.existing?.pdfUrl,
++    csvUrl: draft.existing?.csvUrl,
++    csvUpload,
++    pdfUpload,
++  };
++}
++
++async function buildSavePayload(drafts: CategoryDraft[]): Promise<CategoryResultsSavePayload[]> {
++  const categories: CategoryResultsSavePayload[] = [];
++
++  for (const draft of drafts) {
++    const cat: CategoryResultsSavePayload = {
++      categoryId: draft.categoryId,
++      categoryLabel: draft.categoryLabel,
++    };
++    let hasAny = false;
++    for (const heat of HEAT_KEYS) {
++      const payload = await buildHeatPayload(draft.heats[heat], heat);
++      if (payload) {
++        cat[heat] = payload;
++        hasAny = true;
++      }
++    }
++    if (hasAny) categories.push(cat);
++  }
++
++  return categories;
++}
++
++function refreshStatusLabels(root: HTMLElement, drafts: CategoryDraft[]): void {
++  drafts.forEach((draft, index) => {
++    for (const heat of HEAT_KEYS) {
++      const el = root.querySelector(`[data-heat-status="${index}-${heat}"]`);
++      if (el) el.innerHTML = heatStatus(draft.heats[heat], heat);
++    }
++  });
++}
++
++function bindCategoryUi(root: HTMLElement, drafts: CategoryDraft[]): void {
++  const select = root.querySelector<HTMLSelectElement>('#results-add-category');
++  const addBtn = root.querySelector<HTMLButtonElement>('#results-add-category-btn');
++  const list = root.querySelector('#results-categories');
++
++  if (select) select.innerHTML = renderAddCategorySelect(drafts);
++  if (addBtn) addBtn.disabled = availableCategories(drafts).length === 0;
++  if (list) list.innerHTML = renderCategoriesSection(drafts);
++
++  drafts.forEach((draft, index) => {
++    for (const heat of HEAT_KEYS) {
++      const csvInput = root.querySelector<HTMLInputElement>(`#results-csv-${index}-${heat}`);
++      const pdfInput = root.querySelector<HTMLInputElement>(`#results-pdf-${index}-${heat}`);
++      csvInput?.addEventListener('change', () => {
++        draft.heats[heat].csvFile = csvInput.files?.[0] ?? null;
++        refreshStatusLabels(root, drafts);
++      });
++      pdfInput?.addEventListener('change', () => {
++        draft.heats[heat].pdfFile = pdfInput.files?.[0] ?? null;
++        refreshStatusLabels(root, drafts);
++      });
++    }
++  });
++}
++
++export async function openResultsModal(event: Event, onSaved: () => Promise<void>): Promise<void> {
++  const existing = await loadEventResults(event.id);
++  const drafts: CategoryDraft[] = (existing?.categories ?? []).map(categoryFromExisting);
++
++  const result = await Swal.fire({
++    title: `Resultados · ${event.name}`,
++    html: `
++      <div id="results-modal-root" class="text-left space-y-4 max-h-[70vh] overflow-y-auto pr-1">
++        <p class="text-sm text-gray-light">
++          Agrega solo las categorias que tengas resultados. Puedes dejar mangas incompletas.
++          Los archivos se guardan en Google Drive.
++        </p>
++        <div class="flex flex-wrap items-end gap-2">
++          <div class="flex-1 min-w-[200px]">
++            <label class="block text-xs text-secondary mb-1" for="results-add-category">Agregar categoria</label>
++            <select id="results-add-category" class="input-field text-sm py-2"></select>
++          </div>
++          <button type="button" id="results-add-category-btn" class="btn-secondary text-sm py-2 px-4">+ Agregar</button>
++        </div>
++        <div id="results-categories" class="space-y-4"></div>
++      </div>`,
++    width: '56rem',
++    showCancelButton: true,
++    confirmButtonText: 'Guardar resultados',
++    cancelButtonText: 'Cerrar',
++    confirmButtonColor: '#06b6d4',
++    focusConfirm: false,
++    customClass: {
++      popup: 'bg-primary text-white border border-secondary/30',
++      title: 'text-secondary',
++      htmlContainer: 'text-white',
++    },
++    didOpen: () => {
++      const root = document.getElementById('results-modal-root');
++      if (!root) return;
++
++      const rerender = () => bindCategoryUi(root, drafts);
++      rerender();
++
++      root.addEventListener('click', (ev) => {
++        const target = ev.target as HTMLElement | null;
++        if (!target) return;
++
++        if (target.id === 'results-add-category-btn' || target.closest('#results-add-category-btn')) {
++          const select = root.querySelector<HTMLSelectElement>('#results-add-category');
++          const id = select?.value;
++          if (!id) return;
++          const cat = CATEGORIES.find((c) => c.id === id);
++          if (!cat || drafts.some((d) => d.categoryId === cat.id)) return;
++          drafts.push({
++            categoryId: cat.id,
++            categoryLabel: formatCategoryOptionLabel(cat),
++            heats: emptyHeats(),
++          });
++          rerender();
++          return;
++        }
++
++        const removeBtn = target.closest('.remove-category-btn') as HTMLElement | null;
++        if (removeBtn) {
++          const index = Number(removeBtn.getAttribute('data-index'));
++          if (Number.isNaN(index)) return;
++          drafts.splice(index, 1);
++          rerender();
++        }
++      });
++    },
++    preConfirm: async () => {
++      try {
++        if (drafts.length === 0) {
++          Swal.showValidationMessage('Agrega al menos una categoria con resultados.');
++          return false;
++        }
++        const categories = await buildSavePayload(drafts);
++        if (categories.length === 0) {
++          Swal.showValidationMessage('Cada categoria necesita al menos un CSV (manga o final).');
++          return false;
++        }
++        return categories;
++      } catch (err) {
++        Swal.showValidationMessage(err instanceof Error ? err.message : 'No se pudieron leer los archivos.');
++        return false;
++      }
++    },
++  });
++
++  if (!result.isConfirmed || !result.value) return;
++
++  const categories = result.value as CategoryResultsSavePayload[];
++  Swal.fire({
++    title: 'Guardando resultados...',
++    allowOutsideClick: false,
++    allowEscapeKey: false,
++    didOpen: () => Swal.showLoading(),
++  });
++
++  try {
++    await saveEventResults({
++      eventId: event.id,
++      eventName: event.name,
++      categories,
++    });
++    await Swal.fire({
++      icon: 'success',
++      title: 'Resultados guardados',
++      text: 'Los CSV y PDF se almacenaron en Drive y la pagina de resultados ya esta disponible.',
++      confirmButtonText: 'Aceptar',
++    });
++    await onSaved();
++  } catch (err) {
++    await Swal.fire({
++      icon: 'error',
++      title: 'Error al guardar',
++      text: err instanceof Error ? err.message : 'No se pudieron guardar los resultados.',
++      confirmButtonText: 'Aceptar',
++    });
++  }
++}
++
++export function categoryHasAnyHeat(cat: CategoryResults): boolean {
++  return HEAT_KEYS.some((key) => Boolean(cat[key]));
++}
++
++export function eventResultsArePublic(results: EventResults | null): boolean {
++  return Boolean(results?.categories.some(categoryHasAnyHeat));
++}
+diff --git a/src/pages/admin.ts b/src/pages/admin.ts
+index 68613eb..1b843ba 100644
+--- a/src/pages/admin.ts
++++ b/src/pages/admin.ts
+@@ -20,6 +20,7 @@ import {
+ } from '../types';
+ import type { Event, EventSavePayload, Registration } from '../types';
+ import Swal from 'sweetalert2';
++import { openResultsModal } from './admin-results-modal';
+ 
+ function isAuthenticated(): boolean {
+   return sessionStorage.getItem(CONFIG.storageKeys.adminSession) === 'true';
+@@ -311,6 +312,8 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
+                   Finalizado
+                 </label>
+                 ${e.reglamentoUrl?.trim() ? '<a href="' + e.reglamentoUrl + '" target="_blank" rel="noopener noreferrer" class="text-secondary text-sm hover:text-accent">Ver convocatoria</a>' : '<span class="text-xs text-gray-light">Sin convocatoria</span>'}
++                <button class="load-results-btn text-secondary text-sm hover:text-accent" data-id="${e.id}">${e.resultadosUrl?.trim() ? 'Editar resultados' : 'Cargar resultados'}</button>
++                ${e.resultadosUrl?.trim() ? '<a href="./resultados.html?evento=' + e.id + '" target="_blank" rel="noopener noreferrer" class="text-secondary text-sm hover:text-accent">Ver resultados</a>' : ''}
+                 <button class="edit-event-btn text-secondary text-sm hover:text-accent" data-id="${e.id}">Editar</button>
+                 <button class="delete-event-btn text-orange text-sm hover:text-accent" data-id="${e.id}">Eliminar</button>
+               </div>`
+@@ -336,7 +339,7 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
+             </div>
+             <label class="flex items-center gap-2 text-sm">
+               <input type="checkbox" id="event-finished" class="accent-accent" />
+-              Evento finalizado (habilita boton Ver resultados)
++              Evento finalizado
+             </label>
+             <div class="flex gap-2">
+               <button type="submit" class="btn-primary text-sm py-2 px-4">Guardar evento</button>
+@@ -543,6 +546,17 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
+     });
+   });
+ 
++  document.querySelectorAll('.load-results-btn').forEach((btn) => {
++    btn.addEventListener('click', async () => {
++      const id = btn.getAttribute('data-id')!;
++      const event = events.find((e) => e.id === id);
++      if (!event) return;
++      await openResultsModal(event, async () => {
++        await refreshAdmin();
++      });
++    });
++  });
++
+ 
+   const reglamentoInput = document.getElementById('event-reglamento') as HTMLInputElement | null;
+   reglamentoInput?.addEventListener('change', async () => {
+@@ -577,6 +591,7 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
+       active: existing?.active ?? true,
+       finished: (document.getElementById('event-finished') as HTMLInputElement).checked,
+       reglamentoUrl: existing?.reglamentoUrl ?? '',
++      resultadosUrl: existing?.resultadosUrl ?? '',
+     };
+ 
+     const reglamentoFile = (document.getElementById('event-reglamento') as HTMLInputElement).files?.[0];
+diff --git a/src/pages/events.ts b/src/pages/events.ts
+index 3a70c1d..6131ebc 100644
+--- a/src/pages/events.ts
++++ b/src/pages/events.ts
+@@ -1,6 +1,6 @@
+ import { renderFooter } from '../components/footer';
+ import { renderNavbar, initNavbar } from '../components/navbar';
+-import { loadEvents } from '../utils/storage';
++import { eventHasResults, loadEvents } from '../utils/storage';
+ import { formatDate } from '../utils/age';
+ import type { Event } from '../types';
+ 
+@@ -35,7 +35,7 @@ function renderEventCard(event: Event): string {
+   const reglamentoBtn = isHttpUrl(event.reglamentoUrl)
+     ? `<a href="${event.reglamentoUrl}" target="_blank" rel="noopener noreferrer" class="btn-outline w-full sm:w-auto text-center">Ver convocatoria</a>`
+     : '';
+-  const resultadosBtn = event.finished
++  const resultadosBtn = eventHasResults(event)
+     ? `<a href="./resultados.html?evento=${event.id}" class="btn-secondary w-full sm:w-auto text-center">Ver resultados</a>`
+     : '';
+   const inscripcionBtn = event.active
+diff --git a/src/pages/results.ts b/src/pages/results.ts
+index 65fe659..0ab1b55 100644
+--- a/src/pages/results.ts
++++ b/src/pages/results.ts
+@@ -1,12 +1,206 @@
+ import { renderFooter } from '../components/footer';
+ import { renderNavbar, initNavbar } from '../components/navbar';
+-import { loadEvents } from '../utils/storage';
++import { eventHasResults, loadEventResults, loadEvents } from '../utils/storage';
+ import { formatDate } from '../utils/age';
++import { HEAT_KEYS, HEAT_LABELS, getRowComment } from '../utils/parse-results-csv';
++import type { CategoryResults, Event, EventResults, HeatKey, ResultsTable } from '../types';
++import Swal from 'sweetalert2';
+ 
+ function getEventIdFromUrl(): string | null {
+   return new URLSearchParams(window.location.search).get('evento');
+ }
+ 
++function availableHeats(category: CategoryResults): HeatKey[] {
++  return HEAT_KEYS.filter((key) => Boolean(category[key]));
++}
++
++function escapeHtml(value: string): string {
++  return value
++    .replace(/&/g, '&amp;')
++    .replace(/</g, '&lt;')
++    .replace(/>/g, '&gt;')
++    .replace(/"/g, '&quot;');
++}
++
++function renderTable(table: ResultsTable, heat: HeatKey, categoryId: string): string {
++  const commentCol = table.commentColumn;
++  const rowsHtml = table.rows
++    .map((row, rowIndex) => {
++      const comment = getRowComment(row, commentCol);
++      const cells = table.columns
++        .map((col) => `<td class="px-3 py-2 text-sm whitespace-nowrap">${escapeHtml(row[col] ?? '')}</td>`)
++        .join('');
++      const commentBtn = comment
++        ? `<td class="px-3 py-2 text-center">
++            <button type="button"
++              class="comment-btn inline-flex h-7 w-7 items-center justify-center rounded-full border border-orange/60 text-orange hover:bg-orange/20"
++              data-category="${categoryId}" data-heat="${heat}" data-row="${rowIndex}"
++              title="Ver comentario" aria-label="Ver comentario">!</button>
++          </td>`
++        : '<td class="px-3 py-2"></td>';
++      return `<tr class="border-t border-secondary/10 hover:bg-secondary/5">${cells}${commentBtn}</tr>`;
++    })
++    .join('');
++
++  const headers = table.columns
++    .map((col) => `<th class="px-3 py-2 text-left text-xs uppercase tracking-wide text-secondary">${escapeHtml(col)}</th>`)
++    .join('');
++
++  return `
++    <div class="overflow-x-auto rounded-xl border border-secondary/20">
++      <table class="min-w-full">
++        <thead class="bg-primary/60">
++          <tr>${headers}<th class="px-3 py-2 text-xs uppercase tracking-wide text-secondary">Info</th></tr>
++        </thead>
++        <tbody>${rowsHtml || '<tr><td class="px-3 py-6 text-center text-gray-light" colspan="' + (table.columns.length + 1) + '">Sin filas</td></tr>'}</tbody>
++      </table>
++    </div>`;
++}
++
++function renderHeatPanel(category: CategoryResults, heat: HeatKey, active: boolean): string {
++  const table = category[heat];
++  if (!table) return '';
++
++  const pdfBtn =
++    heat !== 'final' && table.pdfUrl
++      ? `<a href="${table.pdfUrl}" target="_blank" rel="noopener noreferrer" class="btn-outline text-sm py-2 px-4">Vuelta a vuelta (PDF)</a>`
++      : heat !== 'final'
++        ? '<span class="text-xs text-gray-light">Sin PDF de vuelta a vuelta</span>'
++        : '';
++
++  return `
++    <div class="heat-panel ${active ? '' : 'hidden'} space-y-4" data-heat-panel="${category.categoryId}:${heat}">
++      <div class="flex flex-wrap items-center justify-between gap-3">
++        <h3 class="font-title text-2xl tracking-wide text-white">${HEAT_LABELS[heat]}</h3>
++        ${pdfBtn}
++      </div>
++      ${renderTable(table, heat, category.categoryId)}
++    </div>`;
++}
++
++function renderCategoryPanel(category: CategoryResults, active: boolean): string {
++  const heats = availableHeats(category);
++  if (heats.length === 0) return '';
++
++  const heatTabs = heats
++    .map(
++      (heat, i) => `
++      <button type="button"
++        class="heat-tab rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${i === 0 ? 'bg-secondary text-primary' : 'bg-primary/50 text-gray-light hover:text-white'}"
++        data-category="${category.categoryId}" data-heat="${heat}">
++        ${HEAT_LABELS[heat]}
++      </button>`
++    )
++    .join('');
++
++  return `
++    <div class="category-panel ${active ? '' : 'hidden'} space-y-4" data-category-panel="${category.categoryId}">
++      <div class="flex flex-wrap gap-2">${heatTabs}</div>
++      ${heats.map((heat, i) => renderHeatPanel(category, heat, i === 0)).join('')}
++    </div>`;
++}
++
++function bindResultsUi(container: HTMLElement, results: EventResults): void {
++  const categoryTabs = container.querySelectorAll<HTMLButtonElement>('.category-tab');
++  const categoryPanels = container.querySelectorAll<HTMLElement>('.category-panel');
++
++  categoryTabs.forEach((tab) => {
++    tab.addEventListener('click', () => {
++      const categoryId = tab.getAttribute('data-category');
++      categoryTabs.forEach((t) => {
++        const active = t === tab;
++        t.classList.toggle('bg-secondary', active);
++        t.classList.toggle('text-primary', active);
++        t.classList.toggle('bg-primary/40', !active);
++        t.classList.toggle('text-gray-light', !active);
++      });
++      categoryPanels.forEach((panel) => {
++        panel.classList.toggle('hidden', panel.getAttribute('data-category-panel') !== categoryId);
++      });
++    });
++  });
++
++  container.querySelectorAll<HTMLButtonElement>('.heat-tab').forEach((tab) => {
++    tab.addEventListener('click', () => {
++      const categoryId = tab.getAttribute('data-category');
++      const heat = tab.getAttribute('data-heat');
++      const panel = container.querySelector(`[data-category-panel="${categoryId}"]`);
++      if (!panel) return;
++
++      panel.querySelectorAll<HTMLButtonElement>('.heat-tab').forEach((t) => {
++        const active = t === tab;
++        t.classList.toggle('bg-secondary', active);
++        t.classList.toggle('text-primary', active);
++        t.classList.toggle('bg-primary/50', !active);
++        t.classList.toggle('text-gray-light', !active);
++      });
++
++      panel.querySelectorAll<HTMLElement>('.heat-panel').forEach((heatPanel) => {
++        heatPanel.classList.toggle(
++          'hidden',
++          heatPanel.getAttribute('data-heat-panel') !== `${categoryId}:${heat}`
++        );
++      });
++    });
++  });
++
++  container.querySelectorAll<HTMLButtonElement>('.comment-btn').forEach((btn) => {
++    btn.addEventListener('click', () => {
++      const categoryId = btn.getAttribute('data-category');
++      const heat = btn.getAttribute('data-heat') as HeatKey | null;
++      const rowIndex = Number(btn.getAttribute('data-row'));
++      const category = results.categories.find((c) => c.categoryId === categoryId);
++      const table = category && heat ? category[heat] : undefined;
++      const row = table?.rows[rowIndex];
++      if (!row) return;
++      const comment = getRowComment(row, table?.commentColumn);
++      void Swal.fire({
++        title: 'Comentario',
++        text: comment || 'Sin comentario',
++        confirmButtonText: 'Cerrar',
++        confirmButtonColor: '#06b6d4',
++      });
++    });
++  });
++}
++
++function renderResultsContent(event: Event, results: EventResults): string {
++  const categories = results.categories.filter((c) => availableHeats(c).length > 0);
++  if (categories.length === 0) {
++    return `
++      <h1 class="section-title mb-2">Resultados</h1>
++      <p class="text-secondary font-semibold mb-1">${event.name}</p>
++      <p class="text-sm text-gray-light mb-6">${formatDate(event.date)} · ${event.city}</p>
++      <p class="text-gray-light">Aun no hay tablas publicadas para este evento.</p>
++      <a href="./eventos.html" class="btn-outline inline-block mt-8">Volver a eventos</a>`;
++  }
++
++  const categoryTabs = categories
++    .map(
++      (cat, i) => `
++      <button type="button"
++        class="category-tab rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${i === 0 ? 'bg-secondary text-primary' : 'bg-primary/40 text-gray-light hover:text-white'}"
++        data-category="${cat.categoryId}">
++        ${escapeHtml(cat.categoryLabel)}
++      </button>`
++    )
++    .join('');
++
++  return `
++    <div class="text-left">
++      <div class="text-center mb-8">
++        <h1 class="section-title mb-2">Resultados</h1>
++        <p class="text-secondary font-semibold mb-1">${escapeHtml(event.name)}</p>
++        <p class="text-sm text-gray-light">${formatDate(event.date)} · ${escapeHtml(event.city)}</p>
++      </div>
++      <div class="flex flex-wrap gap-2 mb-6 justify-center">${categoryTabs}</div>
++      ${categories.map((cat, i) => renderCategoryPanel(cat, i === 0)).join('')}
++      <div class="text-center mt-8">
++        <a href="./eventos.html" class="btn-outline inline-block">Volver a eventos</a>
++      </div>
++    </div>`;
++}
++
+ export async function initResultsPage(): Promise<void> {
+   const app = document.getElementById('app');
+   if (!app) return;
+@@ -15,10 +209,10 @@ export async function initResultsPage(): Promise<void> {
+ 
+   app.innerHTML = `
+     ${renderNavbar('eventos')}
+-    <main class="mx-auto max-w-3xl px-4 py-12">
+-      <div id="results-content" class="card text-center py-16">
++    <main class="mx-auto max-w-6xl px-4 py-12">
++      <div id="results-content" class="card py-16">
+         <div class="h-12 w-12 mx-auto animate-spin rounded-full border-4 border-secondary/25 border-t-secondary"></div>
+-        <p class="mt-4 text-gray-light">Cargando resultados...</p>
++        <p class="mt-4 text-center text-gray-light">Cargando resultados...</p>
+       </div>
+     </main>
+     ${renderFooter()}
+@@ -31,9 +225,11 @@ export async function initResultsPage(): Promise<void> {
+ 
+   if (!eventId) {
+     content.innerHTML = `
+-      <h1 class="section-title mb-4">Resultados</h1>
+-      <p class="text-gray-light">Selecciona un evento desde la pagina de eventos.</p>
+-      <a href="./eventos.html" class="btn-primary inline-block mt-6">Ver eventos</a>`;
++      <div class="text-center">
++        <h1 class="section-title mb-4">Resultados</h1>
++        <p class="text-gray-light">Selecciona un evento desde la pagina de eventos.</p>
++        <a href="./eventos.html" class="btn-primary inline-block mt-6">Ver eventos</a>
++      </div>`;
+     return;
+   }
+ 
+@@ -42,28 +238,37 @@ export async function initResultsPage(): Promise<void> {
+ 
+   if (!event) {
+     content.innerHTML = `
+-      <h1 class="section-title mb-4">Evento no encontrado</h1>
+-      <p class="text-gray-light">El evento solicitado no existe o fue eliminado.</p>
+-      <a href="./eventos.html" class="btn-primary inline-block mt-6">Ver eventos</a>`;
++      <div class="text-center">
++        <h1 class="section-title mb-4">Evento no encontrado</h1>
++        <p class="text-gray-light">El evento solicitado no existe o fue eliminado.</p>
++        <a href="./eventos.html" class="btn-primary inline-block mt-6">Ver eventos</a>
++      </div>`;
++    return;
++  }
++
++  if (!eventHasResults(event)) {
++    content.innerHTML = `
++      <div class="text-center">
++        <h1 class="section-title mb-4">${escapeHtml(event.name)}</h1>
++        <p class="text-gray-light mb-2">Los resultados de este evento aun no estan disponibles.</p>
++        <p class="text-sm text-gray-light/70">Se publicaran cuando se carguen desde el panel de administracion.</p>
++        <a href="./eventos.html" class="btn-outline inline-block mt-6">Volver a eventos</a>
++      </div>`;
+     return;
+   }
+ 
+-  if (!event.finished) {
++  const results = await loadEventResults(event.id);
++  if (!results || results.categories.length === 0) {
+     content.innerHTML = `
+-      <h1 class="section-title mb-4">${event.name}</h1>
+-      <p class="text-gray-light mb-2">Los resultados de este evento aun no estan disponibles.</p>
+-      <p class="text-sm text-gray-light/70">Se publicaran cuando el evento sea marcado como finalizado.</p>
+-      <a href="./eventos.html" class="btn-outline inline-block mt-6">Volver a eventos</a>`;
++      <div class="text-center">
++        <h1 class="section-title mb-4">${escapeHtml(event.name)}</h1>
++        <p class="text-gray-light mb-2">No se encontraron resultados publicados para este evento.</p>
++        <a href="./eventos.html" class="btn-outline inline-block mt-6">Volver a eventos</a>
++      </div>`;
+     return;
+   }
+ 
+-  content.innerHTML = `
+-    <h1 class="section-title mb-2">Resultados</h1>
+-    <p class="text-secondary font-semibold mb-1">${event.name}</p>
+-    <p class="text-sm text-gray-light mb-6">${formatDate(event.date)} · ${event.city}</p>
+-    <p class="text-gray-light leading-relaxed">
+-      La tabla de resultados se conectara proximamente con los datos del evento.
+-      Esta pagina ya esta habilitada para <strong>${event.name}</strong>.
+-    </p>
+-    <a href="./eventos.html" class="btn-outline inline-block mt-8">Volver a eventos</a>`;
++  content.classList.remove('py-16');
++  content.innerHTML = renderResultsContent(event, results);
++  bindResultsUi(content, results);
+ }
+diff --git a/src/types/index.ts b/src/types/index.ts
+index 25126c7..e719248 100644
+--- a/src/types/index.ts
++++ b/src/types/index.ts
+@@ -70,6 +70,8 @@ export interface Event {
+   active: boolean;
+   finished: boolean;
+   reglamentoUrl: string;
++  /** URL del JSON de resultados en Drive (o "local" en modo sin API). */
++  resultadosUrl: string;
+   valorInscripcion: number;
+ }
+ 
+@@ -80,6 +82,63 @@ export interface EventSavePayload extends Event {
+   reglamentoFileType?: string;
+ }
+ 
++export type HeatKey = 'manga1' | 'manga2' | 'manga3' | 'final';
++
++export interface ResultsTable {
++  columns: string[];
++  rows: Array<Record<string, string>>;
++  commentColumn?: string | null;
++  pdfUrl?: string;
++  csvUrl?: string;
++}
++
++export interface CategoryResults {
++  categoryId: string;
++  categoryLabel: string;
++  manga1?: ResultsTable;
++  manga2?: ResultsTable;
++  manga3?: ResultsTable;
++  final?: ResultsTable;
++}
++
++export interface EventResults {
++  eventId: string;
++  updatedAt: string;
++  categories: CategoryResults[];
++}
++
++/** Archivo pendiente de subir a Drive (base64 data URL). */
++export interface ResultsFileUpload {
++  archivo: string;
++  fileName: string;
++  fileType: string;
++}
++
++export interface ResultsHeatSavePayload {
++  columns: string[];
++  rows: Array<Record<string, string>>;
++  commentColumn?: string | null;
++  pdfUrl?: string;
++  csvUrl?: string;
++  pdfUpload?: ResultsFileUpload;
++  csvUpload?: ResultsFileUpload;
++}
++
++export interface CategoryResultsSavePayload {
++  categoryId: string;
++  categoryLabel: string;
++  manga1?: ResultsHeatSavePayload;
++  manga2?: ResultsHeatSavePayload;
++  manga3?: ResultsHeatSavePayload;
++  final?: ResultsHeatSavePayload;
++}
++
++export interface EventResultsSavePayload {
++  eventId: string;
++  eventName: string;
++  categories: CategoryResultsSavePayload[];
++}
++
+ export interface Registration {
+   id: string;
+   eventId: string;
+diff --git a/src/utils/parse-results-csv.ts b/src/utils/parse-results-csv.ts
+new file mode 100644
+index 0000000..da883df
+--- /dev/null
++++ b/src/utils/parse-results-csv.ts
+@@ -0,0 +1,207 @@
++import type { HeatKey } from '../types';
++
++export type { HeatKey };
++
++export const HEAT_LABELS: Record<HeatKey, string> = {
++  manga1: 'Manga 1',
++  manga2: 'Manga 2',
++  manga3: 'Manga 3',
++  final: 'Final',
++};
++
++export const HEAT_KEYS: HeatKey[] = ['manga1', 'manga2', 'manga3', 'final'];
++
++/** Orden preferido de columnas para mangas (la columna Comentario no se muestra). */
++const MANGA_COLUMN_ORDER = [
++  'Pos.',
++  'N°',
++  'Nombre',
++  'Clase',
++  'MOTO',
++  'Mejor Tm',
++  'Vueltas',
++  'En Vuelta',
++  'Puntos',
++  'Dif. resp. 1°',
++  'Dif. resp. anterior',
++];
++
++/** Orden preferido de columnas para la final. */
++const FINAL_COLUMN_ORDER = [
++  'Pos.',
++  'N°',
++  'Nombre',
++  'Clase',
++  'Total puntos',
++  'Dif. resp. 1°',
++  'MOTO',
++  'R1.',
++  'R2.',
++  'R3.',
++];
++
++const COMMENT_ALIASES = ['comentario', 'comentarios', 'comment', 'comments'];
++
++export interface ParsedResultsTable {
++  columns: string[];
++  rows: Array<Record<string, string>>;
++  commentColumn: string | null;
++}
++
++function normalizeHeaderKey(header: string): string {
++  return header
++    .trim()
++    .toLowerCase()
++    .normalize('NFD')
++    .replace(/[\u0300-\u036f]/g, '')
++    .replace(/\s+/g, ' ');
++}
++
++function isCommentHeader(header: string): boolean {
++  return COMMENT_ALIASES.includes(normalizeHeaderKey(header));
++}
++
++/** Parseo CSV con soporte de comillas y saltos de linea dentro de campos. */
++export function parseCsvText(text: string): string[][] {
++  const rows: string[][] = [];
++  let row: string[] = [];
++  let field = '';
++  let inQuotes = false;
++
++  const input = text.replace(/^\uFEFF/, '');
++
++  for (let i = 0; i < input.length; i++) {
++    const ch = input[i];
++    const next = input[i + 1];
++
++    if (inQuotes) {
++      if (ch === '"' && next === '"') {
++        field += '"';
++        i++;
++      } else if (ch === '"') {
++        inQuotes = false;
++      } else {
++        field += ch;
++      }
++      continue;
++    }
++
++    if (ch === '"') {
++      inQuotes = true;
++      continue;
++    }
++
++    if (ch === ',') {
++      row.push(field);
++      field = '';
++      continue;
++    }
++
++    if (ch === '\n' || (ch === '\r' && next === '\n')) {
++      row.push(field);
++      field = '';
++      if (row.some((cell) => cell.trim() !== '')) rows.push(row);
++      row = [];
++      if (ch === '\r') i++;
++      continue;
++    }
++
++    if (ch === '\r') {
++      row.push(field);
++      field = '';
++      if (row.some((cell) => cell.trim() !== '')) rows.push(row);
++      row = [];
++      continue;
++    }
++
++    field += ch;
++  }
++
++  row.push(field);
++  if (row.some((cell) => cell.trim() !== '')) rows.push(row);
++
++  return rows;
++}
++
++function orderColumns(headers: string[], preferred: string[]): string[] {
++  const remaining = [...headers];
++  const ordered: string[] = [];
++
++  for (const pref of preferred) {
++    const prefKey = normalizeHeaderKey(pref);
++    const idx = remaining.findIndex((h) => normalizeHeaderKey(h) === prefKey);
++    if (idx >= 0) {
++      ordered.push(remaining[idx]);
++      remaining.splice(idx, 1);
++    }
++  }
++
++  return [...ordered, ...remaining];
++}
++
++/**
++ * Parsea un CSV de resultados de manga o final.
++ * Las columnas se muestran en orden preferido; columnas extra al final.
++ * La columna Comentario no forma parte de `columns` (queda en cada fila).
++ */
++export function parseResultsCsv(text: string, heat: HeatKey): ParsedResultsTable {
++  const matrix = parseCsvText(text);
++  if (matrix.length < 2) {
++    throw new Error('El CSV no tiene filas de datos.');
++  }
++
++  const rawHeaders = matrix[0].map((h) => h.trim());
++  if (rawHeaders.every((h) => !h)) {
++    throw new Error('El CSV no tiene encabezados validos.');
++  }
++
++  let commentColumn: string | null = null;
++  const dataHeaders: string[] = [];
++
++  for (const header of rawHeaders) {
++    if (!header) continue;
++    if (isCommentHeader(header)) {
++      commentColumn = header;
++      continue;
++    }
++    dataHeaders.push(header);
++  }
++
++  if (dataHeaders.length === 0) {
++    throw new Error('El CSV no tiene columnas de resultados.');
++  }
++
++  const preferred = heat === 'final' ? FINAL_COLUMN_ORDER : MANGA_COLUMN_ORDER;
++  const columns = orderColumns(dataHeaders, preferred);
++
++  const rows = matrix.slice(1).map((cells) => {
++    const record: Record<string, string> = {};
++    rawHeaders.forEach((header, i) => {
++      if (!header) return;
++      record[header] = (cells[i] ?? '').trim();
++    });
++    if (commentColumn && !(commentColumn in record)) {
++      record[commentColumn] = '';
++    }
++    return record;
++  });
++
++  return { columns, rows, commentColumn };
++}
++
++export async function readFileAsText(file: File): Promise<string> {
++  return new Promise((resolve, reject) => {
++    const reader = new FileReader();
++    reader.onload = () => resolve(String(reader.result ?? ''));
++    reader.onerror = () => reject(new Error('No se pudo leer el archivo CSV.'));
++    reader.readAsText(file, 'UTF-8');
++  });
++}
++
++export function getRowComment(row: Record<string, string>, commentColumn?: string | null): string {
++  if (commentColumn && row[commentColumn]?.trim()) return row[commentColumn].trim();
++  for (const [key, value] of Object.entries(row)) {
++    if (isCommentHeader(key) && value.trim()) return value.trim();
++  }
++  return '';
++}
+diff --git a/src/utils/storage.ts b/src/utils/storage.ts
+index fb0035b..4b7fe34 100644
+--- a/src/utils/storage.ts
++++ b/src/utils/storage.ts
+@@ -1,5 +1,13 @@
+ import { CONFIG } from '../config';
+-import type { AppData, Event, EventSavePayload, Registration, RegistrationFormData } from '../types';
++import type {
++  AppData,
++  Event,
++  EventResults,
++  EventResultsSavePayload,
++  EventSavePayload,
++  Registration,
++  RegistrationFormData,
++} from '../types';
+ import { calculateCategoryAge, generateId, parseSheetDate } from './age';
+ import { getCategoryById, formatCategoryOptionLabel, validateCategorySelection } from '../types';
+ import { computeRegistrationTotal } from './registration-total';
+@@ -12,6 +20,8 @@ import {
+   allPilotNumbers,
+ } from './api';
+ 
++const LOCAL_RESULTS_MARKER = 'local';
++
+ async function fetchJson<T>(url: string): Promise<T | null> {
+   try {
+     const res = await fetch(url);
+@@ -50,10 +60,15 @@ function normalizeEvent(raw: Record<string, unknown>): Event {
+     active: parseBoolField(raw.active),
+     finished: parseBoolField(raw.finished),
+     reglamentoUrl: String(raw.reglamentoUrl ?? ''),
++    resultadosUrl: String(raw.resultadosUrl ?? ''),
+     valorInscripcion: Number(raw.valorInscripcion ?? 0) || 0,
+   };
+ }
+ 
++export function eventHasResults(event: Event): boolean {
++  return Boolean(event.resultadosUrl?.trim());
++}
++
+ function normalizeRegistration(raw: Record<string, unknown>): Registration {
+   return {
+     id: String(raw.id ?? ''),
+@@ -346,6 +361,87 @@ export function downloadJson(data: unknown, filename: string): void {
+   URL.revokeObjectURL(url);
+ }
+ 
++function readLocalResultsMap(): Record<string, EventResults> {
++  return readLocal<Record<string, EventResults>>(CONFIG.storageKeys.results) ?? {};
++}
++
++function writeLocalResultsMap(map: Record<string, EventResults>): void {
++  writeLocal(CONFIG.storageKeys.results, map);
++}
++
++function stripUploadsFromResults(payload: EventResultsSavePayload): EventResults {
++  return {
++    eventId: payload.eventId,
++    updatedAt: new Date().toISOString(),
++    categories: payload.categories.map((cat) => {
++      const next: EventResults['categories'][number] = {
++        categoryId: cat.categoryId,
++        categoryLabel: cat.categoryLabel,
++      };
++      for (const heat of ['manga1', 'manga2', 'manga3', 'final'] as const) {
++        const heatData = cat[heat];
++        if (!heatData) continue;
++        next[heat] = {
++          columns: heatData.columns,
++          rows: heatData.rows,
++          commentColumn: heatData.commentColumn ?? null,
++          pdfUrl: heatData.pdfUrl,
++          csvUrl: heatData.csvUrl,
++        };
++      }
++      return next;
++    }),
++  };
++}
++
++export async function loadEventResults(eventId: string): Promise<EventResults | null> {
++  if (isApiEnabled()) {
++    try {
++      const data = await apiGet<{ results: EventResults | null }>({
++        action: 'results',
++        eventId,
++      });
++      return data.results ?? null;
++    } catch {
++      return null;
++    }
++  }
++
++  return readLocalResultsMap()[eventId] ?? null;
++}
++
++export async function saveEventResults(
++  payload: EventResultsSavePayload
++): Promise<{ results: EventResults; resultadosUrl: string }> {
++  if (isApiEnabled()) {
++    const data = await apiPost<{
++      success?: boolean;
++      results: EventResults;
++      resultadosUrl: string;
++    }>({
++      action: 'saveResults',
++      data: payload,
++    });
++    return {
++      results: data.results,
++      resultadosUrl: data.resultadosUrl,
++    };
++  }
++
++  const results = stripUploadsFromResults(payload);
++  const map = readLocalResultsMap();
++  map[payload.eventId] = results;
++  writeLocalResultsMap(map);
++
++  const events = await loadEvents();
++  const updated = events.map((e) =>
++    e.id === payload.eventId ? { ...e, resultadosUrl: LOCAL_RESULTS_MARKER } : e
++  );
++  await saveEvents(updated);
++
++  return { results, resultadosUrl: LOCAL_RESULTS_MARKER };
++}
++
+ export async function readFileAsDataUrl(file: File): Promise<string> {
+   return new Promise((resolve, reject) => {
+     const reader = new FileReader();
+@@ -355,4 +451,4 @@ export async function readFileAsDataUrl(file: File): Promise<string> {
+   });
+ }
+ 
+-export { isApiEnabled } from './api';
+\ No newline at end of file
++export { isApiEnabled } from './api';
+-- 
+2.46.0.windows.1
+

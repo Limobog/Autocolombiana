@@ -2,11 +2,8 @@
  * Configuracion del sitio Minicross Colombia 2026
  *
  * PANEL: /panel-autocolombiana-gestion-2026.html
- * Clave: minicross2026
  */
 export const CONFIG = {
-  adminPassword: 'minicross2026',
-
   apiUrl:
     'https://script.google.com/macros/s/AKfycbxH5PfCIGk8aKrbP8H7DR0PIMLZrpW9Uj0tzeP1W-g_m9G7JWY-h2jP6CnwwFaNAp1K/exec' as string,
 
@@ -20,6 +17,7 @@ export const CONFIG = {
   storageKeys: {
     registrations: 'minicross_registrations_v1',
     events: 'minicross_events_v1',
+    results: 'minicross_results_v1',
     adminSession: 'minicross_admin_session',
     categories: 'copa_categories_v1',
   },

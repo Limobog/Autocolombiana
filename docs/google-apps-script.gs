@@ -10,7 +10,7 @@
 const SPREADSHEET_ID = '1kAlC3MP2DqH5KXkQQLVZF0SbHV6X8DY3nAyLxO81654';
 const DRIVE_FOLDER_ID = '1TQAM3BE93OjiaODNgI_2SkXLFQ2uqQqM';
 
-const EVENT_HEADERS = ['id', 'name', 'date', 'location', 'city', 'description', 'active', 'reglamentoUrl', 'finished', 'valorInscripcion', 'championshipId'];
+const EVENT_HEADERS = ['id', 'name', 'date', 'location', 'city', 'description', 'active', 'reglamentoUrl', 'finished', 'valorInscripcion', 'championshipId', 'resultadosUrl'];
 const CATEGORY_HEADERS = ['id', 'championshipId', 'label', 'minAge', 'maxAge', 'active'];
 const REG_HEADERS = [
   'id', 'eventId', 'eventName', 'nombre', 'apellido', 'identificacion',
@@ -19,15 +19,19 @@ const REG_HEADERS = [
   'fechaNacimiento', 'edad', 'email', 'celular', 'ciudad', 'marcaMoto',
   'numeroPiloto', 'categoriaId', 'categoriaLabel', 'valorTotalInscripcion', 'createdAt', 'updatedAt',
 ];
+const HEAT_KEYS = ['manga1', 'manga2', 'manga3', 'final'];
+
+const ADMIN_PASSWORD = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD');
 
 // ─── HTTP handlers ───────────────────────────────────────────────────────────
 
 function doGet(e) {
   e = e || { parameter: {} };
-  const action = (e.parameter.action || 'all').toString();
+  const action = (e.parameter.action || '').toString();
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const password = (e.parameter.password || '').toString();
 
-  
+  // Acciones Públicas (GET)
   if (action === 'availablePilots') {
     const eventId = e.parameter.eventId;
     return jsonResponse({ numbers: getAvailablePilotNumbers_(ss, eventId) });
@@ -45,19 +49,39 @@ function doGet(e) {
     return jsonResponse({ events: getEvents_(ss) });
   }
 
-  if (action === 'registrations') {
-    return jsonResponse({ registrations: getRegistrations_(ss) });
-  }
-
   if (action === 'categories') {
     return jsonResponse({ categories: getCategories_(ss) });
   }
 
-  return jsonResponse({
-    events: getEvents_(ss),
-    registrations: getRegistrations_(ss),
-    categories: getCategories_(ss),
-  });
+  if (action === 'results') {
+    const eventId = (e.parameter.eventId || '').toString();
+    return jsonResponse({ results: getEventResults_(ss, eventId) });
+  }
+
+  // Acciones Protegidas (GET) - Requieren contraseña
+  if (action === 'registrations') {
+    if (password !== ADMIN_PASSWORD) {
+      return jsonResponse({ success: false, error: 'No autorizado' });
+    }
+    return jsonResponse({ registrations: getRegistrations_(ss) });
+  }
+
+  if (action === 'all' || !action) {
+    if (password === ADMIN_PASSWORD) {
+      return jsonResponse({
+        events: getEvents_(ss),
+        registrations: getRegistrations_(ss),
+        categories: getCategories_(ss),
+      });
+    }
+    // Si no está autorizado para ver todo, solo devolvemos los eventos y categorías
+    return jsonResponse({
+      events: getEvents_(ss),
+      categories: getCategories_(ss),
+    });
+  }
+
+  return jsonResponse({ success: false, error: 'Accion desconocida o requiere autorizacion' });
 }
 
 function doPost(e) {
@@ -69,10 +93,30 @@ function doPost(e) {
   }
   const body = JSON.parse(e.postData.contents);
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const password = body.password || '';
+
+  // Acciones Públicas (POST)
+  if (body.action === 'createRegistration') {
+    return jsonResponse(createRegistration_(ss, body.data));
+  }
+
+  // Acciones Protegidas (POST) - Requieren contraseña
+  const adminActions = [
+    'updateRegistration',
+    'deleteRegistration',
+    'saveEvents',
+    'saveResults',
+    'saveCategories',
+    'saveRegistrations'
+  ];
+
+  if (adminActions.indexOf(body.action) !== -1) {
+    if (password !== ADMIN_PASSWORD) {
+      return jsonResponse({ success: false, error: 'No autorizado' });
+    }
+  }
 
   switch (body.action) {
-    case 'createRegistration':
-      return jsonResponse(createRegistration_(ss, body.data));
     case 'updateRegistration':
       return jsonResponse(updateRegistration_(ss, body.id, body.data));
     case 'deleteRegistration':
@@ -80,6 +124,12 @@ function doPost(e) {
     case 'saveEvents':
       writeEvents_(ss, body.events);
       return jsonResponse({ success: true });
+    case 'saveResults':
+      try {
+        return jsonResponse(saveEventResults_(ss, body.data));
+      } catch (err) {
+        return jsonResponse({ success: false, error: err.message || String(err) });
+      }
     case 'saveCategories':
       try {
         writeCategories_(ss, body.categories);
@@ -95,7 +145,7 @@ function doPost(e) {
         return jsonResponse({ success: false, error: err.message || String(err) });
       }
     default:
-      return jsonResponse({ success: false, error: 'Accion desconocida' });
+      return jsonResponse({ success: false, error: 'Accion desconocida o requiere autorizacion' });
   }
 }
 
@@ -202,7 +252,6 @@ function isPilotNumberAvailable_(ss, eventId, numero, excludeId) {
 
 // ─── Drive: guardar documento de identidad ───────────────────────────────────
 
-
 function calculateAge_(birthDateStr) {
   if (!birthDateStr) return '';
   var birth = new Date(birthDateStr + 'T12:00:00');
@@ -301,38 +350,17 @@ function saveFileToDrive_(data, ss) {
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     return file.getUrl();
   } catch (err) {
-    return '[error al subir: ' + err.message + ']';
+    return '[error al subir archivo: ' + err.message + ']';
   }
-}
-
-// ─── Events ──────────────────────────────────────────────────────────────────
-
-
-function parseSheetDate_(value) {
-  if (value == null || value === '') return '';
-  if (typeof value === 'number' && value > 1000) {
-    var utc = new Date((value - 25569) * 86400 * 1000);
-    if (!isNaN(utc.getTime())) return utc.toISOString().slice(0, 10);
-  }
-  var str = String(value).trim();
-  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0, 10);
-  var dmy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-  if (dmy) {
-    var day = ('0' + dmy[1]).slice(-2);
-    var month = ('0' + dmy[2]).slice(-2);
-    return dmy[3] + '-' + month + '-' + day;
-  }
-  var d = new Date(str.indexOf('T') >= 0 ? str : str + 'T12:00:00');
-  if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
-  return str;
 }
 
 function getAvailablePilotNumbers_(ss, eventId) {
-  var regs = getRegistrations_(ss);
   var taken = {};
+  var regs = getRegistrations_(ss);
   for (var i = 0; i < regs.length; i++) {
-    if (String(regs[i].eventId) === String(eventId)) {
-      taken[Number(regs[i].numeroPiloto)] = true;
+    var r = regs[i];
+    if (String(r.eventId) === String(eventId)) {
+      taken[Number(r.numeroPiloto)] = true;
     }
   }
   var numbers = [];
@@ -371,6 +399,7 @@ function getEvents_(ss) {
     evt.active = parseBoolField_(evt.active);
     evt.finished = parseBoolField_(evt.finished);
     if (!evt.reglamentoUrl) evt.reglamentoUrl = '';
+    if (!evt.resultadosUrl) evt.resultadosUrl = '';
     evt.valorInscripcion = Number(evt.valorInscripcion) || 0;
     evt.championshipId = normalizeChampionshipId_(evt.championshipId, evt.name);
     return evt;
@@ -457,16 +486,10 @@ function writeRegistrations_(ss, registrations) {
 
 // ─── Sheet helpers ───────────────────────────────────────────────────────────
 
-
 function parseBoolField_(value) {
   return value === true || value === 'true' || value === 'TRUE' || value === 1 || value === '1';
 }
 
-/**
- * Normaliza el campeonato de un evento: 'mx' o 'enduro'.
- * Si la celda esta vacia (eventos creados antes de esta columna),
- * se infiere por el nombre del evento.
- */
 function normalizeChampionshipId_(value, eventName) {
   var v = String(value || '').trim().toLowerCase();
   if (v === 'enduro' || v === 'mx') return v;
@@ -475,16 +498,6 @@ function normalizeChampionshipId_(value, eventName) {
 
 function getEventsSheet_(ss) {
   return getOrCreateSheet_(ss, 'Events', EVENT_HEADERS);
-}
-
-function eventHeadersMatch_(current, headers) {
-  var trimmed = current.map(function (h) { return String(h).trim(); });
-  while (trimmed.length && !trimmed[trimmed.length - 1]) trimmed.pop();
-  if (trimmed.length !== headers.length) return false;
-  for (var i = 0; i < headers.length; i++) {
-    if (trimmed[i] !== headers[i]) return false;
-  }
-  return true;
 }
 
 function syncEventHeaders_(ss, sheet, headers) {
@@ -536,21 +549,203 @@ function prepareEventRow_(ss, data) {
   } else if (!row.reglamentoUrl) {
     row.reglamentoUrl = '';
   }
+  if (data.resultadosUrl && String(data.resultadosUrl).indexOf('http') === 0) {
+    row.resultadosUrl = data.resultadosUrl;
+  } else if (!row.resultadosUrl) {
+    row.resultadosUrl = '';
+  }
   return row;
+}
+
+// ─── Resultados (JSON y archivos en Drive) ───────────────────────────────────
+
+function getOrCreateResultsFolder_() {
+  var root = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+  var name = 'Resultados';
+  var folders = root.getFoldersByName(name);
+  if (folders.hasNext()) return folders.next();
+  return root.createFolder(name);
+}
+
+function uploadResultsBlob_(folder, base64DataUrl, fileName, mimeType) {
+  var parts = String(base64DataUrl || '').split(',');
+  var base64 = parts.length > 1 ? parts[1] : parts[0];
+  var blob = Utilities.newBlob(
+    Utilities.base64Decode(base64),
+    mimeType || 'application/octet-stream',
+    fileName
+  );
+  var file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return file.getUrl();
+}
+
+function findDriveFileByUrl_(url) {
+  if (!url || String(url).indexOf('http') !== 0) return null;
+  var match = String(url).match(/[-\w]{25,}/);
+  if (!match) return null;
+  try {
+    return DriveApp.getFileById(match[0]);
+  } catch (err) {
+    return null;
+  }
+}
+
+function processHeatUploads_(folder, eventId, eventName, categoryId, heatKey, heatData) {
+  if (!heatData) return null;
+
+  var result = {
+    columns: heatData.columns || [],
+    rows: heatData.rows || [],
+    commentColumn: heatData.commentColumn || null,
+    pdfUrl: heatData.pdfUrl || '',
+    csvUrl: heatData.csvUrl || '',
+  };
+
+  var suffixBase = sanitizeFileNamePart_(eventId) + '_' + sanitizeFileNamePart_(categoryId) + '_' + heatKey;
+
+  if (heatData.csvUpload && heatData.csvUpload.archivo && String(heatData.csvUpload.archivo).indexOf('data:') === 0) {
+    var csvName = buildDriveFileName_(
+      suffixBase,
+      eventName,
+      'CSV',
+      heatData.csvUpload.fileName || (heatKey + '.csv'),
+      heatData.csvUpload.fileType || 'text/csv'
+    );
+    result.csvUrl = uploadResultsBlob_(
+      folder,
+      heatData.csvUpload.archivo,
+      csvName,
+      heatData.csvUpload.fileType || 'text/csv'
+    );
+  }
+
+  if (heatKey !== 'final' && heatData.pdfUpload && heatData.pdfUpload.archivo && String(heatData.pdfUpload.archivo).indexOf('data:') === 0) {
+    var pdfName = buildDriveFileName_(
+      suffixBase,
+      eventName,
+      'VUELTAS',
+      heatData.pdfUpload.fileName || (heatKey + '.pdf'),
+      heatData.pdfUpload.fileType || 'application/pdf'
+    );
+    result.pdfUrl = uploadResultsBlob_(
+      folder,
+      heatData.pdfUpload.archivo,
+      pdfName,
+      heatData.pdfUpload.fileType || 'application/pdf'
+    );
+  }
+
+  if (!result.pdfUrl) delete result.pdfUrl;
+  if (!result.csvUrl) delete result.csvUrl;
+  return result;
+}
+
+function getEventResults_(ss, eventId) {
+  if (!eventId) return null;
+  var events = getEvents_(ss);
+  var event = null;
+  for (var i = 0; i < events.length; i++) {
+    if (events[i].id === eventId) {
+      event = events[i];
+      break;
+    }
+  }
+  if (!event || !event.resultadosUrl) return null;
+
+  var file = findDriveFileByUrl_(event.resultadosUrl);
+  if (!file) return null;
+
+  try {
+    var parsed = JSON.parse(file.getBlob().getDataAsString('UTF-8'));
+    return parsed;
+  } catch (err) {
+    return null;
+  }
+}
+
+function updateEventResultadosUrl_(ss, eventId, resultadosUrl) {
+  var sheet = getEventsSheet_(ss);
+  var objects = sheetToObjects_(sheet);
+  var changed = false;
+  objects.forEach(function (row) {
+    if (row.id === eventId) {
+      row.resultadosUrl = resultadosUrl;
+      changed = true;
+    }
+  });
+  if (changed) writeObjects_(sheet, EVENT_HEADERS, objects.map(function (row) {
+    return prepareEventRow_(ss, row);
+  }));
+}
+
+function saveEventResults_(ss, data) {
+  if (!data || !data.eventId) {
+    throw new Error('Falta eventId para guardar resultados.');
+  }
+
+  var eventName = data.eventName || getEventNameById_(ss, data.eventId) || data.eventId;
+  var folder = getOrCreateResultsFolder_();
+  var categories = (data.categories || []).map(function (cat) {
+    var out = {
+      categoryId: cat.categoryId,
+      categoryLabel: cat.categoryLabel || cat.categoryId,
+    };
+    HEAT_KEYS.forEach(function (heatKey) {
+      if (!cat[heatKey]) return;
+      out[heatKey] = processHeatUploads_(folder, data.eventId, eventName, cat.categoryId, heatKey, cat[heatKey]);
+    });
+    return out;
+  });
+
+  var results = {
+    eventId: data.eventId,
+    updatedAt: new Date().toISOString(),
+    categories: categories,
+  };
+
+  var jsonName = buildDriveFileName_(
+    data.eventId,
+    eventName,
+    'RESULTADOS',
+    'resultados.json',
+    'application/json'
+  );
+  var jsonBlob = Utilities.newBlob(JSON.stringify(results), 'application/json', jsonName);
+
+  var existingEvents = getEvents_(ss);
+  var existingUrl = '';
+  for (var i = 0; i < existingEvents.length; i++) {
+    if (existingEvents[i].id === data.eventId) {
+      existingUrl = existingEvents[i].resultadosUrl || '';
+      break;
+    }
+  }
+
+  var existingFile = findDriveFileByUrl_(existingUrl);
+  if (existingFile) {
+    try {
+      existingFile.setTrashed(true);
+    } catch (err) {
+      // Si no se puede borrar el JSON anterior, se crea uno nuevo de todas formas.
+    }
+  }
+
+  var created = folder.createFile(jsonBlob);
+  created.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  var resultadosUrl = created.getUrl();
+
+  updateEventResultadosUrl_(ss, data.eventId, resultadosUrl);
+
+  return {
+    success: true,
+    results: results,
+    resultadosUrl: resultadosUrl,
+  };
 }
 
 function getRegistrationsSheet_(ss) {
   return getOrCreateSheet_(ss, 'Registrations', REG_HEADERS);
-}
-
-function registrationHeadersMatch_(current, headers) {
-  var trimmed = current.map(function (h) { return String(h).trim(); });
-  while (trimmed.length && !trimmed[trimmed.length - 1]) trimmed.pop();
-  if (trimmed.length !== headers.length) return false;
-  for (var i = 0; i < headers.length; i++) {
-    if (trimmed[i] !== headers[i]) return false;
-  }
-  return true;
 }
 
 function migrateRegistrationRows_(ss, rows) {
@@ -672,6 +867,7 @@ function syncEventHeadersFull_(ss, sheet, headers) {
     row.active = parseBoolField_(row.active);
     row.finished = parseBoolField_(row.finished);
     if (!row.reglamentoUrl) row.reglamentoUrl = '';
+    if (!row.resultadosUrl) row.resultadosUrl = '';
     row.valorInscripcion = Number(row.valorInscripcion) || 0;
     row.championshipId = normalizeChampionshipId_(row.championshipId, row.name);
   });
@@ -724,7 +920,28 @@ function jsonResponse(data) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// ─── Utilidad: crear hojas iniciales (ejecutar una vez manualmente) ──────────
+// ─── Utilidades y reparaciones ──────────────────────────────────────────────
+
+/**
+ * Prueba minima del editor. Si ESTA falla con "error desconocido",
+ * el problema es de Google Apps Script (no del codigo ni de tus datos).
+ */
+function ping() {
+  Logger.log('ping OK - el editor puede ejecutar codigo');
+}
+
+/**
+ * Solo agrega columnas nuevas a Events (p. ej. resultadosUrl) sin backup ni remapear.
+ * NUNCA borra filas. Usa ESTA solo si quieres forzar la columna desde el editor.
+ * En la practica NO es obligatoria: al usar el sitio, getEvents_ ya agrega columnas faltantes.
+ */
+function addMissingEventColumns() {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = getEventsSheet_(ss);
+  ensureSheetHeaders_(sheet, EVENT_HEADERS);
+  Logger.log('Encabezados Events: ' + readSheetHeaders_(sheet).join(', '));
+  Logger.log('Listo. Ninguna fila fue borrada.');
+}
 
 /** Ejecutar manualmente si la hoja Events tiene columnas desalineadas. Crea backup antes de remapear. */
 function repairEventsSheet() {
@@ -735,12 +952,15 @@ function repairEventsSheet() {
     Logger.log('Hoja Events creada con columnas correctas.');
     return;
   }
+
+  // Primero intenta agregar columnas faltantes sin borrar datos (ej. resultadosUrl).
+  ensureSheetHeaders_(sheet, EVENT_HEADERS);
   var current = readSheetHeaders_(sheet);
   if (headersMatchInOrder_(current, EVENT_HEADERS)) {
-    ensureSheetHeaders_(sheet, EVENT_HEADERS);
     Logger.log('Hoja Events OK. Filas: ' + Math.max(0, sheet.getLastRow() - 1));
     return;
   }
+
   var backupName = backupSheet_(sheet);
   Logger.log('Backup creado: ' + backupName);
   syncEventHeadersFull_(ss, sheet, EVENT_HEADERS);
@@ -770,8 +990,18 @@ function repairRegistrationsSheet() {
 
 /** Repara Events y Registrations en una sola ejecucion. */
 function repairAllSheets() {
-  repairEventsSheet();
-  repairRegistrationsSheet();
+  try {
+    repairEventsSheet();
+  } catch (err) {
+    Logger.log('Error en Events: ' + (err && err.message ? err.message : err));
+    throw err;
+  }
+  try {
+    repairRegistrationsSheet();
+  } catch (err) {
+    Logger.log('Error en Registrations: ' + (err && err.message ? err.message : err));
+    throw err;
+  }
   Logger.log('Reparacion completada (Events + Registrations).');
 }
 
@@ -793,6 +1023,7 @@ function setupSheets() {
         description: 'Primera valida del campeonato. Triple Corona: 3 mangas.',
         active: true,
         reglamentoUrl: '',
+        resultadosUrl: '',
         finished: false,
         championshipId: 'mx',
       },
@@ -805,6 +1036,7 @@ function setupSheets() {
         description: 'Segunda valida del campeonato.',
         active: true,
         reglamentoUrl: '',
+        resultadosUrl: '',
         finished: false,
         championshipId: 'mx',
       },

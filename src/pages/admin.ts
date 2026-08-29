@@ -26,6 +26,7 @@ import {
 import type { Category, ChampionshipId, Event, EventSavePayload, Registration, StoredCategory } from '../types';
 import { CHAMPIONSHIPS } from '../championships';
 import Swal from 'sweetalert2';
+import { openResultsModal } from './admin-results-modal';
 
 function getEventChampionshipId(events: Event[], eventId: string): ChampionshipId {
   return events.find((e) => e.id === eventId)?.championshipId ?? 'mx';
@@ -39,7 +40,10 @@ function renderChampBadge(championshipId: ChampionshipId): string {
 }
 
 function isAuthenticated(): boolean {
-  return sessionStorage.getItem(CONFIG.storageKeys.adminSession) === 'true';
+  return (
+    sessionStorage.getItem(CONFIG.storageKeys.adminSession) === 'true' &&
+    Boolean(sessionStorage.getItem('minicross_admin_password'))
+  );
 }
 
 function isHttpUrl(value: string): boolean {
@@ -630,6 +634,8 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
                   Finalizado
                 </label>
                 ${e.reglamentoUrl?.trim() ? '<a href="' + e.reglamentoUrl + '" target="_blank" rel="noopener noreferrer" class="text-secondary text-sm hover:text-white">Ver reglamento</a>' : '<span class="text-xs text-muted">Sin reglamento</span>'}
+                <button class="load-results-btn text-secondary text-sm hover:text-white" data-id="${e.id}">${e.resultadosUrl?.trim() ? 'Editar resultados' : 'Cargar resultados'}</button>
+                ${e.resultadosUrl?.trim() ? '<a href="./resultados.html?evento=' + e.id + '" target="_blank" rel="noopener noreferrer" class="text-secondary text-sm hover:text-white">Ver resultados</a>' : ''}
                 <button class="edit-event-btn text-secondary text-sm hover:text-white" data-id="${e.id}">Editar</button>
                 <button class="delete-event-btn text-silver text-sm hover:text-white" data-id="${e.id}">Eliminar</button>
               </div>`
@@ -662,7 +668,7 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
             </div>
             <label class="flex items-center gap-2 text-sm">
               <input type="checkbox" id="event-finished" class="accent-white" />
-              Evento finalizado (habilita boton Ver resultados)
+              Evento finalizado
             </label>
             <div class="flex gap-2">
               <button type="submit" class="btn-primary text-sm py-2 px-4">Guardar evento</button>
@@ -734,6 +740,7 @@ async function promptExportFormat(): Promise<ExportFormat | null> {
 function bindAdminEvents(events: Event[], registrations: Registration[]): void {
   document.getElementById('logout-btn')?.addEventListener('click', () => {
     sessionStorage.removeItem(CONFIG.storageKeys.adminSession);
+    sessionStorage.removeItem('minicross_admin_password');
     initAdminPage();
   });
 
@@ -792,6 +799,17 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
       if (!format) return;
 
       exportRegistrations(regs, event?.name ?? 'evento', events, format);
+    });
+  });
+
+  document.querySelectorAll('.load-results-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id')!;
+      const event = events.find((e) => e.id === id);
+      if (!event) return;
+      await openResultsModal(event, async () => {
+        await refreshAdmin();
+      });
     });
   });
 
@@ -939,6 +957,7 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
       active: existing?.active ?? true,
       finished: (document.getElementById('event-finished') as HTMLInputElement).checked,
       reglamentoUrl: existing?.reglamentoUrl ?? '',
+      resultadosUrl: existing?.resultadosUrl ?? '',
       championshipId: (document.getElementById('event-championship') as HTMLSelectElement).value as ChampionshipId,
     };
 
@@ -1065,16 +1084,27 @@ export async function initAdminPage(): Promise<void> {
 
   if (!isAuthenticated()) {
     app.innerHTML = renderLogin();
-    document.getElementById('login-form')?.addEventListener('submit', (e) => {
+    document.getElementById('login-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const password = (document.getElementById('password') as HTMLInputElement).value;
       const errorEl = document.getElementById('login-error');
-      if (password === CONFIG.adminPassword) {
+
+      sessionStorage.setItem('minicross_admin_password', password);
+
+      try {
+        showSaving('Verificando credenciales...');
+        await loadRegistrations();
         sessionStorage.setItem(CONFIG.storageKeys.adminSession, 'true');
+        Swal.close();
         initAdminPage();
-      } else if (errorEl) {
-        errorEl.textContent = 'Contrasena incorrecta.';
-        errorEl.classList.remove('hidden');
+      } catch (err) {
+        sessionStorage.removeItem('minicross_admin_password');
+        sessionStorage.removeItem(CONFIG.storageKeys.adminSession);
+        Swal.close();
+        if (errorEl) {
+          errorEl.textContent = 'Contrasena incorrecta o error de conexion.';
+          errorEl.classList.remove('hidden');
+        }
       }
     });
     return;

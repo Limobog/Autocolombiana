@@ -9,7 +9,9 @@
     "active": true,
     "finished": false,
     "reglamentoUrl": "",
-    "valorInscripcion": 0
+    "resultadosUrl": "",
+    "valorInscripcion": 0,
+    "championshipId": "mx"
   },
   {
     "id": "evt-002",
@@ -21,6 +23,8 @@
     "active": true,
     "finished": false,
     "reglamentoUrl": "",
-    "valorInscripcion": 0
+    "resultadosUrl": "",
+    "valorInscripcion": 0,
+    "championshipId": "mx"
   }
 ]

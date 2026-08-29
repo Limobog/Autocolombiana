@@ -29,9 +29,15 @@ Con esta configuracion, las inscripciones se guardan directamente en una Google 
    const DRIVE_FOLDER_ID = 'tu-id-de-la-carpeta-drive';//1TQAM3BE93OjiaODNgI_2SkXLFQ2uqQqM
    ```
 4. Guarda el proyecto (Ctrl+S)
-5. En el selector de funciones (arriba), elige **`setupSheets`** — NO elijas `doGet` ni `doPost`
-6. Clic en **Ejecutar** y autoriza los permisos (Sheets + Drive)
-7. Revisa tu Google Sheet: deben aparecer las pestanas `Events` y `Registrations`
+5. En el menú lateral izquierdo, ve a **Configuración del proyecto** (el ícono del engranaje).
+6. Desplázate hacia abajo hasta **Propiedades de la secuencia de comandos**.
+7. Haz clic en **Añadir propiedad del script**.
+8. Escribe `ADMIN_PASSWORD` en el campo Propiedad y escribe la contraseña deseada en el campo Valor (ej: `minicross2026`).
+9. Haz clic en **Guardar propiedades de la secuencia de comandos**.
+10. Vuelve al Editor (ícono `< >`).
+11. En el selector de funciones (arriba), elige **`setupSheets`** — NO elijas `doGet` ni `doPost`
+12. Clic en **Ejecutar** y autoriza los permisos (Sheets + Drive)
+13. Revisa tu Google Sheet: deben aparecer las pestanas `Events` y `Registrations`
 
 > **Nota:** Si ejecutas `doGet` desde el editor veras un error o respuesta vacia. Esa funcion solo funciona cuando la Web App recibe peticiones HTTP desde la pagina web.
 
@@ -78,24 +84,20 @@ npm run build
 | description | Descripcion |
 | active | Habilitado para inscripciones (true/false) |
 | reglamentoUrl | URL del PDF del reglamento en Drive |
-| finished | Evento finalizado; habilita boton Ver resultados (true/false) |
+| finished | Evento finalizado (true/false) |
 | valorInscripcion | Valor de inscripcion por categoria (COP, numero) |
 | championshipId | Campeonato del evento: `mx` o `enduro` (si esta vacio se infiere por el nombre) |
+| resultadosUrl | URL del JSON de resultados en Drive (carpeta Resultados). Si esta vacio, no se muestra Ver resultados |
 
-## Estructura de la hoja Categories
+Tras actualizar el script, vuelve a **Implementar > Administrar implementaciones > Nueva version**.
 
-Las categorias de cada campeonato se gestionan desde el panel (seccion "Categorias por campeonato") y se guardan en la hoja `Categories`. Si la hoja esta vacia, el sitio usa las categorias por defecto del codigo.
+**No necesitas ejecutar `repairAllSheets`.** Esa funcion es solo para columnas cruzadas/desordenadas y puede fallar con el error generico de Google. Opciones seguras (ninguna borra datos):
 
-| Columna | Contenido |
-| --- | --- |
-| id | Identificador estable de la categoria (no cambia al renombrar) |
-| championshipId | `mx` o `enduro` |
-| label | Nombre visible, ej: `85cc A — hasta 85cc 2T` |
-| minAge | Edad minima (numero) |
-| maxAge | Edad maxima (numero; 999 = sin limite) |
-| active | `true` / `false`. Si es `false`, la categoria queda inhabilitada para nuevas inscripciones (no se elimina si ya hay inscritos) |
+1. **Recomendada:** redeployar y abrir el panel admin una vez. Al consultar eventos, el script agrega solo la columna faltante al final.
+2. **Manual:** en la hoja `Events`, escribe `resultadosUrl` en la siguiente celda vacia de la fila 1 (encabezados). Deja las celdas de datos vacias en esa columna.
+3. Si el editor ejecuta codigo: prueba `ping` (si falla, es un fallo del editor de Google, no de tus datos). Luego opcionalmente `addMissingEventColumns`.
 
-Si agregaste columnas manualmente, ejecuta **repairEventsSheet** o **repairAllSheets** en Apps Script (deben aparecer en el selector de funciones tras pegar el script actualizado).
+Si agregaste columnas manualmente, ejecuta **repairEventsSheet** o **repairAllSheets** en Apps Script **solo si** las columnas estan cruzadas/desordenadas (esas si crean backup y reescriben).
 
 > **Importante:** Las funciones `repair*` crean una **copia de seguridad** de la hoja (`BACKUP_Registrations_...`) antes de remapear columnas. El uso normal del sitio **solo agrega columnas nuevas** al final y **no borra inscripciones**. Ejecuta `repair*` solo si las columnas estan cruzadas/desordenadas.
 

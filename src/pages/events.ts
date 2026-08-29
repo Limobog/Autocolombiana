@@ -1,7 +1,7 @@
 import { renderFooter } from '../components/footer';
 import { renderNavbar, initNavbar } from '../components/navbar';
 import { getActiveChampionship, type Championship } from '../championships';
-import { loadEvents } from '../utils/storage';
+import { eventHasResults, loadEvents } from '../utils/storage';
 import { formatDate } from '../utils/age';
 import type { Event } from '../types';
 
@@ -36,7 +36,7 @@ function renderEventCard(event: Event): string {
   const reglamentoBtn = isHttpUrl(event.reglamentoUrl)
     ? `<a href="${event.reglamentoUrl}" target="_blank" rel="noopener noreferrer" class="btn-outline w-full sm:w-auto text-center">Ver reglamento</a>`
     : '';
-  const resultadosBtn = event.finished
+  const resultadosBtn = eventHasResults(event)
     ? `<a href="./resultados.html?evento=${event.id}" class="btn-secondary w-full sm:w-auto text-center">Ver resultados</a>`
     : '';
   const inscripcionBtn = event.active
