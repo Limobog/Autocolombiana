@@ -230,14 +230,17 @@ export async function saveEvents(events: EventSavePayload[]): Promise<void> {
   writeLocal(CONFIG.storageKeys.events, events);
 }
 
-export async function loadRegistrations(): Promise<Registration[]> {
+export async function loadRegistrations(options: { throwOnError?: boolean } = {}): Promise<Registration[]> {
   if (isApiEnabled()) {
     try {
       const data = await apiGet<{ registrations: Record<string, unknown>[] }>({
         action: 'registrations',
       });
       return (data.registrations ?? []).map(normalizeRegistration);
-    } catch {
+    } catch (err) {
+      if (options.throwOnError || (err instanceof Error && err.message === 'No autorizado')) {
+        throw err;
+      }
       /* fallback below */
     }
   }

@@ -703,13 +703,19 @@ async function refreshAdmin(showLoading = false): Promise<void> {
   try {
     const [events, registrations] = await Promise.all([
       loadEvents(),
-      loadRegistrations(),
+      loadRegistrations({ throwOnError: true }),
       initCategories().catch(() => undefined),
     ]);
     app.innerHTML = renderAdminPanel(events, registrations);
     bindAdminEvents(events, registrations);
   } catch (err) {
     Swal.close();
+    if (err instanceof Error && err.message === 'No autorizado') {
+      sessionStorage.removeItem(CONFIG.storageKeys.adminSession);
+      sessionStorage.removeItem('minicross_admin_password');
+      initAdminPage();
+      return;
+    }
     await showError(
       'Error al cargar',
       err instanceof Error ? err.message : 'No se pudieron obtener los datos del panel.'
@@ -1093,7 +1099,7 @@ export async function initAdminPage(): Promise<void> {
 
       try {
         showSaving('Verificando credenciales...');
-        await loadRegistrations();
+        await loadRegistrations({ throwOnError: true });
         sessionStorage.setItem(CONFIG.storageKeys.adminSession, 'true');
         Swal.close();
         initAdminPage();
@@ -1102,7 +1108,12 @@ export async function initAdminPage(): Promise<void> {
         sessionStorage.removeItem(CONFIG.storageKeys.adminSession);
         Swal.close();
         if (errorEl) {
-          errorEl.textContent = 'Contrasena incorrecta o error de conexion.';
+          errorEl.textContent =
+            err instanceof Error && err.message === 'No autorizado'
+              ? 'Contrasena incorrecta.'
+              : err instanceof Error
+              ? err.message
+              : 'Contrasena incorrecta o error de conexion.';
           errorEl.classList.remove('hidden');
         }
       }
