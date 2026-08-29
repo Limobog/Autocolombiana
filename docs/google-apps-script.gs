@@ -250,7 +250,44 @@ function isPilotNumberAvailable_(ss, eventId, numero, excludeId) {
   return true;
 }
 
-// ─── Drive: guardar documento de identidad ───────────────────────────────────
+// ─── Normalización de fechas y cálculos ──────────────────────────────────────
+
+function parseSheetDate_(value) {
+  if (value === null || value === undefined || value === '') return '';
+  if (typeof value === 'number' && value > 1000) {
+    var utc = new Date((value - 25569) * 86400 * 1000);
+    if (!isNaN(utc.getTime())) {
+      var y = utc.getUTCFullYear();
+      var m = ('0' + (utc.getUTCMonth() + 1)).slice(-2);
+      var d = ('0' + utc.getUTCDate()).slice(-2);
+      return y + '-' + m + '-' + d;
+    }
+  }
+  if (value instanceof Date) {
+    if (!isNaN(value.getTime())) {
+      var y2 = value.getFullYear();
+      var m2 = ('0' + (value.getMonth() + 1)).slice(-2);
+      var d2 = ('0' + value.getDate()).slice(-2);
+      return y2 + '-' + m2 + '-' + d2;
+    }
+  }
+  var str = String(value).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0, 10);
+  var dmy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (dmy) {
+    var day = ('0' + dmy[1]).slice(-2);
+    var month = ('0' + dmy[2]).slice(-2);
+    return dmy[3] + '-' + month + '-' + day;
+  }
+  var dt = new Date(str.indexOf('T') >= 0 ? str : str + 'T12:00:00');
+  if (!isNaN(dt.getTime())) {
+    var y3 = dt.getFullYear();
+    var m3 = ('0' + (dt.getMonth() + 1)).slice(-2);
+    var d3 = ('0' + dt.getDate()).slice(-2);
+    return y3 + '-' + m3 + '-' + d3;
+  }
+  return str;
+}
 
 function calculateAge_(birthDateStr) {
   if (!birthDateStr) return '';
