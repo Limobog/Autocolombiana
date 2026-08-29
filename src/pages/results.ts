@@ -28,31 +28,31 @@ function renderTable(table: ResultsTable, heat: HeatKey, categoryId: string): st
     .map((row, rowIndex) => {
       const comment = getRowComment(row, commentCol);
       const cells = table.columns
-        .map((col) => `<td class="px-3 py-2 text-sm whitespace-nowrap">${escapeHtml(row[col] ?? '')}</td>`)
+        .map((col) => `<td class="px-4 py-3 text-sm whitespace-nowrap text-silver">${escapeHtml(row[col] ?? '')}</td>`)
         .join('');
       const commentBtn = comment
-        ? `<td class="px-3 py-2 text-center">
+        ? `<td class="px-4 py-3 text-center">
             <button type="button"
-              class="comment-btn inline-flex h-7 w-7 items-center justify-center rounded-full border border-orange/60 text-orange hover:bg-orange/20"
+              class="comment-btn inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/30 text-white hover:border-white hover:bg-white/15 transition-all text-xs font-bold shadow-glow cursor-pointer"
               data-category="${categoryId}" data-heat="${heat}" data-row="${rowIndex}"
               title="Ver comentario" aria-label="Ver comentario">!</button>
           </td>`
-        : '<td class="px-3 py-2"></td>';
-      return `<tr class="border-t border-white/10 hover:bg-white/5">${cells}${commentBtn}</tr>`;
+        : '<td class="px-4 py-3"></td>';
+      return `<tr class="border-t border-white/10 hover:bg-white/5 transition-colors">${cells}${commentBtn}</tr>`;
     })
     .join('');
 
   const headers = table.columns
-    .map((col) => `<th class="px-3 py-2 text-left text-xs uppercase tracking-wide text-secondary">${escapeHtml(col)}</th>`)
+    .map((col) => `<th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-silver">${escapeHtml(col)}</th>`)
     .join('');
 
   return `
-    <div class="overflow-x-auto rounded-xl border border-white/20">
+    <div class="overflow-x-auto rounded-xl border border-white/15 bg-surface-raised/40">
       <table class="min-w-full">
-        <thead class="bg-surface-raised">
-          <tr>${headers}<th class="px-3 py-2 text-xs uppercase tracking-wide text-secondary">Info</th></tr>
+        <thead class="bg-surface-elevated border-b border-white/10">
+          <tr>${headers}<th class="px-4 py-3 text-xs font-bold uppercase tracking-wider text-silver text-center">Info</th></tr>
         </thead>
-        <tbody>${rowsHtml || '<tr><td class="px-3 py-6 text-center text-muted" colspan="' + (table.columns.length + 1) + '">Sin filas</td></tr>'}</tbody>
+        <tbody class="divide-y divide-white/5">${rowsHtml || '<tr><td class="px-4 py-8 text-center text-muted text-sm" colspan="' + (table.columns.length + 1) + '">Sin filas de resultados</td></tr>'}</tbody>
       </table>
     </div>`;
 }
@@ -63,15 +63,15 @@ function renderHeatPanel(category: CategoryResults, heat: HeatKey, active: boole
 
   const pdfBtn =
     heat !== 'final' && table.pdfUrl
-      ? `<a href="${table.pdfUrl}" target="_blank" rel="noopener noreferrer" class="btn-outline text-sm py-2 px-4">Vuelta a vuelta (PDF)</a>`
+      ? `<a href="${table.pdfUrl}" target="_blank" rel="noopener noreferrer" class="btn-outline text-xs py-2 px-4 inline-flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Vuelta a vuelta (PDF)</a>`
       : heat !== 'final'
-        ? '<span class="text-xs text-muted">Sin PDF de vuelta a vuelta</span>'
+        ? '<span class="text-xs text-muted">Sin PDF adjunto</span>'
         : '';
 
   return `
     <div class="heat-panel ${active ? '' : 'hidden'} space-y-4" data-heat-panel="${category.categoryId}:${heat}">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <h3 class="font-title text-2xl tracking-wide text-white">${HEAT_LABELS[heat]}</h3>
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
+        <h3 class="font-title text-2xl tracking-wider text-white">${HEAT_LABELS[heat]}</h3>
         ${pdfBtn}
       </div>
       ${renderTable(table, heat, category.categoryId)}
@@ -86,7 +86,7 @@ function renderCategoryPanel(category: CategoryResults, active: boolean): string
     .map(
       (heat, i) => `
       <button type="button"
-        class="heat-tab rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${i === 0 ? 'bg-secondary text-primary font-bold' : 'bg-surface-raised text-muted hover:text-white'}"
+        class="heat-tab rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 cursor-pointer ${i === 0 ? 'bg-white text-ink font-bold shadow-glow' : 'bg-surface-raised text-silver border border-white/10 hover:border-white/30 hover:bg-white/10 hover:text-white'}"
         data-category="${category.categoryId}" data-heat="${heat}">
         ${HEAT_LABELS[heat]}
       </button>`
@@ -94,8 +94,8 @@ function renderCategoryPanel(category: CategoryResults, active: boolean): string
     .join('');
 
   return `
-    <div class="category-panel ${active ? '' : 'hidden'} space-y-4" data-category-panel="${category.categoryId}">
-      <div class="flex flex-wrap gap-2">${heatTabs}</div>
+    <div class="category-panel ${active ? '' : 'hidden'} space-y-5" data-category-panel="${category.categoryId}">
+      <div class="flex flex-wrap gap-2.5">${heatTabs}</div>
       ${heats.map((heat, i) => renderHeatPanel(category, heat, i === 0)).join('')}
     </div>`;
 }
@@ -109,11 +109,11 @@ function bindResultsUi(container: HTMLElement, results: EventResults): void {
       const categoryId = tab.getAttribute('data-category');
       categoryTabs.forEach((t) => {
         const active = t === tab;
-        t.classList.toggle('bg-secondary', active);
-        t.classList.toggle('text-primary', active);
-        t.classList.toggle('font-bold', active);
-        t.classList.toggle('bg-surface-raised', !active);
-        t.classList.toggle('text-muted', !active);
+        t.className = `category-tab rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 cursor-pointer ${
+          active
+            ? 'bg-white text-ink font-bold shadow-glow-strong'
+            : 'bg-surface-raised text-silver border border-white/10 hover:border-white/30 hover:bg-white/10 hover:text-white'
+        }`;
       });
       categoryPanels.forEach((panel) => {
         panel.classList.toggle('hidden', panel.getAttribute('data-category-panel') !== categoryId);
@@ -130,11 +130,11 @@ function bindResultsUi(container: HTMLElement, results: EventResults): void {
 
       panel.querySelectorAll<HTMLButtonElement>('.heat-tab').forEach((t) => {
         const active = t === tab;
-        t.classList.toggle('bg-secondary', active);
-        t.classList.toggle('text-primary', active);
-        t.classList.toggle('font-bold', active);
-        t.classList.toggle('bg-surface-raised', !active);
-        t.classList.toggle('text-muted', !active);
+        t.className = `heat-tab rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 cursor-pointer ${
+          active
+            ? 'bg-white text-ink font-bold shadow-glow'
+            : 'bg-surface-raised text-silver border border-white/10 hover:border-white/30 hover:bg-white/10 hover:text-white'
+        }`;
       });
 
       panel.querySelectorAll<HTMLElement>('.heat-panel').forEach((heatPanel) => {
@@ -157,10 +157,16 @@ function bindResultsUi(container: HTMLElement, results: EventResults): void {
       if (!row) return;
       const comment = getRowComment(row, table?.commentColumn);
       void Swal.fire({
-        title: 'Comentario',
-        text: comment || 'Sin comentario',
-        confirmButtonText: 'Cerrar',
-        confirmButtonColor: '#06b6d4',
+        title: 'Incidencia / Comentario',
+        text: comment || 'Sin comentarios registrados.',
+        confirmButtonText: 'Entendido',
+        buttonsStyling: false,
+        customClass: {
+          popup: 'rounded-card border border-white/15 bg-surface-raised text-foreground shadow-2xl p-6',
+          title: 'font-title text-2xl tracking-wider text-white pb-2 border-b border-white/10',
+          htmlContainer: 'text-silver font-body text-sm py-4 m-0',
+          confirmButton: 'btn-primary text-sm font-bold px-6 py-2.5 cursor-pointer',
+        },
       });
     });
   });
@@ -170,18 +176,26 @@ function renderResultsContent(event: Event, results: EventResults): string {
   const categories = results.categories.filter((c) => availableHeats(c).length > 0);
   if (categories.length === 0) {
     return `
-      <h1 class="section-title mb-2">Resultados</h1>
-      <p class="text-silver font-semibold mb-1">${event.name}</p>
-      <p class="text-sm text-muted mb-6">${formatDate(event.date)} · ${event.city}</p>
-      <p class="text-muted">Aun no hay tablas publicadas para este evento.</p>
-      <a href="./eventos.html" class="btn-outline inline-block mt-8">Volver a eventos</a>`;
+      <div class="text-center py-12">
+        <h1 class="section-title mb-2">Resultados</h1>
+        <p class="text-white font-semibold text-lg mb-1">${escapeHtml(event.name)}</p>
+        <p class="text-sm text-silver mb-6">${formatDate(event.date)} · ${escapeHtml(event.city)}</p>
+        <div class="rounded-2xl border border-dashed border-white/15 bg-surface/40 max-w-md mx-auto p-8 mb-8">
+          <p class="text-muted">Aún no hay tablas de resultados publicadas para este evento.</p>
+        </div>
+        <a href="./eventos.html" class="btn-outline inline-block">Volver a eventos</a>
+      </div>`;
   }
 
   const categoryTabs = categories
     .map(
       (cat, i) => `
       <button type="button"
-        class="category-tab rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${i === 0 ? 'bg-secondary text-primary font-bold' : 'bg-surface-raised text-muted hover:text-white'}"
+        class="category-tab rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 cursor-pointer ${
+          i === 0
+            ? 'bg-white text-ink font-bold shadow-glow-strong'
+            : 'bg-surface-raised text-silver border border-white/10 hover:border-white/30 hover:bg-white/10 hover:text-white'
+        }"
         data-category="${cat.categoryId}">
         ${escapeHtml(cat.categoryLabel)}
       </button>`
