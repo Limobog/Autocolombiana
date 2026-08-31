@@ -217,6 +217,45 @@ function renderResultsContent(event: Event, results: EventResults): string {
     </div>`;
 }
 
+function renderSinglePdfContent(event: Event, pdfUrl: string): string {
+  return `
+    <div class="text-left space-y-6">
+      <div class="text-center mb-6">
+        <h1 class="section-title mb-2">Resultados Oficiales</h1>
+        <p class="text-silver font-semibold mb-1">${escapeHtml(event.name)}</p>
+        <p class="text-sm text-muted">${formatDate(event.date)} · ${escapeHtml(event.city)}</p>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-3">
+        <a href="${pdfUrl}" target="_blank" rel="noopener noreferrer" class="btn-primary text-sm font-bold px-6 py-3 inline-flex items-center gap-2 shadow-glow cursor-pointer">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          Abrir / Descargar PDF Oficial
+        </a>
+        <a href="${pdfUrl}" target="_blank" rel="noopener noreferrer" class="btn-outline text-sm font-semibold px-5 py-3 inline-flex items-center gap-2 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+          Pestaña completa
+        </a>
+      </div>
+
+      <div class="rounded-2xl border border-white/15 bg-surface-raised overflow-hidden shadow-2xl">
+        <div class="bg-surface-elevated px-4 py-3 border-b border-white/10 flex items-center justify-between">
+          <span class="text-xs font-semibold text-silver flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            Planilla Oficial de Resultados
+          </span>
+          <a href="${pdfUrl}" target="_blank" rel="noopener noreferrer" class="text-xs text-secondary hover:text-white underline font-medium">Ver en ventana externa</a>
+        </div>
+        <div class="w-full h-[75vh] min-h-[500px] bg-neutral-900">
+          <iframe src="${pdfUrl}" class="w-full h-full border-0" title="Resultados del evento ${escapeHtml(event.name)}"></iframe>
+        </div>
+      </div>
+
+      <div class="text-center pt-4">
+        <a href="./eventos.html" class="btn-outline inline-block">Volver a eventos</a>
+      </div>
+    </div>`;
+}
+
 export async function initResultsPage(): Promise<void> {
   const app = document.getElementById('app');
   if (!app) return;
@@ -274,6 +313,29 @@ export async function initResultsPage(): Promise<void> {
   }
 
   const results = await loadEventResults(event.id);
+
+  // Si está en modo PDF único o si tiene URL de PDF
+  const singlePdf =
+    results?.singlePdfUrl ||
+    (event.resultadosUrl &&
+    (event.resultadosUrl.toLowerCase().includes('.pdf') ||
+      event.resultadosUrl.startsWith('data:application/pdf') ||
+      (results?.mode === 'single_pdf' && event.resultadosUrl !== 'local'))
+      ? event.resultadosUrl
+      : undefined);
+
+  if (results?.mode === 'single_pdf' && singlePdf) {
+    content.classList.remove('py-16');
+    content.innerHTML = renderSinglePdfContent(event, singlePdf);
+    return;
+  }
+
+  if (singlePdf && (!results || results.categories.length === 0)) {
+    content.classList.remove('py-16');
+    content.innerHTML = renderSinglePdfContent(event, singlePdf);
+    return;
+  }
+
   if (!results || results.categories.length === 0) {
     content.innerHTML = `
       <div class="text-center">

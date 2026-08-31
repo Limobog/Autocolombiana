@@ -691,13 +691,40 @@ function getEventResults_(ss, eventId) {
   if (!event || !event.resultadosUrl) return null;
 
   var file = findDriveFileByUrl_(event.resultadosUrl);
-  if (!file) return null;
+  if (!file) {
+    if (String(event.resultadosUrl).indexOf('http') === 0) {
+      return {
+        eventId: eventId,
+        updatedAt: '',
+        mode: 'single_pdf',
+        singlePdfUrl: event.resultadosUrl,
+        categories: [],
+      };
+    }
+    return null;
+  }
 
   try {
+    var mime = file.getMimeType();
+    if (mime === 'application/pdf' || file.getName().toLowerCase().indexOf('.pdf') !== -1) {
+      return {
+        eventId: eventId,
+        updatedAt: file.getLastUpdated().toISOString(),
+        mode: 'single_pdf',
+        singlePdfUrl: file.getUrl(),
+        categories: [],
+      };
+    }
     var parsed = JSON.parse(file.getBlob().getDataAsString('UTF-8'));
     return parsed;
   } catch (err) {
-    return null;
+    return {
+      eventId: eventId,
+      updatedAt: '',
+      mode: 'single_pdf',
+      singlePdfUrl: file.getUrl(),
+      categories: [],
+    };
   }
 }
 
@@ -723,6 +750,70 @@ function saveEventResults_(ss, data) {
 
   var eventName = data.eventName || getEventNameById_(ss, data.eventId) || data.eventId;
   var folder = getOrCreateResultsFolder_();
+  var isSinglePdf = data.mode === 'single_pdf' || Boolean(data.singlePdfUpload) || (Boolean(data.singlePdfUrl) && (!data.categories || data.categories.length === 0));
+
+  if (isSinglePdf) {
+    var singlePdfUrl = data.singlePdfUrl || '';
+    if (data.singlePdfUpload && data.singlePdfUpload.archivo && data.singlePdfUpload.archivo.indexOf('data:') === 0) {
+      var pdfName = buildDriveFileName_(
+        data.eventId,
+        eventName,
+        'RESULTADOS_OFICIALES',
+        data.singlePdfUpload.fileName || 'resultados.pdf',
+        data.singlePdfUpload.fileType || 'application/pdf'
+      );
+      var pdfBlob = parseDataUriToBlob_(data.singlePdfUpload.archivo, pdfName);
+      var pdfFile = folder.createFile(pdfBlob);
+      pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      singlePdfUrl = pdfFile.getUrl();
+    }
+
+    var singleResults = {
+      eventId: data.eventId,
+      updatedAt: new Date().toISOString(),
+      mode: 'single_pdf',
+      singlePdfUrl: singlePdfUrl,
+      categories: [],
+    };
+
+    var jsonName = buildDriveFileName_(
+      data.eventId,
+      eventName,
+      'RESULTADOS',
+      'resultados.json',
+      'application/json'
+    );
+    var jsonBlob = Utilities.newBlob(JSON.stringify(singleResults), 'application/json', jsonName);
+
+    var existingEvents = getEvents_(ss);
+    var existingUrl = '';
+    for (var i = 0; i < existingEvents.length; i++) {
+      if (existingEvents[i].id === data.eventId) {
+        existingUrl = existingEvents[i].resultadosUrl || '';
+        break;
+      }
+    }
+
+    var existingFile = findDriveFileByUrl_(existingUrl);
+    if (existingFile) {
+      try {
+        existingFile.setTrashed(true);
+      } catch (err) {}
+    }
+
+    var created = folder.createFile(jsonBlob);
+    created.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    var resultadosUrl = created.getUrl();
+
+    updateEventResultadosUrl_(ss, data.eventId, singlePdfUrl || resultadosUrl);
+
+    return {
+      success: true,
+      results: singleResults,
+      resultadosUrl: singlePdfUrl || resultadosUrl,
+    };
+  }
+
   var categories = (data.categories || []).map(function (cat) {
     var out = {
       categoryId: cat.categoryId,
@@ -738,6 +829,7 @@ function saveEventResults_(ss, data) {
   var results = {
     eventId: data.eventId,
     updatedAt: new Date().toISOString(),
+    mode: 'categories',
     categories: categories,
   };
 

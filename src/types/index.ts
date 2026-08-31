@@ -202,9 +202,13 @@ export interface CategoryResults {
   final?: ResultsTable;
 }
 
+export type ResultsMode = 'categories' | 'single_pdf';
+
 export interface EventResults {
   eventId: string;
   updatedAt: string;
+  mode?: ResultsMode;
+  singlePdfUrl?: string;
   categories: CategoryResults[];
 }
 
@@ -237,6 +241,9 @@ export interface CategoryResultsSavePayload {
 export interface EventResultsSavePayload {
   eventId: string;
   eventName: string;
+  mode?: ResultsMode;
+  singlePdfUrl?: string;
+  singlePdfUpload?: ResultsFileUpload;
   categories: CategoryResultsSavePayload[];
 }
 

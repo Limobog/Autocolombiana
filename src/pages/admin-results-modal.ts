@@ -8,8 +8,10 @@ import {
   type CategoryResultsSavePayload,
   type Event,
   type EventResults,
+  type EventResultsSavePayload,
   type HeatKey,
   type ResultsHeatSavePayload,
+  type ResultsMode,
   type ResultsTable,
 } from '../types';
 import { HEAT_KEYS, HEAT_LABELS, parseResultsCsv, readFileAsText } from '../utils/parse-results-csv';
@@ -242,22 +244,105 @@ export async function openResultsModal(event: Event, onSaved: () => Promise<void
   const drafts: CategoryDraft[] = (existing?.categories ?? []).map(categoryFromExisting);
   const eventCategories = getChampionshipCategories(event.championshipId || 'mx');
 
+  // Determinar modalidad inicial: si ya tenía PDF único o no tiene categorías
+  const initialMode: ResultsMode =
+    existing?.mode === 'single_pdf' || (Boolean(existing?.singlePdfUrl) && drafts.length === 0)
+      ? 'single_pdf'
+      : 'categories';
+
+  let currentMode: ResultsMode = initialMode;
+  let singlePdfFile: File | null = null;
+  const existingSinglePdfUrl =
+    existing?.singlePdfUrl ||
+    (event.resultadosUrl && (event.resultadosUrl.toLowerCase().includes('.pdf') || event.resultadosUrl.startsWith('data:application/pdf'))
+      ? event.resultadosUrl
+      : undefined);
+
   const result = await Swal.fire({
     title: `Resultados · ${event.name}`,
     html: `
-      <div id="results-modal-root" class="text-left space-y-5 max-h-[68vh] overflow-y-auto pr-2 custom-scrollbar">
-        <div class="rounded-xl border border-white/10 bg-surface/80 p-3.5 text-xs text-silver leading-relaxed">
-          <p class="font-bold text-white mb-1">Carga de planillas de resultados:</p>
-          Agrega únicamente las categorías que tengan resultados. Puedes cargar mangas parciales (Manga 1, 2, 3 o Final). Los archivos se procesan y almacenan automáticamente en Google Drive.
-        </div>
-        <div class="flex flex-wrap items-end gap-3 bg-surface-elevated p-4 rounded-xl border border-white/10">
-          <div class="flex-1 min-w-[240px]">
-            <label class="block text-xs font-semibold text-silver uppercase tracking-wider mb-1.5" for="results-add-category">Agregar categoría</label>
-            <select id="results-add-category" class="input-field text-sm py-2.5 bg-surface text-foreground border-white/15"></select>
+      <div id="results-modal-root" class="text-left space-y-5 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+        
+        <!-- Selector de modalidad exclusiva -->
+        <div class="space-y-1.5 bg-surface/90 p-3.5 rounded-2xl border border-white/15">
+          <label class="block text-xs font-bold text-silver uppercase tracking-wider">Elige la modalidad de resultados</label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 p-1 bg-surface-elevated rounded-xl border border-white/10">
+            <button type="button" id="mode-btn-categories" class="mode-tab py-2.5 px-4 rounded-lg text-xs md:text-sm font-semibold transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 ${
+              currentMode === 'categories'
+                ? 'bg-white text-ink font-bold shadow-glow'
+                : 'text-silver hover:text-white hover:bg-white/5'
+            }">
+              <span>📊</span>
+              <span>1. Resultados individuales</span>
+            </button>
+            <button type="button" id="mode-btn-single" class="mode-tab py-2.5 px-4 rounded-lg text-xs md:text-sm font-semibold transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 ${
+              currentMode === 'single_pdf'
+                ? 'bg-white text-ink font-bold shadow-glow'
+                : 'text-silver hover:text-white hover:bg-white/5'
+            }">
+              <span>📄</span>
+              <span>2. Un único resultado (PDF)</span>
+            </button>
           </div>
-          <button type="button" id="results-add-category-btn" class="btn-secondary text-sm py-2.5 px-5 font-bold cursor-pointer hover:border-white hover:bg-white/10">+ Agregar categoría</button>
+          <p class="text-[11px] text-muted text-center pt-0.5">Solo se puede seleccionar una modalidad por evento.</p>
         </div>
-        <div id="results-categories" class="space-y-4"></div>
+
+        <!-- CONTENEDOR 1: Categorías y mangas (individuales) -->
+        <div id="mode-categories-container" class="${currentMode === 'categories' ? '' : 'hidden'} space-y-4">
+          <div class="rounded-xl border border-white/10 bg-surface/80 p-3.5 text-xs text-silver leading-relaxed">
+            <p class="font-bold text-white mb-1">Carga de planillas de resultados por categoría:</p>
+            Agrega únicamente las categorías que tengan resultados. Puedes cargar mangas parciales (Manga 1, 2, 3 o Final). Los archivos se procesan y almacenan automáticamente.
+          </div>
+          <div class="flex flex-wrap items-end gap-3 bg-surface-elevated p-4 rounded-xl border border-white/10">
+            <div class="flex-1 min-w-[240px]">
+              <label class="block text-xs font-semibold text-silver uppercase tracking-wider mb-1.5" for="results-add-category">Agregar categoría</label>
+              <select id="results-add-category" class="input-field text-sm py-2.5 bg-surface text-foreground border-white/15"></select>
+            </div>
+            <button type="button" id="results-add-category-btn" class="btn-secondary text-sm py-2.5 px-5 font-bold cursor-pointer hover:border-white hover:bg-white/10">+ Agregar categoría</button>
+          </div>
+          <div id="results-categories" class="space-y-4"></div>
+        </div>
+
+        <!-- CONTENEDOR 2: Documento único en PDF -->
+        <div id="mode-single-container" class="${currentMode === 'single_pdf' ? '' : 'hidden'} space-y-4">
+          <div class="rounded-xl border border-white/10 bg-surface/80 p-3.5 text-xs text-silver leading-relaxed">
+            <p class="font-bold text-white mb-1">Carga de documento único oficial:</p>
+            Sube la planilla o documento PDF completo con todos los resultados consolidados de la válida. Al hacer clic en <strong>Ver resultados</strong>, se abrirá directamente este PDF.
+          </div>
+
+          ${
+            existingSinglePdfUrl
+              ? `
+            <div class="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl border border-white/15 bg-surface-elevated">
+              <div class="flex items-center gap-2">
+                <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                <span class="text-xs text-silver font-medium">Hay un PDF de resultados guardado</span>
+              </div>
+              <a href="${existingSinglePdfUrl}" target="_blank" rel="noopener noreferrer" class="btn-outline py-1.5 px-3 text-xs text-white inline-flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                Ver PDF actual
+              </a>
+            </div>`
+              : ''
+          }
+
+          <div class="rounded-2xl border border-dashed border-white/20 bg-surface/40 p-6 text-center space-y-3">
+            <label for="results-single-pdf-input" class="block cursor-pointer space-y-2 group">
+              <div class="w-12 h-12 rounded-full bg-white/10 text-white flex items-center justify-center mx-auto group-hover:bg-white/20 group-hover:scale-105 transition-all">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+              </div>
+              <p class="text-sm font-semibold text-white group-hover:text-silver transition-colors">
+                ${existingSinglePdfUrl ? 'Subir un nuevo archivo PDF para reemplazar el actual' : 'Seleccionar archivo PDF de resultados'}
+              </p>
+              <p class="text-xs text-muted">Formato .pdf (máx. ${CONFIG.maxFileSizeMB} MB)</p>
+            </label>
+            <input type="file" id="results-single-pdf-input" accept=".pdf,application/pdf" class="hidden" />
+            <div id="results-single-pdf-status" class="pt-2">
+              <span class="text-muted text-xs">Ningún archivo nuevo seleccionado</span>
+            </div>
+          </div>
+        </div>
+
       </div>`,
     width: '58rem',
     showCancelButton: true,
@@ -277,6 +362,47 @@ export async function openResultsModal(event: Event, onSaved: () => Promise<void
     didOpen: () => {
       const root = document.getElementById('results-modal-root');
       if (!root) return;
+
+      const catBtn = root.querySelector<HTMLButtonElement>('#mode-btn-categories');
+      const singleBtn = root.querySelector<HTMLButtonElement>('#mode-btn-single');
+      const catContainer = root.querySelector<HTMLElement>('#mode-categories-container');
+      const singleContainer = root.querySelector<HTMLElement>('#mode-single-container');
+      const pdfInput = root.querySelector<HTMLInputElement>('#results-single-pdf-input');
+      const pdfStatus = root.querySelector<HTMLElement>('#results-single-pdf-status');
+
+      const switchMode = (mode: ResultsMode) => {
+        currentMode = mode;
+        if (catBtn) {
+          catBtn.className = `mode-tab py-2.5 px-4 rounded-lg text-xs md:text-sm font-semibold transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 ${
+            mode === 'categories' ? 'bg-white text-ink font-bold shadow-glow' : 'text-silver hover:text-white hover:bg-white/5'
+          }`;
+        }
+        if (singleBtn) {
+          singleBtn.className = `mode-tab py-2.5 px-4 rounded-lg text-xs md:text-sm font-semibold transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 ${
+            mode === 'single_pdf' ? 'bg-white text-ink font-bold shadow-glow' : 'text-silver hover:text-white hover:bg-white/5'
+          }`;
+        }
+        catContainer?.classList.toggle('hidden', mode !== 'categories');
+        singleContainer?.classList.toggle('hidden', mode !== 'single_pdf');
+      };
+
+      catBtn?.addEventListener('click', () => switchMode('categories'));
+      singleBtn?.addEventListener('click', () => switchMode('single_pdf'));
+
+      pdfInput?.addEventListener('change', () => {
+        const file = pdfInput.files?.[0] ?? null;
+        singlePdfFile = file;
+        if (pdfStatus) {
+          if (file) {
+            pdfStatus.innerHTML = `
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)
+              </span>`;
+          } else {
+            pdfStatus.innerHTML = `<span class="text-muted text-xs">Ningún archivo nuevo seleccionado</span>`;
+          }
+        }
+      });
 
       const rerender = () => bindCategoryUi(root, drafts, eventCategories);
       rerender();
@@ -311,6 +437,34 @@ export async function openResultsModal(event: Event, onSaved: () => Promise<void
     },
     preConfirm: async () => {
       try {
+        if (currentMode === 'single_pdf') {
+          if (!singlePdfFile && !existingSinglePdfUrl) {
+            Swal.showValidationMessage('Debes seleccionar un archivo PDF con los resultados.');
+            return false;
+          }
+
+          let singlePdfUpload: EventResultsSavePayload['singlePdfUpload'];
+          if (singlePdfFile) {
+            assertFileSize(singlePdfFile);
+            singlePdfUpload = {
+              archivo: await readFileAsDataUrl(singlePdfFile),
+              fileName: singlePdfFile.name,
+              fileType: singlePdfFile.type || 'application/pdf',
+            };
+          }
+
+          const payload: EventResultsSavePayload = {
+            eventId: event.id,
+            eventName: event.name,
+            mode: 'single_pdf',
+            singlePdfUrl: existingSinglePdfUrl,
+            singlePdfUpload,
+            categories: [],
+          };
+          return payload;
+        }
+
+        // Modo categorías individuales
         if (drafts.length === 0) {
           Swal.showValidationMessage('Agrega al menos una categoría con resultados.');
           return false;
@@ -320,7 +474,14 @@ export async function openResultsModal(event: Event, onSaved: () => Promise<void
           Swal.showValidationMessage('Cada categoría necesita al menos un CSV (manga o final).');
           return false;
         }
-        return categories;
+
+        const payload: EventResultsSavePayload = {
+          eventId: event.id,
+          eventName: event.name,
+          mode: 'categories',
+          categories,
+        };
+        return payload;
       } catch (err) {
         Swal.showValidationMessage(err instanceof Error ? err.message : 'No se pudieron leer los archivos.');
         return false;
@@ -330,7 +491,7 @@ export async function openResultsModal(event: Event, onSaved: () => Promise<void
 
   if (!result.isConfirmed || !result.value) return;
 
-  const categories = result.value as CategoryResultsSavePayload[];
+  const savePayload = result.value as EventResultsSavePayload;
   Swal.fire({
     title: 'Guardando resultados...',
     allowOutsideClick: false,
@@ -344,15 +505,14 @@ export async function openResultsModal(event: Event, onSaved: () => Promise<void
   });
 
   try {
-    await saveEventResults({
-      eventId: event.id,
-      eventName: event.name,
-      categories,
-    });
+    await saveEventResults(savePayload);
     await Swal.fire({
       icon: 'success',
       title: 'Resultados guardados',
-      text: 'Los CSV y PDF se almacenaron en Drive y la página de resultados ya está disponible.',
+      text:
+        savePayload.mode === 'single_pdf'
+          ? 'El PDF de resultados se guardó correctamente y ya está disponible.'
+          : 'Las planillas se almacenaron correctamente y la página de resultados ya está disponible.',
       confirmButtonText: 'Aceptar',
       buttonsStyling: false,
       customClass: {
@@ -383,5 +543,7 @@ export function categoryHasAnyHeat(cat: CategoryResults): boolean {
 }
 
 export function eventResultsArePublic(results: EventResults | null): boolean {
-  return Boolean(results?.categories.some(categoryHasAnyHeat));
+  if (!results) return false;
+  if (results.mode === 'single_pdf' && results.singlePdfUrl) return true;
+  return Boolean(results.categories.some(categoryHasAnyHeat));
 }

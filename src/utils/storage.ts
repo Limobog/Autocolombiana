@@ -480,10 +480,13 @@ function writeLocalResultsMap(map: Record<string, EventResults>): void {
 }
 
 function stripUploadsFromResults(payload: EventResultsSavePayload): EventResults {
+  const mode = payload.mode ?? (payload.singlePdfUpload || payload.singlePdfUrl ? 'single_pdf' : 'categories');
   return {
     eventId: payload.eventId,
     updatedAt: new Date().toISOString(),
-    categories: payload.categories.map((cat) => {
+    mode,
+    singlePdfUrl: payload.singlePdfUpload?.archivo ?? payload.singlePdfUrl,
+    categories: (payload.categories || []).map((cat) => {
       const next: EventResults['categories'][number] = {
         categoryId: cat.categoryId,
         categoryLabel: cat.categoryLabel,
@@ -543,13 +546,14 @@ export async function saveEventResults(
   map[payload.eventId] = results;
   writeLocalResultsMap(map);
 
+  const localMarker = results.mode === 'single_pdf' && results.singlePdfUrl ? results.singlePdfUrl : LOCAL_RESULTS_MARKER;
   const events = await loadEvents();
   const updated = events.map((e) =>
-    e.id === payload.eventId ? { ...e, resultadosUrl: LOCAL_RESULTS_MARKER } : e
+    e.id === payload.eventId ? { ...e, resultadosUrl: localMarker } : e
   );
   await saveEvents(updated);
 
-  return { results, resultadosUrl: LOCAL_RESULTS_MARKER };
+  return { results, resultadosUrl: localMarker };
 }
 
 export async function readFileAsDataUrl(file: File): Promise<string> {
