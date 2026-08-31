@@ -65,12 +65,13 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
     extraStat: ['$20M', 'Premiación'],
     calendar: [],
     bankDetails: {
-      bank: 'Bancolombia',
+      bank: 'Bre-B',
       accountHolder: 'LIMOBOG',
       idLabel: 'NIT',
       idValue: '860080966',
-      accountType: 'Ahorros',
-      accountNumber: '20531257354',
+      accountType: 'Llave Bre-B',
+      accountNumber: '3146105217',
+      paymentKey: '3146105217',
     },
   },
   enduro: {
