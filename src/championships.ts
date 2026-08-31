@@ -66,9 +66,9 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
     calendar: [],
     bankDetails: {
       bank: 'Bre-B',
-      accountHolder: 'LIMOBOG',
-      idLabel: 'NIT',
-      idValue: '860080966',
+      accountHolder: 'Wilman Esteban Chivata',
+      idLabel: 'Cédula',
+      idValue: '1010234134',
       accountType: 'Llave Bre-B',
       accountNumber: '3146105217',
       paymentKey: '3146105217',
