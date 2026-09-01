@@ -604,14 +604,21 @@ function getOrCreateResultsFolder_() {
   return root.createFolder(name);
 }
 
-function uploadResultsBlob_(folder, base64DataUrl, fileName, mimeType) {
-  var parts = String(base64DataUrl || '').split(',');
+function parseDataUriToBlob_(dataUri, fileName, fallbackMime) {
+  var parts = String(dataUri || '').split(',');
+  var header = parts[0] || '';
   var base64 = parts.length > 1 ? parts[1] : parts[0];
-  var blob = Utilities.newBlob(
+  var mimeMatch = header.match(/data:([^;]+);/);
+  var mimeType = (mimeMatch && mimeMatch[1]) ? mimeMatch[1] : (fallbackMime || 'application/octet-stream');
+  return Utilities.newBlob(
     Utilities.base64Decode(base64),
-    mimeType || 'application/octet-stream',
-    fileName
+    mimeType,
+    fileName || 'archivo'
   );
+}
+
+function uploadResultsBlob_(folder, base64DataUrl, fileName, mimeType) {
+  var blob = parseDataUriToBlob_(base64DataUrl, fileName, mimeType);
   var file = folder.createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   return file.getUrl();
