@@ -9,7 +9,7 @@ import {
   getAvailablePilotNumbers,
   readFileAsDataUrl,
 } from '../utils/storage';
-import { calculateAge, formatDate } from '../utils/age';
+import { calculateAge, calculateAgeOnJan1, formatDate } from '../utils/age';
 import { getCategoriesForAge, formatCategoryOptionLabel, type ChampionshipId, type Event } from '../types';
 import { formatCop } from '../utils/registration-total';
 import Swal from 'sweetalert2';
@@ -25,10 +25,14 @@ function getEventIdFromUrl(): string | null {
   return new URLSearchParams(window.location.search).get('evento');
 }
 
-function renderCategoryCheckboxes(age: number, championshipId: ChampionshipId, selected: string[] = []): string {
-  const categories = getCategoriesForAge(age, championshipId);
+function renderCategoryCheckboxes(
+  ageOrContext: number | { birthDate: string; eventDate?: string },
+  championshipId: ChampionshipId,
+  selected: string[] = []
+): string {
+  const categories = getCategoriesForAge(ageOrContext, championshipId);
   if (categories.length === 0) {
-    return '<p class="text-sm text-muted">Sin categorias disponibles para esta edad.</p>';
+    return '<p class="text-sm text-muted">Sin categorías disponibles para esta edad.</p>';
   }
   return `<div class="space-y-2" id="categoria-checkboxes">
     ${categories
@@ -222,31 +226,26 @@ function renderForm(events: Event[], selectedEventId: string | null, pilotNumber
     </form>`;
 }
 
-async function refreshPilotSelect(eventId: string): Promise<void> {
+async function refreshPilotSelect(eventId: string, currentNumber?: number): Promise<void> {
   const select = document.getElementById('numeroPiloto') as HTMLSelectElement | null;
-  const status = document.getElementById('pilot-status');
+  const status = document.getElementById('pilot-number-status');
   if (!select || !status) return;
-
-  if (!eventId) {
-    select.innerHTML = '<option value="">Selecciona un evento</option>';
-    status.textContent = 'Selecciona un evento para ver numeros disponibles.';
-    return;
-  }
 
   select.disabled = true;
   select.classList.add('opacity-60', 'pointer-events-none');
-  status.innerHTML =
-    '<span class="inline-flex items-center gap-2 text-silver"><span class="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>Consultando numeros disponibles...</span>';
+  status.textContent = 'Consultando números disponibles...';
 
   try {
-    const numbers = await getAvailablePilotNumbers(eventId);
-    const current = Number(select.value);
-    select.innerHTML = renderPilotOptions(numbers, current || undefined);
-    status.textContent = numbers.length
-      ? `${numbers.length} numero(s) disponible(s) para este evento.`
-      : 'No hay numeros disponibles en este evento.';
-  } catch {
-    select.innerHTML = '<option value="">Error al cargar numeros</option>';
+    const available = await getAvailablePilotNumbers(eventId);
+    const numbersToShow =
+      currentNumber !== undefined && !available.includes(currentNumber)
+        ? [...available, currentNumber].sort((a, b) => a - b)
+        : available;
+
+    select.innerHTML = renderPilotOptions(numbersToShow, currentNumber);
+    status.textContent = `${available.length} números disponibles para este evento.`;
+  } catch (err) {
+    console.error('Error cargando numeros disponibles:', err);
     status.textContent = 'No se pudieron cargar los numeros. Intenta de nuevo.';
   } finally {
     select.disabled = false;
@@ -254,37 +253,55 @@ async function refreshPilotSelect(eventId: string): Promise<void> {
   }
 }
 
-function updateCategories(age: number, events: Event[]): void {
+function updateCategories(birthDate: string, events: Event[]): void {
   const container = document.getElementById('categoria-container');
   const ageDisplay = document.getElementById('age-display');
+  const eventSelect = document.getElementById('eventId') as HTMLSelectElement | null;
   if (!container || !ageDisplay) return;
 
-  if (age < 0) {
+  if (!birthDate) {
+    ageDisplay.classList.add('hidden');
+    container.classList.add('opacity-60', 'pointer-events-none');
+    container.innerHTML = '<p class="text-sm text-muted">Ingresa tu fecha de nacimiento</p>';
+    return;
+  }
+
+  const selectedEvent = events.find((e) => e.id === eventSelect?.value);
+  const eventDate = selectedEvent?.date;
+  const ageOnEvent = calculateAge(birthDate, eventDate);
+  const ageOnJan1 = calculateAgeOnJan1(birthDate, eventDate);
+
+  if (ageOnEvent < 0 || ageOnJan1 < 0) {
     ageDisplay.classList.add('hidden');
     container.classList.add('opacity-60', 'pointer-events-none');
     container.innerHTML = '<p class="text-sm text-muted">Fecha invalida</p>';
     return;
   }
 
-  ageDisplay.textContent = `Edad calculada: ${age} años`;
+  const previouslySelected = getSelectedCategoryIds();
+  const championshipId = getActiveChampionship().id;
+  const ageContext = { birthDate, eventDate };
+  const categories = getCategoriesForAge(ageContext, championshipId);
+
+  ageDisplay.textContent =
+    ageOnJan1 !== ageOnEvent
+      ? `Edad calculada: ${ageOnEvent} años (${ageOnJan1} años al 1 de enero)`
+      : `Edad calculada: ${ageOnEvent} años`;
   ageDisplay.classList.remove('hidden');
 
-  const championshipId = getActiveChampionship().id;
-  const categories = getCategoriesForAge(age, championshipId);
   container.classList.toggle('opacity-60', categories.length === 0);
   container.classList.toggle('pointer-events-none', categories.length === 0);
-  container.innerHTML = renderCategoryCheckboxes(age, championshipId);
+  container.innerHTML = renderCategoryCheckboxes(ageContext, championshipId, previouslySelected);
   updateInscriptionTotal(events);
 }
 
 function updateInscriptionTotal(events: Event[]): void {
   const eventSelect = document.getElementById('eventId') as HTMLSelectElement | null;
   const totalBlock = document.getElementById('inscription-total');
-  const paymentSection = document.getElementById('payment-section');
   const unitPriceEl = document.getElementById('inscription-unit-price');
   const totalAmountEl = document.getElementById('inscription-total-amount');
   const countEl = document.getElementById('inscription-category-count');
-  if (!eventSelect || !totalBlock || !paymentSection || !unitPriceEl || !totalAmountEl || !countEl) return;
+  if (!eventSelect || !totalBlock || !unitPriceEl || !totalAmountEl || !countEl) return;
 
   const event = events.find((e) => e.id === eventSelect.value);
   const selectedCount = getSelectedCategoryIds().length;
@@ -293,13 +310,11 @@ function updateInscriptionTotal(events: Event[]): void {
 
   if (selectedCount > 0 && event) {
     totalBlock.classList.remove('hidden');
-    paymentSection.classList.remove('hidden');
     unitPriceEl.textContent = formatCop(unitPrice);
     totalAmountEl.textContent = formatCop(total);
     countEl.textContent = String(selectedCount);
   } else {
     totalBlock.classList.add('hidden');
-    paymentSection.classList.add('hidden');
     unitPriceEl.textContent = '—';
     totalAmountEl.textContent = '—';
     countEl.textContent = '0';
@@ -349,11 +364,12 @@ function bindRegistrationForm(events: Event[]): void {
 
   eventSelect?.addEventListener('change', () => {
     if (eventSelect.value) void refreshPilotSelect(eventSelect.value);
+    if (birthInput?.value) updateCategories(birthInput.value, events);
     updateInscriptionTotal(events);
   });
 
   birthInput?.addEventListener('change', () => {
-    if (birthInput.value) updateCategories(calculateAge(birthInput.value), events);
+    if (birthInput.value) updateCategories(birthInput.value, events);
   });
 
   categoriaContainer?.addEventListener('change', (e) => {
@@ -402,7 +418,10 @@ function bindRegistrationForm(events: Event[]): void {
 
     const fd = new FormData(form);
     const fechaNacimiento = fd.get('fechaNacimiento') as string;
-    const edad = calculateAge(fechaNacimiento);
+    const eventId = fd.get('eventId') as string;
+    const selectedEvent = events.find((e) => e.id === eventId);
+    const eventDate = selectedEvent?.date;
+    const edad = calculateAge(fechaNacimiento, eventDate);
     const categoriaIds = getSelectedCategoryIds();
 
     if (edad < 0) {
@@ -410,7 +429,10 @@ function bindRegistrationForm(events: Event[]): void {
       return;
     }
 
-    const validCategories = getCategoriesForAge(edad, getActiveChampionship().id);
+    const validCategories = getCategoriesForAge(
+      { birthDate: fechaNacimiento, eventDate },
+      getActiveChampionship().id
+    );
     if (categoriaIds.length === 0 || !categoriaIds.every((id) => validCategories.some((c) => c.id === id))) {
       await Swal.fire({
         icon: 'error',
@@ -420,7 +442,7 @@ function bindRegistrationForm(events: Event[]): void {
       return;
     }
 
-    if (!paymentFileData) {
+    if (!idFileData) {
       await Swal.fire({ icon: 'error', title: 'Documento', text: 'Debes adjuntar el documento de identidad.' });
       return;
     }

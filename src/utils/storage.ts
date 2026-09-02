@@ -322,10 +322,10 @@ export async function createRegistration(data: RegistrationFormData): Promise<Re
   if (categoryError) throw new Error(categoryError);
 
   const { categoriaId, categoriaLabel } = resolveCategoryFields(data.categoriaIds);
-  const edad = calculateAge(data.fechaNacimiento);
-  const now = new Date().toISOString();
   const events = await loadEvents();
   const event = events.find((e) => e.id === data.eventId);
+  const edad = calculateAge(data.fechaNacimiento, event?.date);
+  const now = new Date().toISOString();
   const valorTotalInscripcion = computeRegistrationTotal(event, data.categoriaIds);
 
   const registration: Registration = {
@@ -391,6 +391,8 @@ export async function updateRegistration(
 
   const current = registrations[index];
   const merged = { ...current, ...updates, updatedAt: new Date().toISOString() };
+  const events = await loadEvents();
+  const event = events.find((e) => e.id === merged.eventId);
 
   if (
     updates.numeroPiloto !== undefined &&
@@ -401,7 +403,7 @@ export async function updateRegistration(
 
   if (updates.fechaNacimiento) {
     merged.fechaNacimiento = parseSheetDate(updates.fechaNacimiento);
-    merged.edad = calculateAge(merged.fechaNacimiento);
+    merged.edad = calculateAge(merged.fechaNacimiento, event?.date);
   }
 
   if (updates.categoriaId) {
@@ -417,8 +419,6 @@ export async function updateRegistration(
       .join('|');
   }
 
-  const events = await loadEvents();
-  const event = events.find((e) => e.id === merged.eventId);
   merged.valorTotalInscripcion = computeRegistrationTotal(
     event,
     merged.categoriaId.split(',').map((id) => id.trim()).filter(Boolean)

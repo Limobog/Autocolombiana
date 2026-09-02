@@ -126,8 +126,12 @@ function parseCategoryIds(value: string): string[] {
     .filter(Boolean);
 }
 
-function renderCategoryCheckboxes(age: number, championshipId: ChampionshipId, selected: string[] = []): string {
-  const categories = getCategoriesForAge(age, championshipId, { includeIds: selected });
+function renderCategoryCheckboxes(
+  ageOrContext: number | { birthDate: string; eventDate?: string },
+  championshipId: ChampionshipId,
+  selected: string[] = []
+): string {
+  const categories = getCategoriesForAge(ageOrContext, championshipId, { includeIds: selected });
   if (categories.length === 0) {
     return '<p class="text-sm text-muted">Sin categorias disponibles para esta edad.</p>';
   }
@@ -156,23 +160,27 @@ function getUsedCategoryIds(registrations: Registration[]): Set<string> {
   return used;
 }
 
-function refreshEditFormCategories(form: HTMLFormElement): void {
+function refreshEditFormCategories(form: HTMLFormElement, registrations: Registration[] = [], events: Event[] = []): void {
   const birthInput = form.querySelector<HTMLInputElement>('input[name="fechaNacimiento"]');
   const container = form.querySelector<HTMLElement>('.edit-categoria-container');
   if (!birthInput || !container) return;
 
+  const id = form.getAttribute('data-id');
+  const reg = registrations.find((r) => r.id === id);
+  const event = events.find((e) => e.id === reg?.eventId);
   const championshipId = (container.getAttribute('data-champ') as ChampionshipId) || 'mx';
   const selected = Array.from(form.querySelectorAll<HTMLInputElement>('input[name="categoriaIds"]:checked')).map(
     (el) => el.value
   );
-  const age = birthInput.value ? calculateAge(parseSheetDate(birthInput.value)) : -1;
+  const birthDate = parseSheetDate(birthInput.value);
+  const age = birthDate ? calculateAge(birthDate, event?.date) : -1;
 
   if (age < 0) {
     container.innerHTML = '<p class="text-sm text-muted">Fecha invalida</p>';
     return;
   }
 
-  container.innerHTML = renderCategoryCheckboxes(age, championshipId, selected);
+  container.innerHTML = renderCategoryCheckboxes({ birthDate, eventDate: event?.date }, championshipId, selected);
 }
 
 function renderDocumentLinkCell(url: string | undefined, title: string, ariaLabel: string): string {
@@ -188,16 +196,19 @@ function renderDocumentLinkCell(url: string | undefined, title: string, ariaLabe
 function renderRegistrationRow(reg: Registration, events: Event[]): string {
   const selectedCategoryIds = parseCategoryIds(reg.categoriaId);
   const birthDate = parseSheetDate(reg.fechaNacimiento);
-  const ageForCategories = birthDate ? calculateAge(birthDate) : reg.edad;
+  const event = events.find((e) => e.id === reg.eventId);
+  const eventDate = event?.date;
+  const ageForCategories = birthDate ? calculateAge(birthDate, eventDate) : reg.edad;
   const categoryAge = ageForCategories >= 0 ? ageForCategories : reg.edad;
   const totalLabel = formatCop(resolveRegistrationTotal(reg, events));
   const championshipId = getEventChampionshipId(events, reg.eventId);
+  const ageContext = birthDate ? { birthDate, eventDate } : categoryAge;
 
   return `
     <tr class="border-b border-white/10 hover:bg-surface-raised" data-id="${reg.id}">
       <td class="px-3 py-3 text-sm">#${reg.numeroPiloto}</td>
       <td class="px-3 py-3 text-sm">${reg.nombre} ${reg.apellido}</td>
-      <td class="px-3 py-3 text-sm hidden md:table-cell">${reg.edad} años</td>
+      <td class="px-3 py-3 text-sm hidden md:table-cell">${categoryAge} años</td>
       <td class="px-3 py-3 text-sm hidden lg:table-cell">${formatCategoryDisplayLabel(reg.categoriaId, reg.categoriaLabel)}</td>
       <td class="px-3 py-3 text-sm hidden md:table-cell font-semibold text-white">${totalLabel}</td>
       <td class="px-3 py-3 text-sm hidden lg:table-cell">${reg.ciudad}</td>
@@ -223,7 +234,7 @@ function renderRegistrationRow(reg: Registration, events: Event[]): string {
           <input type="number" name="numeroPiloto" value="${reg.numeroPiloto}" min="4" max="999" class="input-field text-sm" required />
           <div class="sm:col-span-2 lg:col-span-3">
             <p class="text-sm text-secondary mb-2 font-medium">Categorias *</p>
-            <div class="edit-categoria-container" data-champ="${championshipId}">${renderCategoryCheckboxes(categoryAge, championshipId, selectedCategoryIds)}</div>
+            <div class="edit-categoria-container" data-champ="${championshipId}">${renderCategoryCheckboxes(ageContext, championshipId, selectedCategoryIds)}</div>
           </div>
           <div class="sm:col-span-2 lg:col-span-3 flex gap-2">
             <button type="submit" class="btn-secondary text-sm py-2 px-4">Guardar</button>
@@ -1031,7 +1042,9 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
 
   document.querySelectorAll('.edit-form').forEach((form) => {
     const birthInput = form.querySelector<HTMLInputElement>('input[name="fechaNacimiento"]');
-    birthInput?.addEventListener('change', () => refreshEditFormCategories(form as HTMLFormElement));
+    birthInput?.addEventListener('change', () =>
+      refreshEditFormCategories(form as HTMLFormElement, registrations, events)
+    );
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1040,10 +1053,15 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
       const fechaNacimiento = parseSheetDate(fd.get('fechaNacimiento') as string);
       const categoriaIds = fd.getAll('categoriaIds').map(String);
       const registration = registrations.find((r) => r.id === id);
+      const event = events.find((e) => e.id === registration?.eventId);
       const championshipId = registration ? getEventChampionshipId(events, registration.eventId) : 'mx';
-      const validCategories = getCategoriesForAge(calculateAge(fechaNacimiento), championshipId, {
-        includeIds: categoriaIds,
-      });
+      const validCategories = getCategoriesForAge(
+        { birthDate: fechaNacimiento, eventDate: event?.date },
+        championshipId,
+        {
+          includeIds: categoriaIds,
+        }
+      );
 
       if (!fechaNacimiento) {
         await showError('Fecha invalida', 'Revisa la fecha de nacimiento.');

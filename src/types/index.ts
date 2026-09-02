@@ -1,3 +1,5 @@
+import { isPilotAgeValidForCategory } from '../utils/age';
+
 export const PILOT_NUMBER_MIN = 4;
 export const PILOT_NUMBER_MAX = 999;
 
@@ -142,20 +144,38 @@ export function getCategoryById(id: string): Category | undefined {
   );
 }
 
+export type AgeValidationContext =
+  | number
+  | {
+      birthDate: string;
+      eventDate?: string | Date;
+    };
+
 /**
  * Categorías elegibles por edad.
+ * - Si se pasa un contexto con fecha de nacimiento y fecha de evento:
+ *   La edad mínima se valida con la edad al día del evento (si cumple años el día del evento es válido).
+ *   La edad máxima se valida con la edad al 1ro de enero del año correspondiente.
+ * - Si se pasa un número de edad, se valida directamente en el rango [minAge, maxAge].
  * Por defecto solo habilita las activas; `includeIds` permite mostrar
  * categorías inhabilitadas ya seleccionadas (edición de inscripciones).
  */
 export function getCategoriesForAge(
-  age: number,
+  ageOrContext: AgeValidationContext,
   championshipId: ChampionshipId = 'mx',
   options?: { includeIds?: string[] }
 ): Category[] {
-  if (age < 0) return [];
   const include = new Set((options?.includeIds ?? []).map(resolveCategoryId));
   return getChampionshipCategories(championshipId).filter((c) => {
-    if (age < c.minAge || age > c.maxAge) return false;
+    if (typeof ageOrContext === 'number') {
+      if (ageOrContext < 0 || ageOrContext < c.minAge || ageOrContext > c.maxAge) return false;
+    } else if (ageOrContext && typeof ageOrContext === 'object') {
+      if (!isPilotAgeValidForCategory(c.minAge, c.maxAge, ageOrContext.birthDate, ageOrContext.eventDate)) {
+        return false;
+      }
+    } else {
+      return false;
+    }
     return isCategoryEnabled(c) || include.has(c.id);
   });
 }

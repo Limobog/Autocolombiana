@@ -193,7 +193,8 @@ function updateRegistration_(ss, id, updates) {
   merged.updatedAt = new Date().toISOString();
   if (merged.fechaNacimiento) {
     merged.fechaNacimiento = parseSheetDate_(merged.fechaNacimiento);
-    merged.edad = calculateAge_(merged.fechaNacimiento);
+    var eventObj = getEventById_(ss, merged.eventId);
+    merged.edad = calculateAge_(merged.fechaNacimiento, eventObj ? eventObj.date : null);
   }
   if (updates.eventId !== undefined) {
     merged.eventName = getEventNameById_(ss, merged.eventId);
@@ -289,11 +290,12 @@ function parseSheetDate_(value) {
   return str;
 }
 
-function calculateAge_(birthDateStr) {
+function calculateAge_(birthDateStr, refDateStr) {
   if (!birthDateStr) return '';
   var birth = new Date(birthDateStr + 'T12:00:00');
   if (isNaN(birth.getTime())) return '';
-  var ref = new Date();
+  var ref = refDateStr ? new Date(parseSheetDate_(refDateStr) + 'T12:00:00') : new Date();
+  if (isNaN(ref.getTime())) ref = new Date();
   var age = ref.getFullYear() - birth.getFullYear();
   var m = ref.getMonth() - birth.getMonth();
   if (m < 0 || (m === 0 && ref.getDate() < birth.getDate())) age--;
@@ -326,8 +328,9 @@ function prepareRegistrationRow_(ss, data) {
   });
   row.eventName = getEventNameById_(ss, data.eventId);
   row.fechaNacimiento = parseSheetDate_(row.fechaNacimiento);
+  var eventObj = getEventById_(ss, data.eventId);
   if (row.fechaNacimiento) {
-    row.edad = calculateAge_(row.fechaNacimiento);
+    row.edad = calculateAge_(row.fechaNacimiento, eventObj ? eventObj.date : null);
   }
   if (!row.comprobantePagoUrl && data.comprobantePagoArchivo && String(data.comprobantePagoArchivo).indexOf('http') === 0) {
     row.comprobantePagoUrl = data.comprobantePagoArchivo;
