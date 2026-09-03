@@ -298,6 +298,7 @@ function updateCategories(birthDate: string, events: Event[]): void {
 function updateInscriptionTotal(events: Event[]): void {
   const eventSelect = document.getElementById('eventId') as HTMLSelectElement | null;
   const totalBlock = document.getElementById('inscription-total');
+  const paymentSection = document.getElementById('payment-section');
   const unitPriceEl = document.getElementById('inscription-unit-price');
   const totalAmountEl = document.getElementById('inscription-total-amount');
   const countEl = document.getElementById('inscription-category-count');
@@ -310,11 +311,13 @@ function updateInscriptionTotal(events: Event[]): void {
 
   if (selectedCount > 0 && event) {
     totalBlock.classList.remove('hidden');
+    paymentSection?.classList.remove('hidden');
     unitPriceEl.textContent = formatCop(unitPrice);
     totalAmountEl.textContent = formatCop(total);
     countEl.textContent = String(selectedCount);
   } else {
     totalBlock.classList.add('hidden');
+    paymentSection?.classList.add('hidden');
     unitPriceEl.textContent = '—';
     totalAmountEl.textContent = '—';
     countEl.textContent = '0';
