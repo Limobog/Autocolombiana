@@ -24,6 +24,8 @@ import {
   allPilotNumbers,
 } from './api';
 
+export { allPilotNumbers };
+
 const LOCAL_RESULTS_MARKER = 'local';
 
 async function fetchJson<T>(url: string): Promise<T | null> {

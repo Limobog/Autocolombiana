@@ -7,6 +7,7 @@ import {
   initCategories,
   loadEvents,
   getAvailablePilotNumbers,
+  allPilotNumbers,
   readFileAsDataUrl,
 } from '../utils/storage';
 import { calculateAge, calculateAgeOnJan1, formatDate } from '../utils/age';
@@ -188,7 +189,7 @@ function renderForm(events: Event[], selectedEventId: string | null, pilotNumber
           <select id="numeroPiloto" name="numeroPiloto" required class="input-field">
             ${renderPilotOptions(pilotNumbers)}
           </select>
-          <p id="pilot-status" class="mt-1 text-xs text-muted">Selecciona un evento para ver numeros disponibles.</p>
+          <p id="pilot-number-status" class="mt-1 text-xs text-muted">Selecciona un evento para ver numeros disponibles.</p>
         </div>
       </div>
 
@@ -570,7 +571,7 @@ async function renderPage(): Promise<void> {
         ? eventIdFromUrl
         : events[0]?.id ?? null;
 
-    const initialPilots = initialEventId ? await getAvailablePilotNumbers(initialEventId) : [];
+    const initialPilots = allPilotNumbers();
 
     card.innerHTML =
       events.length === 0
@@ -578,6 +579,10 @@ async function renderPage(): Promise<void> {
         : renderForm(events, initialEventId, initialPilots);
 
     bindRegistrationForm(events);
+
+    if (initialEventId) {
+      void refreshPilotSelect(initialEventId);
+    }
   } catch {
     card.innerHTML =
       '<p class="text-center text-silver-400 py-8">No se pudieron cargar los datos. Recarga la pagina e intenta de nuevo.</p>';

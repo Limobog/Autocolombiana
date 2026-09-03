@@ -237,15 +237,36 @@ function deleteRegistration_(ss, id) {
 // ─── Pilot number check ──────────────────────────────────────────────────────
 
 function isPilotNumberAvailable_(ss, eventId, numero, excludeId) {
-  const regs = getRegistrations_(ss);
-  for (var i = 0; i < regs.length; i++) {
-    var r = regs[i];
-    if (
-      String(r.eventId) === String(eventId) &&
-      Number(r.numeroPiloto) === Number(numero) &&
-      (!excludeId || String(r.id) !== String(excludeId))
-    ) {
-      return false;
+  var sheet = getRegistrationsSheet_(ss);
+  if (!sheet || sheet.getLastRow() < 2) return true;
+
+  var lastCol = sheet.getLastColumn();
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var eventIdCol = -1;
+  var pilotNumCol = -1;
+  var idCol = -1;
+
+  for (var j = 0; j < headers.length; j++) {
+    var h = String(headers[j] || '').trim();
+    if (h === 'eventId') eventIdCol = j + 1;
+    if (h === 'numeroPiloto') pilotNumCol = j + 1;
+    if (h === 'id') idCol = j + 1;
+  }
+
+  var numRows = sheet.getLastRow() - 1;
+  if (eventIdCol > 0 && pilotNumCol > 0 && numRows > 0) {
+    var eventVals = sheet.getRange(2, eventIdCol, numRows, 1).getValues();
+    var numVals = sheet.getRange(2, pilotNumCol, numRows, 1).getValues();
+    var idVals = (excludeId && idCol > 0) ? sheet.getRange(2, idCol, numRows, 1).getValues() : null;
+
+    for (var i = 0; i < numRows; i++) {
+      if (
+        String(eventVals[i][0]) === String(eventId) &&
+        Number(numVals[i][0]) === Number(numero) &&
+        (!excludeId || !idVals || String(idVals[i][0]) !== String(excludeId))
+      ) {
+        return false;
+      }
     }
   }
   return true;
@@ -395,18 +416,47 @@ function saveFileToDrive_(data, ss) {
 }
 
 function getAvailablePilotNumbers_(ss, eventId) {
+  var sheet = getRegistrationsSheet_(ss);
+  if (!sheet || sheet.getLastRow() < 2) {
+    return allDefaultPilotNumbers_();
+  }
+
+  // Obtenemos solo los encabezados para saber las columnas exactas de eventId y numeroPiloto
+  var lastCol = sheet.getLastColumn();
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var eventIdCol = -1;
+  var pilotNumCol = -1;
+
+  for (var j = 0; j < headers.length; j++) {
+    var h = String(headers[j] || '').trim();
+    if (h === 'eventId') eventIdCol = j + 1;
+    if (h === 'numeroPiloto') pilotNumCol = j + 1;
+  }
+
   var taken = {};
-  var regs = getRegistrations_(ss);
-  for (var i = 0; i < regs.length; i++) {
-    var r = regs[i];
-    if (String(r.eventId) === String(eventId)) {
-      taken[Number(r.numeroPiloto)] = true;
+  var numRows = sheet.getLastRow() - 1;
+
+  if (eventIdCol > 0 && pilotNumCol > 0 && numRows > 0) {
+    var eventVals = sheet.getRange(2, eventIdCol, numRows, 1).getValues();
+    var numVals = sheet.getRange(2, pilotNumCol, numRows, 1).getValues();
+    for (var i = 0; i < numRows; i++) {
+      if (String(eventVals[i][0]) === String(eventId)) {
+        var pNum = Number(numVals[i][0]);
+        if (pNum) taken[pNum] = true;
+      }
     }
   }
+
   var numbers = [];
   for (var n = 4; n <= 999; n++) {
     if (!taken[n]) numbers.push(n);
   }
+  return numbers;
+}
+
+function allDefaultPilotNumbers_() {
+  var numbers = [];
+  for (var n = 4; n <= 999; n++) numbers.push(n);
   return numbers;
 }
 
