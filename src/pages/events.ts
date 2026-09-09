@@ -37,7 +37,7 @@ function renderEventCard(event: Event): string {
     ? `<a href="${event.reglamentoUrl}" target="_blank" rel="noopener noreferrer" class="btn-outline w-full sm:w-auto text-center">Ver reglamento</a>`
     : '';
   const resultadosBtn = eventHasResults(event)
-    ? `<a href="./resultados.html?evento=${event.id}" class="btn-secondary w-full sm:w-auto text-center">Ver resultados</a>`
+    ? `<a href="./resultados.html?evento=${event.id}&vista=valida" class="btn-secondary w-full sm:w-auto text-center">Ver resultados</a>`
     : '';
   const inscripcionBtn = event.active
     ? `<a href="./inscripcion.html?evento=${event.id}" class="btn-primary w-full sm:w-auto text-center">Inscribirme en este evento</a>`
@@ -105,9 +105,28 @@ async function renderPage(): Promise<void> {
       <div class="mb-10 text-center">
         <h1 class="section-title mb-4">Eventos ${champ.article === 'el' ? 'del Festival' : 'de la Copa'}</h1>
         <p class="text-muted max-w-2xl mx-auto">
-          Consulta las ${champ.validasLabel} ${champ.article === 'el' ? 'del' : 'de la'} ${champ.name}, descarga el reglamento y revisa los resultados cuando estén disponibles.
+          Consulta las ${champ.validasLabel} ${champ.article === 'el' ? 'del' : 'de la'} ${champ.name}, descarga el reglamento y revisa las clasificaciones oficiales.
         </p>
       </div>
+
+      <!-- Banner de la Tabla General del Campeonato -->
+      <div class="mb-10 rounded-2xl border border-white/15 bg-gradient-to-r from-white/10 via-surface-elevated to-white/5 p-6 md:p-8 shadow-glow flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="space-y-2 text-center md:text-left">
+          <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white border border-white/15">
+            🏆 Clasificación Oficial
+          </div>
+          <h2 class="font-title text-2xl md:text-3xl tracking-wider text-white">
+            Tabla General de Posiciones ${champ.article === 'el' ? 'del Festival' : 'de la Copa'}
+          </h2>
+          <p class="text-sm text-silver max-w-xl">
+            Suma acumulada de puntos fecha a fecha por categoría, calculada con base en los resultados oficiales de la clasificación final de cada válida.
+          </p>
+        </div>
+        <a href="./resultados.html?vista=general" class="btn-primary whitespace-nowrap py-3 px-6 text-sm font-bold shadow-glow shrink-0 cursor-pointer">
+          Ver Tabla General
+        </a>
+      </div>
+
       <div id="events-list" class="grid gap-6 md:grid-cols-2">
         <div class="col-span-full card border border-secondary/30">${renderLoadingPanel()}</div>
       </div>

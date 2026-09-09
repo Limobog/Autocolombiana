@@ -222,7 +222,7 @@ export interface CategoryResults {
   final?: ResultsTable;
 }
 
-export type ResultsMode = 'categories' | 'single_pdf';
+export type ResultsMode = 'categories' | 'single_pdf' | 'single_category_csv';
 
 export interface EventResults {
   eventId: string;

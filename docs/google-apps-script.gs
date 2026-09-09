@@ -653,8 +653,31 @@ function getOrCreateResultsFolder_() {
   var root = DriveApp.getFolderById(DRIVE_FOLDER_ID);
   var name = 'Resultados';
   var folders = root.getFoldersByName(name);
-  if (folders.hasNext()) return folders.next();
-  return root.createFolder(name);
+  var folder = folders.hasNext() ? folders.next() : root.createFolder(name);
+  makeDriveFilePublicView_(folder);
+  return folder;
+}
+
+function makeDriveFilePublicView_(fileOrFolder) {
+  if (!fileOrFolder) return;
+  try {
+    fileOrFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  } catch (err) {
+    try {
+      fileOrFolder.setSharing(DriveApp.Access.ANYONE, DriveApp.Permission.VIEW);
+    } catch (e) {}
+  }
+}
+
+function formatDrivePreviewUrl_(urlOrId) {
+  if (!urlOrId) return '';
+  var str = String(urlOrId).trim();
+  if (str.indexOf('data:') === 0 || str.indexOf('blob:') === 0) return str;
+  var match = str.match(/\/file\/d\/([-\w]{25,})/i) || str.match(/[?&]id=([-\w]{25,})/i) || str.match(/[-\w]{25,}/);
+  if (match) {
+    return 'https://drive.google.com/file/d/' + (match[1] || match[0]) + '/preview';
+  }
+  return str;
 }
 
 function parseDataUriToBlob_(dataUri, fileName, fallbackMime) {
@@ -673,8 +696,8 @@ function parseDataUriToBlob_(dataUri, fileName, fallbackMime) {
 function uploadResultsBlob_(folder, base64DataUrl, fileName, mimeType) {
   var blob = parseDataUriToBlob_(base64DataUrl, fileName, mimeType);
   var file = folder.createFile(blob);
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  return file.getUrl();
+  makeDriveFilePublicView_(file);
+  return formatDrivePreviewUrl_(file.getId());
 }
 
 function findDriveFileByUrl_(url) {
@@ -765,24 +788,34 @@ function getEventResults_(ss, eventId) {
   }
 
   try {
+    makeDriveFilePublicView_(file);
     var mime = file.getMimeType();
     if (mime === 'application/pdf' || file.getName().toLowerCase().indexOf('.pdf') !== -1) {
       return {
         eventId: eventId,
         updatedAt: file.getLastUpdated().toISOString(),
         mode: 'single_pdf',
-        singlePdfUrl: file.getUrl(),
+        singlePdfUrl: formatDrivePreviewUrl_(file.getId()),
         categories: [],
       };
     }
     var parsed = JSON.parse(file.getBlob().getDataAsString('UTF-8'));
+    if (parsed && parsed.singlePdfUrl) {
+      var singlePdfFile = findDriveFileByUrl_(parsed.singlePdfUrl);
+      if (singlePdfFile) {
+        makeDriveFilePublicView_(singlePdfFile);
+        parsed.singlePdfUrl = formatDrivePreviewUrl_(singlePdfFile.getId());
+      } else {
+        parsed.singlePdfUrl = formatDrivePreviewUrl_(parsed.singlePdfUrl);
+      }
+    }
     return parsed;
   } catch (err) {
     return {
       eventId: eventId,
       updatedAt: '',
       mode: 'single_pdf',
-      singlePdfUrl: file.getUrl(),
+      singlePdfUrl: formatDrivePreviewUrl_(file.getId()),
       categories: [],
     };
   }
@@ -824,8 +857,14 @@ function saveEventResults_(ss, data) {
       );
       var pdfBlob = parseDataUriToBlob_(data.singlePdfUpload.archivo, pdfName);
       var pdfFile = folder.createFile(pdfBlob);
-      pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      singlePdfUrl = pdfFile.getUrl();
+      makeDriveFilePublicView_(pdfFile);
+      singlePdfUrl = formatDrivePreviewUrl_(pdfFile.getId());
+    } else if (singlePdfUrl) {
+      var existingPdfFile = findDriveFileByUrl_(singlePdfUrl);
+      if (existingPdfFile) {
+        makeDriveFilePublicView_(existingPdfFile);
+        singlePdfUrl = formatDrivePreviewUrl_(existingPdfFile.getId());
+      }
     }
 
     var singleResults = {
@@ -862,7 +901,7 @@ function saveEventResults_(ss, data) {
     }
 
     var created = folder.createFile(jsonBlob);
-    created.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    makeDriveFilePublicView_(created);
     var resultadosUrl = created.getUrl();
 
     updateEventResultadosUrl_(ss, data.eventId, singlePdfUrl || resultadosUrl);
@@ -1243,4 +1282,22 @@ function testConnection() {
   Logger.log('Carpeta Drive: ' + folder.getName());
   Logger.log('Eventos: ' + getEvents_(ss).length);
   Logger.log('Todo OK. Ahora despliega como Web App.');
+}
+
+/**
+ * Utilidad administrativa para ejecutar desde el editor de Google Apps Script:
+ * Asigna permisos públicos de lectura ("Cualquiera con el enlace puede ver")
+ * a la carpeta Resultados y a todos los archivos y PDFs dentro de ella.
+ */
+function fixAllResultsDrivePermissions() {
+  var folder = getOrCreateResultsFolder_();
+  makeDriveFilePublicView_(folder);
+  var files = folder.getFiles();
+  var count = 0;
+  while (files.hasNext()) {
+    var f = files.next();
+    makeDriveFilePublicView_(f);
+    count++;
+  }
+  Logger.log('Se asignaron permisos publicos de lectura a ' + count + ' archivos en la carpeta Resultados.');
 }

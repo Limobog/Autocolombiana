@@ -4,11 +4,14 @@ import { getActiveChampionship } from '../championships';
 import { asset, otherChampionshipHref } from '../utils/site-context';
 import type { ChampionshipId } from '../types';
 
-export function renderNavbar(activePage: 'home' | 'eventos' | 'inscripcion' | 'reglamento' = 'home'): string {
+export function renderNavbar(
+  activePage: 'home' | 'eventos' | 'inscripcion' | 'reglamento' | 'resultados' = 'home'
+): string {
   const champ = getActiveChampionship();
   const links = [
     { href: './index.html', label: 'Inicio', key: 'home' },
     { href: './eventos.html', label: 'Eventos', key: 'eventos' },
+    { href: './resultados.html', label: 'Resultados', key: 'resultados' },
     { href: './inscripcion.html', label: 'Inscripción', key: 'inscripcion' },
     { href: './reglamento.html', label: 'Reglamento', key: 'reglamento' },
   ];
