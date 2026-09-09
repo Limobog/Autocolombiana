@@ -74,7 +74,7 @@ function heatStatus(draft: HeatDraft, heat: HeatKey): string {
 }
 
 function renderCategoryBlock(draft: CategoryDraft, index: number, mode: ResultsMode): string {
-  if (mode === 'single_category_csv') {
+  if (mode === 'single_category_csv' || mode === 'single_pdf') {
     const draftHeat = draft.heats.final;
     return `
       <div class="rounded-2xl border border-white/15 bg-surface-elevated p-5 space-y-4 shadow-card" data-category-index="${index}">
@@ -143,8 +143,8 @@ function renderCategoriesSection(drafts: CategoryDraft[], mode: ResultsMode): st
   if (drafts.length === 0) {
     return `
       <div class="rounded-2xl border border-dashed border-white/15 bg-surface/40 p-8 text-center">
-        <p class="text-sm text-silver font-medium">Aún no has agregado categorías con resultados.</p>
-        <p class="text-xs text-muted mt-1">Selecciona una categoría arriba y pulsa "+ Agregar categoría".</p>
+        <p class="text-white font-semibold text-sm">Aún no hay categorías agregadas</p>
+        <p class="text-muted text-xs mt-1">Selecciona una categoría arriba y haz clic en "+ Agregar categoría".</p>
       </div>`;
   }
   return drafts.map((d, i) => renderCategoryBlock(d, i, mode)).join('');
@@ -265,15 +265,16 @@ function bindCategoryUi(
   championshipCategories: Category[],
   mode: ResultsMode
 ): void {
-  const select = root.querySelector<HTMLSelectElement>('#results-add-category');
-  const addBtn = root.querySelector<HTMLButtonElement>('#results-add-category-btn');
-  const list = root.querySelector('#results-categories');
+  const isSingle = mode === 'single_pdf' || mode === 'single_category_csv';
+  const select = root.querySelector<HTMLSelectElement>(isSingle ? '#results-add-category-single' : '#results-add-category');
+  const addBtn = root.querySelector<HTMLButtonElement>(isSingle ? '#results-add-category-single-btn' : '#results-add-category-btn');
+  const list = root.querySelector(isSingle ? '#results-categories-single' : '#results-categories');
 
   if (select) select.innerHTML = renderAddCategorySelect(drafts, championshipCategories);
   if (addBtn) addBtn.disabled = availableCategories(drafts, championshipCategories).length === 0;
-  if (list) list.innerHTML = renderCategoriesSection(drafts, mode);
+  if (list) list.innerHTML = renderCategoriesSection(drafts, isSingle ? 'single_pdf' : 'categories');
 
-  const keysToBind = mode === 'single_category_csv' ? (['final'] as HeatKey[]) : HEAT_KEYS;
+  const keysToBind = isSingle ? (['final'] as HeatKey[]) : HEAT_KEYS;
 
   drafts.forEach((draft, index) => {
     for (const heat of keysToBind) {
@@ -296,13 +297,11 @@ export async function openResultsModal(event: Event, onSaved: () => Promise<void
   const drafts: CategoryDraft[] = (existing?.categories ?? []).map(categoryFromExisting);
   const eventCategories = getChampionshipCategories(event.championshipId || 'mx');
 
-  // Determinar modalidad inicial
+  // Determinar modalidad inicial: si tenía 'categories' permanece en 'categories'; de lo contrario, 'single_pdf'
   const initialMode: ResultsMode =
-    existing?.mode === 'single_pdf' || (Boolean(existing?.singlePdfUrl) && drafts.length === 0)
-      ? 'single_pdf'
-      : existing?.mode === 'single_category_csv'
-        ? 'single_category_csv'
-        : 'categories';
+    existing?.mode === 'categories'
+      ? 'categories'
+      : 'single_pdf';
 
   let currentMode: ResultsMode = initialMode;
   let singlePdfFile: File | null = null;
@@ -317,10 +316,10 @@ export async function openResultsModal(event: Event, onSaved: () => Promise<void
     html: `
       <div id="results-modal-root" class="text-left space-y-5 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
         
-        <!-- Selector de modalidad exclusiva -->
+        <!-- Selector de modalidad exclusiva (2 opciones) -->
         <div class="space-y-1.5 bg-surface/90 p-3.5 rounded-2xl border border-white/15">
           <label class="block text-xs font-bold text-silver uppercase tracking-wider">Elige la modalidad de resultados</label>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 p-1 bg-surface-elevated rounded-xl border border-white/10">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 p-1 bg-surface-elevated rounded-xl border border-white/10">
             <button type="button" id="mode-btn-categories" class="mode-tab py-2.5 px-3 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
               currentMode === 'categories'
                 ? 'bg-white text-ink font-bold shadow-glow'
@@ -329,37 +328,23 @@ export async function openResultsModal(event: Event, onSaved: () => Promise<void
               <span>📊</span>
               <span>1. Mangas individuales</span>
             </button>
-            <button type="button" id="mode-btn-single-csv" class="mode-tab py-2.5 px-3 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
-              currentMode === 'single_category_csv'
+            <button type="button" id="mode-btn-single" class="mode-tab py-2.5 px-3 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
+              currentMode !== 'categories'
                 ? 'bg-white text-ink font-bold shadow-glow'
                 : 'text-silver hover:text-white hover:bg-white/5'
             }">
               <span>🏁</span>
-              <span>2. Único CSV final</span>
-            </button>
-            <button type="button" id="mode-btn-single-pdf" class="mode-tab py-2.5 px-3 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
-              currentMode === 'single_pdf'
-                ? 'bg-white text-ink font-bold shadow-glow'
-                : 'text-silver hover:text-white hover:bg-white/5'
-            }">
-              <span>📄</span>
-              <span>3. Documento PDF único</span>
+              <span>2. Un único resultado (PDF y puntos)</span>
             </button>
           </div>
-          <p class="text-[11px] text-muted text-center pt-0.5">Solo se puede seleccionar una modalidad por evento.</p>
+          <p class="text-[11px] text-muted text-center pt-0.5">Selecciona el método de publicación para esta válida.</p>
         </div>
 
-        <!-- CONTENEDOR DE CATEGORÍAS (Usado por modo 1: Mangas y modo 2: Único CSV) -->
-        <div id="mode-categories-container" class="${currentMode !== 'single_pdf' ? '' : 'hidden'} space-y-4">
-          
-          <div id="info-mode-categories" class="${currentMode === 'categories' ? '' : 'hidden'} rounded-xl border border-white/10 bg-surface/80 p-3.5 text-xs text-silver leading-relaxed">
+        <!-- CONTENEDOR 1: Mangas individuales -->
+        <div id="mode-categories-container" class="${currentMode === 'categories' ? '' : 'hidden'} space-y-4">
+          <div class="rounded-xl border border-white/10 bg-surface/80 p-3.5 text-xs text-silver leading-relaxed">
             <p class="font-bold text-white mb-1">Carga detallada de planillas por mangas:</p>
             Agrega las categorías con resultados. Puedes cargar mangas parciales (Manga 1, 2, 3 o Final) y sus PDFs opcionales de vuelta a vuelta.
-          </div>
-
-          <div id="info-mode-single-csv" class="${currentMode === 'single_category_csv' ? '' : 'hidden'} rounded-xl border border-white/10 bg-surface/80 p-3.5 text-xs text-silver leading-relaxed">
-            <p class="font-bold text-white mb-1">Carga de planilla final única por categoría (CSV):</p>
-            Sube únicamente el archivo CSV con la sumatoria o clasificación final de cada categoría (ej. columnas Pos, N°, Nombre, Clase, Total puntos, M1, M2...). A diferencia de la otra opción, <strong>este CSV final es el único archivo requerido por categoría</strong> y calcula automáticamente la Tabla General del Campeonato.
           </div>
 
           <div class="flex flex-wrap items-end gap-3 bg-surface-elevated p-4 rounded-xl border border-white/10">
@@ -372,43 +357,72 @@ export async function openResultsModal(event: Event, onSaved: () => Promise<void
           <div id="results-categories" class="space-y-4"></div>
         </div>
 
-        <!-- CONTENEDOR 3: Documento único en PDF -->
-        <div id="mode-single-container" class="${currentMode === 'single_pdf' ? '' : 'hidden'} space-y-4">
+        <!-- CONTENEDOR 2: Un único resultado (PDF oficial + CSVs de puntos) -->
+        <div id="mode-single-container" class="${currentMode !== 'categories' ? '' : 'hidden'} space-y-5">
           <div class="rounded-xl border border-white/10 bg-surface/80 p-3.5 text-xs text-silver leading-relaxed">
-            <p class="font-bold text-white mb-1">Carga de documento único oficial:</p>
-            Sube la planilla o documento PDF completo con todos los resultados consolidados de la válida. Al hacer clic en <strong>Ver resultados</strong>, se abrirá directamente este visor PDF.
+            <p class="font-bold text-white mb-1">Modalidad: Un único resultado por válida</p>
+            Sube el <strong>documento PDF consolidado</strong> para mostrarlo a los visitantes al consultar esta válida, y en esta misma opción carga las <strong>clasificaciones finales de cada categoría en CSV</strong> con las que se calculará automáticamente la sumatoria de puntos del campeonato.
           </div>
 
-          ${
-            existingSinglePdfUrl
-              ? `
-            <div class="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl border border-white/15 bg-surface-elevated">
-              <div class="flex items-center gap-2">
-                <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                <span class="text-xs text-silver font-medium">Hay un PDF de resultados guardado</span>
-              </div>
-              <a href="${existingSinglePdfUrl}" target="_blank" rel="noopener noreferrer" class="btn-outline py-1.5 px-3 text-xs text-white inline-flex items-center gap-1.5">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                Ver PDF actual
-              </a>
-            </div>`
-              : ''
-          }
-
-          <div class="rounded-2xl border border-dashed border-white/20 bg-surface/40 p-6 text-center space-y-3">
-            <label for="results-single-pdf-input" class="block cursor-pointer space-y-2 group">
-              <div class="w-12 h-12 rounded-full bg-white/10 text-white flex items-center justify-center mx-auto group-hover:bg-white/20 group-hover:scale-105 transition-all">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-              </div>
-              <p class="text-sm font-semibold text-white group-hover:text-silver transition-colors">
-                ${existingSinglePdfUrl ? 'Subir un nuevo archivo PDF para reemplazar el actual' : 'Seleccionar archivo PDF de resultados'}
-              </p>
-              <p class="text-xs text-muted">Formato .pdf (máx. ${CONFIG.maxFileSizeMB} MB)</p>
-            </label>
-            <input type="file" id="results-single-pdf-input" accept=".pdf,application/pdf" class="hidden" />
-            <div id="results-single-pdf-status" class="pt-2">
-              <span class="text-muted text-xs">Ningún archivo nuevo seleccionado</span>
+          <!-- SECCIÓN A: Documento PDF oficial -->
+          <div class="rounded-2xl border border-white/15 bg-surface-elevated p-4 space-y-3">
+            <div class="flex items-center gap-2 border-b border-white/10 pb-2.5">
+              <span class="text-base">📄</span>
+              <h3 class="text-xs font-bold uppercase tracking-wider text-white">Documento PDF oficial de la válida</h3>
             </div>
+
+            ${
+              existingSinglePdfUrl
+                ? `
+              <div class="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border border-white/15 bg-surface-raised">
+                <div class="flex items-center gap-2">
+                  <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                  <span class="text-xs text-silver font-medium">Hay un PDF de resultados guardado</span>
+                </div>
+                <a href="${existingSinglePdfUrl}" target="_blank" rel="noopener noreferrer" class="btn-outline py-1.5 px-3 text-xs text-white inline-flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                  Ver PDF actual
+                </a>
+              </div>`
+                : ''
+            }
+
+            <div class="rounded-xl border border-dashed border-white/20 bg-surface/40 p-5 text-center space-y-2">
+              <label for="results-single-pdf-input" class="block cursor-pointer space-y-2 group">
+                <div class="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center mx-auto group-hover:bg-white/20 group-hover:scale-105 transition-all">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                </div>
+                <p class="text-xs font-semibold text-white group-hover:text-silver transition-colors">
+                  ${existingSinglePdfUrl ? 'Subir un nuevo archivo PDF para reemplazar el actual' : 'Seleccionar archivo PDF de resultados oficiales'}
+                </p>
+                <p class="text-[11px] text-muted">Formato .pdf (máx. ${CONFIG.maxFileSizeMB} MB) · Se mostrará a los visitantes en el visor de la válida</p>
+              </label>
+              <input type="file" id="results-single-pdf-input" accept=".pdf,application/pdf" class="hidden" />
+              <div id="results-single-pdf-status" class="pt-1">
+                <span class="text-muted text-xs">Ningún archivo nuevo seleccionado</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECCIÓN B: Puntos del Campeonato por Categoría (CSVs) -->
+          <div class="rounded-2xl border border-white/15 bg-surface-elevated p-4 space-y-3">
+            <div class="flex items-center gap-2 border-b border-white/10 pb-2.5">
+              <span class="text-base">🏁</span>
+              <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-white">Clasificación final por categoría (Puntos del Campeonato)</h3>
+                <p class="text-[11px] text-muted">Carga el CSV final de cada categoría para calcular automáticamente la Tabla General acumulada.</p>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-end gap-3 bg-surface-raised p-3.5 rounded-xl border border-white/10">
+              <div class="flex-1 min-w-[220px]">
+                <label class="block text-xs font-semibold text-silver uppercase tracking-wider mb-1.5" for="results-add-category-single">Agregar categoría</label>
+                <select id="results-add-category-single" class="input-field text-sm py-2 bg-surface text-foreground border-white/15"></select>
+              </div>
+              <button type="button" id="results-add-category-single-btn" class="btn-secondary text-xs py-2.5 px-4 font-bold cursor-pointer hover:border-white hover:bg-white/10">+ Agregar categoría</button>
+            </div>
+
+            <div id="results-categories-single" class="space-y-3"></div>
           </div>
         </div>
 
@@ -433,13 +447,10 @@ export async function openResultsModal(event: Event, onSaved: () => Promise<void
       if (!root) return;
 
       const catBtn = root.querySelector<HTMLButtonElement>('#mode-btn-categories');
-      const csvBtn = root.querySelector<HTMLButtonElement>('#mode-btn-single-csv');
-      const singleBtn = root.querySelector<HTMLButtonElement>('#mode-btn-single-pdf');
+      const singleBtn = root.querySelector<HTMLButtonElement>('#mode-btn-single');
 
       const catContainer = root.querySelector<HTMLElement>('#mode-categories-container');
       const singleContainer = root.querySelector<HTMLElement>('#mode-single-container');
-      const infoCategories = root.querySelector<HTMLElement>('#info-mode-categories');
-      const infoSingleCsv = root.querySelector<HTMLElement>('#info-mode-single-csv');
 
       const pdfInput = root.querySelector<HTMLInputElement>('#results-single-pdf-input');
       const pdfStatus = root.querySelector<HTMLElement>('#results-single-pdf-status');
@@ -453,14 +464,9 @@ export async function openResultsModal(event: Event, onSaved: () => Promise<void
             mode === 'categories' ? activeClass : inactiveClass
           }`;
         }
-        if (csvBtn) {
-          csvBtn.className = `mode-tab py-2.5 px-3 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
-            mode === 'single_category_csv' ? activeClass : inactiveClass
-          }`;
-        }
         if (singleBtn) {
           singleBtn.className = `mode-tab py-2.5 px-3 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
-            mode === 'single_pdf' ? activeClass : inactiveClass
+            mode !== 'categories' ? activeClass : inactiveClass
           }`;
         }
       };
@@ -469,20 +475,14 @@ export async function openResultsModal(event: Event, onSaved: () => Promise<void
         currentMode = mode;
         updateButtonStyles(mode);
 
-        const isCategoryBased = mode === 'categories' || mode === 'single_category_csv';
-        catContainer?.classList.toggle('hidden', !isCategoryBased);
-        singleContainer?.classList.toggle('hidden', mode !== 'single_pdf');
+        const isCategories = mode === 'categories';
+        catContainer?.classList.toggle('hidden', !isCategories);
+        singleContainer?.classList.toggle('hidden', isCategories);
 
-        infoCategories?.classList.toggle('hidden', mode !== 'categories');
-        infoSingleCsv?.classList.toggle('hidden', mode !== 'single_category_csv');
-
-        if (isCategoryBased) {
-          bindCategoryUi(root, drafts, eventCategories, currentMode);
-        }
+        bindCategoryUi(root, drafts, eventCategories, currentMode);
       };
 
       catBtn?.addEventListener('click', () => switchMode('categories'));
-      csvBtn?.addEventListener('click', () => switchMode('single_category_csv'));
       singleBtn?.addEventListener('click', () => switchMode('single_pdf'));
 
       pdfInput?.addEventListener('change', () => {
@@ -507,8 +507,15 @@ export async function openResultsModal(event: Event, onSaved: () => Promise<void
         const target = ev.target as HTMLElement | null;
         if (!target) return;
 
-        if (target.id === 'results-add-category-btn' || target.closest('#results-add-category-btn')) {
-          const select = root.querySelector<HTMLSelectElement>('#results-add-category');
+        if (
+          target.id === 'results-add-category-btn' ||
+          target.closest('#results-add-category-btn') ||
+          target.id === 'results-add-category-single-btn' ||
+          target.closest('#results-add-category-single-btn')
+        ) {
+          const isSingle = currentMode !== 'categories';
+          const selectId = isSingle ? '#results-add-category-single' : '#results-add-category';
+          const select = root.querySelector<HTMLSelectElement>(selectId);
           const id = select?.value;
           if (!id) return;
           const cat = eventCategories.find((c) => c.id === id);
@@ -533,9 +540,12 @@ export async function openResultsModal(event: Event, onSaved: () => Promise<void
     },
     preConfirm: async () => {
       try {
-        if (currentMode === 'single_pdf') {
-          if (!singlePdfFile && !existingSinglePdfUrl) {
-            Swal.showValidationMessage('Debes seleccionar un archivo PDF con los resultados.');
+        if (currentMode === 'single_pdf' || currentMode === 'single_category_csv') {
+          const hasPdf = Boolean(singlePdfFile || existingSinglePdfUrl);
+          const hasCategories = drafts.length > 0;
+
+          if (!hasPdf && !hasCategories) {
+            Swal.showValidationMessage('Debes adjuntar al menos el documento PDF oficial o las planillas CSV de las categorías.');
             return false;
           }
 
@@ -549,27 +559,14 @@ export async function openResultsModal(event: Event, onSaved: () => Promise<void
             };
           }
 
+          const categories = hasCategories ? await buildSingleCategoryCsvPayload(drafts) : [];
+
           const payload: EventResultsSavePayload = {
             eventId: event.id,
             eventName: event.name,
             mode: 'single_pdf',
             singlePdfUrl: existingSinglePdfUrl,
             singlePdfUpload,
-            categories: [],
-          };
-          return payload;
-        }
-
-        if (currentMode === 'single_category_csv') {
-          if (drafts.length === 0) {
-            Swal.showValidationMessage('Agrega al menos una categoría con su CSV final.');
-            return false;
-          }
-          const categories = await buildSingleCategoryCsvPayload(drafts);
-          const payload: EventResultsSavePayload = {
-            eventId: event.id,
-            eventName: event.name,
-            mode: 'single_category_csv',
             categories,
           };
           return payload;
@@ -622,10 +619,10 @@ export async function openResultsModal(event: Event, onSaved: () => Promise<void
       title: 'Resultados guardados',
       text:
         savePayload.mode === 'single_pdf'
-          ? 'El PDF de resultados se guardó correctamente y ya está disponible.'
-          : savePayload.mode === 'single_category_csv'
-            ? 'Los CSV finales por categoría se guardaron correctamente y la clasificación del campeonato ya está actualizada.'
-            : 'Las planillas se almacenaron correctamente y la página de resultados ya está disponible.',
+          ? (savePayload.categories && savePayload.categories.length > 0
+              ? 'Los resultados de la válida y las clasificaciones por categoría se guardaron correctamente. La clasificación del campeonato ya está actualizada.'
+              : 'El PDF de resultados se guardó correctamente y ya está disponible.')
+          : 'Las planillas se almacenaron correctamente y la página de resultados ya está disponible.',
       confirmButtonText: 'Aceptar',
       buttonsStyling: false,
       customClass: {

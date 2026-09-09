@@ -397,9 +397,15 @@ function renderGeneralView(standings: ChampionshipCategoryStandings[], champTitl
 
 // ─── VISTA DE DOCUMENTO PDF ÚNICO ──────────────────────────────────────────
 
-function renderSinglePdfContent(event: Event, pdfUrl: string, allPublishedEvents: Event[]): string {
+function renderSinglePdfContent(
+  event: Event,
+  pdfUrl: string,
+  allPublishedEvents: Event[],
+  results?: EventResults | null
+): string {
   const embedUrl = getDriveEmbedUrl(pdfUrl);
   const openUrl = getDriveDirectViewUrl(pdfUrl);
+  const hasCategories = results?.categories && results.categories.length > 0;
 
   const eventPills =
     allPublishedEvents.length > 1
@@ -421,6 +427,21 @@ function renderSinglePdfContent(event: Event, pdfUrl: string, allPublishedEvents
         </div>`
       : '';
 
+  const championshipBanner = hasCategories
+    ? `<div class="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl border border-white/15 bg-surface-elevated shadow-card">
+        <div class="flex items-center gap-2.5">
+          <span class="text-lg">🏆</span>
+          <div>
+            <p class="text-xs font-bold text-white">Clasificación general acumulada disponible</p>
+            <p class="text-[11px] text-silver">Los puntos de esta válida ya están sumados a la tabla del campeonato.</p>
+          </div>
+        </div>
+        <a href="./resultados.html?vista=general" class="btn-secondary text-xs py-2 px-4 font-bold inline-flex items-center gap-1.5">
+          Ver Tabla General de Posiciones →
+        </a>
+      </div>`
+    : '';
+
   return `
     <div class="text-left space-y-6">
       ${eventPills}
@@ -429,6 +450,8 @@ function renderSinglePdfContent(event: Event, pdfUrl: string, allPublishedEvents
         <p class="text-silver font-semibold text-sm">${formatDate(event.date)} · ${escapeHtml(event.city)}</p>
         <p class="text-xs text-muted mt-1">Documento oficial único de resultados</p>
       </div>
+
+      ${championshipBanner}
 
       <div class="flex flex-wrap items-center justify-center gap-3">
         <a href="${openUrl}" target="_blank" rel="noopener noreferrer" class="btn-primary text-sm font-bold px-6 py-3 inline-flex items-center gap-2 shadow-glow cursor-pointer">
@@ -478,7 +501,7 @@ function renderValidaView(
       : undefined);
 
   if ((results?.mode === 'single_pdf' && singlePdf) || (singlePdf && (!results || results.categories.length === 0))) {
-    return renderSinglePdfContent(event, singlePdf, allPublishedEvents);
+    return renderSinglePdfContent(event, singlePdf, allPublishedEvents, results);
   }
 
   const eventPills =
