@@ -23,10 +23,11 @@ Con esta configuracion, las inscripciones se guardan directamente en una Google 
 
 1. En la Google Sheet: **Extensiones → Apps Script**
 2. Borra el contenido default y pega todo el codigo de `docs/google-apps-script.gs`
-3. Reemplaza en las lineas 10-11:
+3. Reemplaza en las lineas 10-12:
    ```javascript
-   const SPREADSHEET_ID = 'tu-id-de-la-sheet';//1kAlC3MP2DqH5KXkQQLVZF0SbHV6X8DY3nAyLxO81654
-   const DRIVE_FOLDER_ID = 'tu-id-de-la-carpeta-drive';//1TQAM3BE93OjiaODNgI_2SkXLFQ2uqQqM
+   const SPREADSHEET_ID = 'tu-id-de-la-sheet'; // 1kAlC3MP2DqH5KXkQQLVZF0SbHV6X8DY3nAyLxO81654
+   const DRIVE_FOLDER_ID = 'tu-id-de-la-carpeta-drive'; // 1TQAM3BE93OjiaODNgI_2SkXLFQ2uqQqM
+   const RESULTS_FOLDER_ID = 'tu-id-de-la-carpeta-resultados'; // 1UuF4vADS53MfEXxakEm20aANkvyPd10R
    ```
 4. Guarda el proyecto (Ctrl+S)
 5. En el menú lateral izquierdo, ve a **Configuración del proyecto** (el ícono del engranaje).
