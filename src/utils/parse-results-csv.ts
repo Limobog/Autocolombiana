@@ -55,6 +55,7 @@ export interface ParsedResultsTable {
 function normalizeHeaderKey(header: string): string {
   return header
     .trim()
+    .replace(/^["']+|["']+$/g, '')
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -128,8 +129,7 @@ export function detectDelimiter(text: string): string {
   return ',';
 }
 
-/** Parseo CSV con soporte de comillas, saltos de linea dentro de campos y autodetección de delimitador (, ; \t). */
-export function parseCsvText(text: string, delimiter?: string): string[][] {
+function parseRawCsv(text: string, delimiter?: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
   let field = '';
@@ -191,6 +191,39 @@ export function parseCsvText(text: string, delimiter?: string): string[][] {
   return rows;
 }
 
+/**
+ * Parseo CSV con soporte de:
+ * 1. Autodetección de delimitador (',', ';', '\t').
+ * 2. Comillas estándar y saltos de línea dentro de campos.
+ * 3. Autocorrección de CSV "sobre-comillado" (cuando Excel exporta cada fila como una celda única entre comillas).
+ */
+export function parseCsvText(text: string, delimiter?: string): string[][] {
+  let matrix = parseRawCsv(text, delimiter);
+
+  // Si todas las filas o la fila de encabezados quedaron en 1 sola columna,
+  // pero el contenido dentro de esa columna tiene delimitadores que forman un CSV
+  // (caso típico cuando se pega el CSV completo en la Columna A de Excel y se guarda como CSV),
+  // des-envolvemos automáticamente el contenido.
+  for (let pass = 0; pass < 2; pass++) {
+    if (
+      matrix.length > 0 &&
+      matrix[0].length === 1 &&
+      (matrix.length === 1 || matrix[1]?.length === 1)
+    ) {
+      const candidateText = matrix.map((row) => row[0] ?? '').join('\n');
+      const candidateDelim = delimiter || detectDelimiter(candidateText);
+      const unwrapped = parseRawCsv(candidateText, candidateDelim);
+      if (unwrapped.length > 0 && unwrapped[0].length > 1) {
+        matrix = unwrapped;
+        continue;
+      }
+    }
+    break;
+  }
+
+  return matrix;
+}
+
 function orderColumns(headers: string[], preferred: string[]): string[] {
   const remaining = [...headers];
   const ordered: string[] = [];
@@ -218,7 +251,7 @@ export function parseResultsCsv(text: string, heat: HeatKey): ParsedResultsTable
     throw new Error('El CSV no tiene filas de datos.');
   }
 
-  const rawHeaders = matrix[0].map((h) => h.trim());
+  const rawHeaders = matrix[0].map((h) => h.trim().replace(/^["']+|["']+$/g, ''));
   if (rawHeaders.every((h) => !h)) {
     throw new Error('El CSV no tiene encabezados validos.');
   }
