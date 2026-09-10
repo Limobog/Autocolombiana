@@ -90,7 +90,20 @@ npm run build
 | championshipId | Campeonato del evento: `mx` o `enduro` (si esta vacio se infiere por el nombre) |
 | resultadosUrl | URL del JSON de resultados en Drive (carpeta Resultados). Si esta vacio, no se muestra Ver resultados |
 
-Tras actualizar el script, vuelve a **Implementar > Administrar implementaciones > Nueva version**.
+## Paso 6 — Desplegar la actualización de Alto Rendimiento (CacheService)
+
+El script incluye ahora soporte para **`CacheService` nativo de Google Apps Script**, permitiendo responder consultas públicas (`events`, `categories`, `results`) en **~100 ms** directamente desde la memoria caché de Google Cloud sin abrir ni procesar la hoja de cálculo cada vez.
+
+Para actualizar tu Apps Script existente:
+1. En tu Google Sheet ve a **Extensiones > Apps Script**.
+2. Copia todo el contenido de [`docs/google-apps-script.gs`](file:///docs/google-apps-script.gs) y reemplázalo en el editor.
+3. Guarda el proyecto (`Ctrl + S`).
+4. Ve a **Implementar > Administrar implementaciones**.
+5. Haz clic en el ícono del lápiz (Editar) en tu implementación activa.
+6. En **Versión**, selecciona **Nueva versión** y escribe una descripción (ej. *"Caché de alto rendimiento"*).
+7. Haz clic en **Implementar**.
+
+> **Nota:** Cada vez que el administrador guarde o modifique eventos, categorías o resultados desde el panel web, el script invalida automáticamente la caché para que los cambios se reflejen de inmediato.
 
 **No necesitas ejecutar `repairAllSheets`.** Esa funcion es solo para columnas cruzadas/desordenadas y puede fallar con el error generico de Google. Opciones seguras (ninguna borra datos):
 

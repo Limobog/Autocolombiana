@@ -1,6 +1,6 @@
 import { renderFooter } from '../components/footer';
 import { renderNavbar, initNavbar } from '../components/navbar';
-import { initCategories } from '../utils/storage';
+import { initCategories, loadEvents } from '../utils/storage';
 import { getActiveChampionship, type Championship } from '../championships';
 import { getEnabledChampionshipCategories, type Category, type ChampionshipId } from '../types';
 import { asset } from '../utils/site-context';
@@ -296,4 +296,9 @@ export async function initHomePage(): Promise<void> {
   `;
 
   initNavbar();
+
+  // Precargar eventos en segundo plano para navegación instantánea
+  setTimeout(() => {
+    void loadEvents();
+  }, 100);
 }

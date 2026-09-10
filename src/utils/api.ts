@@ -11,20 +11,51 @@ function buildUrl(params: Record<string, string>): string {
   return url.toString();
 }
 
-export async function apiGet<T>(params: Record<string, string> = {}): Promise<T> {
+const inFlightGets = new Map<string, Promise<unknown>>();
+
+export async function apiGet<T>(params: Record<string, string> = {}, options: { timeoutMs?: number } = {}): Promise<T> {
   const password = sessionStorage.getItem('minicross_admin_password');
   const finalParams = { ...params };
   if (password) {
     finalParams.password = password;
   }
-  const res = await fetch(buildUrl(finalParams));
-  if (!res.ok) throw new Error('No se pudo conectar con Google Sheets.');
-  const data = (await res.json()) as T & { success?: boolean; error?: string };
-  if (data.success === false && data.error) throw new Error(data.error);
-  return data;
+  const url = buildUrl(finalParams);
+
+  // Si ya hay una petición idéntica en vuelo, reutilizar la misma promesa
+  const existing = inFlightGets.get(url);
+  if (existing) {
+    return existing as Promise<T>;
+  }
+
+  const timeoutMs = options.timeoutMs ?? 18000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  const fetchPromise = (async () => {
+    try {
+      const res = await fetch(url, { signal: controller.signal });
+      if (!res.ok) throw new Error('No se pudo conectar con Google Sheets.');
+      const data = (await res.json()) as T & { success?: boolean; error?: string };
+      if (data.success === false && data.error) throw new Error(data.error);
+      return data;
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw new Error('Tiempo de espera agotado al consultar el servidor.');
+      }
+      throw err;
+    } finally {
+      clearTimeout(timer);
+      inFlightGets.delete(url);
+    }
+  })();
+
+  inFlightGets.set(url, fetchPromise);
+  return fetchPromise;
 }
 
 export async function apiPost<T>(body: unknown): Promise<T> {
+  // Limpiar peticiones en vuelo al mutar
+  inFlightGets.clear();
   const password = sessionStorage.getItem('minicross_admin_password');
   let finalBody = body;
   if (password && typeof body === 'object' && body !== null) {

@@ -23,22 +23,99 @@ const REG_HEADERS = [
 const HEAT_KEYS = ['manga1', 'manga2', 'manga3', 'final'];
 
 const ADMIN_PASSWORD = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD');
+const CACHE_TTL_SECONDS = 21600; // 6 horas de caché en Google Cloud
+
+function getScriptCache_() {
+  return CacheService.getScriptCache();
+}
+
+function getSpreadsheet_() {
+  return SpreadsheetApp.openById(SPREADSHEET_ID);
+}
+
+function invalidateCache_(type, extraId) {
+  try {
+    var cache = getScriptCache_();
+    if (type === 'events') {
+      cache.remove('cache_events_v2');
+    } else if (type === 'categories') {
+      cache.remove('cache_categories_v2');
+    } else if (type === 'results') {
+      if (extraId) cache.remove('cache_results_v2_' + extraId);
+      cache.remove('cache_events_v2');
+    } else if (type === 'all') {
+      cache.remove('cache_events_v2');
+      cache.remove('cache_categories_v2');
+    }
+  } catch (err) {
+    Logger.log('Error invalidando cache: ' + err);
+  }
+}
 
 // ─── HTTP handlers ───────────────────────────────────────────────────────────
 
 function doGet(e) {
   e = e || { parameter: {} };
   const action = (e.parameter.action || '').toString();
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const password = (e.parameter.password || '').toString();
 
-  // Acciones Públicas (GET)
+  // 1. Acciones con Caché de Alto Rendimiento (~100ms de respuesta)
+  if (action === 'events') {
+    const cache = getScriptCache_();
+    const cached = cache.get('cache_events_v2');
+    if (cached) {
+      return rawJsonResponse(cached);
+    }
+    const ss = getSpreadsheet_();
+    const events = getEvents_(ss);
+    const jsonStr = JSON.stringify({ events: events });
+    try {
+      cache.put('cache_events_v2', jsonStr, CACHE_TTL_SECONDS);
+    } catch (err) {}
+    return rawJsonResponse(jsonStr);
+  }
+
+  if (action === 'categories') {
+    const cache = getScriptCache_();
+    const cached = cache.get('cache_categories_v2');
+    if (cached) {
+      return rawJsonResponse(cached);
+    }
+    const ss = getSpreadsheet_();
+    const categories = getCategories_(ss);
+    const jsonStr = JSON.stringify({ categories: categories });
+    try {
+      cache.put('cache_categories_v2', jsonStr, CACHE_TTL_SECONDS);
+    } catch (err) {}
+    return rawJsonResponse(jsonStr);
+  }
+
+  if (action === 'results') {
+    const eventId = (e.parameter.eventId || '').toString();
+    const cacheKey = 'cache_results_v2_' + eventId;
+    const cache = getScriptCache_();
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return rawJsonResponse(cached);
+    }
+    const ss = getSpreadsheet_();
+    const results = getEventResults_(ss, eventId);
+    const jsonStr = JSON.stringify({ results: results });
+    try {
+      cache.put(cacheKey, jsonStr, CACHE_TTL_SECONDS);
+    } catch (err) {}
+    return rawJsonResponse(jsonStr);
+  }
+
+  // 2. Acciones dinámicas de pilotos (requieren verificar la hoja en tiempo real)
   if (action === 'availablePilots') {
+    const ss = getSpreadsheet_();
     const eventId = e.parameter.eventId;
     return jsonResponse({ numbers: getAvailablePilotNumbers_(ss, eventId) });
   }
 
   if (action === 'checkPilot') {
+    const ss = getSpreadsheet_();
     const eventId = e.parameter.eventId;
     const numero = Number(e.parameter.numero);
     const excludeId = e.parameter.excludeId || null;
@@ -46,39 +123,44 @@ function doGet(e) {
     return jsonResponse({ available: available });
   }
 
-  if (action === 'events') {
-    return jsonResponse({ events: getEvents_(ss) });
-  }
-
-  if (action === 'categories') {
-    return jsonResponse({ categories: getCategories_(ss) });
-  }
-
-  if (action === 'results') {
-    const eventId = (e.parameter.eventId || '').toString();
-    return jsonResponse({ results: getEventResults_(ss, eventId) });
-  }
-
-  // Acciones Protegidas (GET) - Requieren contraseña
+  // 3. Acciones Protegidas (GET) - Requieren contraseña
   if (action === 'registrations') {
     if (password !== ADMIN_PASSWORD) {
       return jsonResponse({ success: false, error: 'No autorizado' });
     }
+    const ss = getSpreadsheet_();
     return jsonResponse({ registrations: getRegistrations_(ss) });
   }
 
   if (action === 'all' || !action) {
     if (password === ADMIN_PASSWORD) {
+      const ss = getSpreadsheet_();
       return jsonResponse({
         events: getEvents_(ss),
         registrations: getRegistrations_(ss),
         categories: getCategories_(ss),
       });
     }
-    // Si no está autorizado para ver todo, solo devolvemos los eventos y categorías
+    // Público: responder events + categories (utilizando caché si está disponible)
+    const cache = getScriptCache_();
+    const cachedEvents = cache.get('cache_events_v2');
+    const cachedCategories = cache.get('cache_categories_v2');
+    if (cachedEvents && cachedCategories) {
+      return jsonResponse({
+        events: JSON.parse(cachedEvents).events,
+        categories: JSON.parse(cachedCategories).categories,
+      });
+    }
+    const ss = getSpreadsheet_();
+    const events = getEvents_(ss);
+    const categories = getCategories_(ss);
+    try {
+      cache.put('cache_events_v2', JSON.stringify({ events: events }), CACHE_TTL_SECONDS);
+      cache.put('cache_categories_v2', JSON.stringify({ categories: categories }), CACHE_TTL_SECONDS);
+    } catch (err) {}
     return jsonResponse({
-      events: getEvents_(ss),
-      categories: getCategories_(ss),
+      events: events,
+      categories: categories,
     });
   }
 
@@ -93,13 +175,7 @@ function doPost(e) {
     });
   }
   const body = JSON.parse(e.postData.contents);
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const password = body.password || '';
-
-  // Acciones Públicas (POST)
-  if (body.action === 'createRegistration') {
-    return jsonResponse(createRegistration_(ss, body.data));
-  }
 
   // Acciones Protegidas (POST) - Requieren contraseña
   const adminActions = [
@@ -117,23 +193,31 @@ function doPost(e) {
     }
   }
 
+  const ss = getSpreadsheet_();
+
   switch (body.action) {
+    case 'createRegistration':
+      return jsonResponse(createRegistration_(ss, body.data));
     case 'updateRegistration':
       return jsonResponse(updateRegistration_(ss, body.id, body.data));
     case 'deleteRegistration':
       return jsonResponse(deleteRegistration_(ss, body.id));
     case 'saveEvents':
       writeEvents_(ss, body.events);
+      invalidateCache_('events');
       return jsonResponse({ success: true });
     case 'saveResults':
       try {
-        return jsonResponse(saveEventResults_(ss, body.data));
+        const res = saveEventResults_(ss, body.data);
+        invalidateCache_('results', body.data ? body.data.eventId : null);
+        return jsonResponse(res);
       } catch (err) {
         return jsonResponse({ success: false, error: err.message || String(err) });
       }
     case 'saveCategories':
       try {
         writeCategories_(ss, body.categories);
+        invalidateCache_('categories');
         return jsonResponse({ success: true });
       } catch (err) {
         return jsonResponse({ success: false, error: err.message || String(err) });
@@ -1108,6 +1192,12 @@ function writeObjects_(sheet, headers, objects) {
   objects.forEach(function (obj) {
     appendRow_(sheet, headers, obj);
   });
+}
+
+function rawJsonResponse(jsonString) {
+  return ContentService
+    .createTextOutput(jsonString)
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function jsonResponse(data) {

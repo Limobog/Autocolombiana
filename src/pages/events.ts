@@ -1,7 +1,7 @@
 import { renderFooter } from '../components/footer';
 import { renderNavbar, initNavbar } from '../components/navbar';
 import { getActiveChampionship, type Championship } from '../championships';
-import { eventHasResults, loadEvents } from '../utils/storage';
+import { eventHasResults, loadEvents, getCachedEventsSync } from '../utils/storage';
 import { formatDate } from '../utils/age';
 import type { Event } from '../types';
 
@@ -98,6 +98,15 @@ async function renderPage(): Promise<void> {
   if (!app) return;
 
   const champ = getActiveChampionship();
+  const cachedAllEvents = getCachedEventsSync();
+  const cachedChampEvents = cachedAllEvents
+    ? cachedAllEvents.filter((e) => e.championshipId === champ.id).sort((a, b) => a.date.localeCompare(b.date))
+    : null;
+
+  const hasCache = cachedChampEvents && cachedChampEvents.length > 0;
+  const initialContent = hasCache
+    ? cachedChampEvents.map(renderEventCard).join('')
+    : `<div class="col-span-full card border border-secondary/30">${renderLoadingPanel()}</div>`;
 
   app.innerHTML = `
     ${renderNavbar('eventos')}
@@ -128,7 +137,7 @@ async function renderPage(): Promise<void> {
       </div>
 
       <div id="events-list" class="grid gap-6 md:grid-cols-2">
-        <div class="col-span-full card border border-secondary/30">${renderLoadingPanel()}</div>
+        ${initialContent}
       </div>
     </main>
     ${renderFooter()}
@@ -139,23 +148,34 @@ async function renderPage(): Promise<void> {
   const list = document.getElementById('events-list');
   if (!list) return;
 
-  try {
-    const events = (await loadEvents())
+  const updateListUi = (eventsList: Event[]) => {
+    const filtered = eventsList
       .filter((e) => e.championshipId === champ.id)
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    if (events.length === 0) {
+    if (filtered.length === 0) {
       list.innerHTML = renderCalendarFallback(champ);
-      return;
+    } else {
+      list.innerHTML = filtered.map(renderEventCard).join('');
     }
+  };
 
-    list.innerHTML = events.map(renderEventCard).join('');
+  try {
+    const events = await loadEvents({
+      onUpdate: (freshEvents) => {
+        updateListUi(freshEvents);
+      },
+    });
+
+    updateListUi(events);
   } catch {
-    list.innerHTML = `
-      <div class="col-span-full card text-center py-12">
-        <p class="text-muted text-lg mb-4">No se pudieron cargar los eventos.</p>
-        <p class="text-sm text-muted/60">Intenta de nuevo en unos minutos.</p>
-      </div>`;
+    if (!hasCache) {
+      list.innerHTML = `
+        <div class="col-span-full card text-center py-12">
+          <p class="text-muted text-lg mb-4">No se pudieron cargar los eventos.</p>
+          <p class="text-sm text-muted/60">Intenta de nuevo en unos minutos.</p>
+        </div>`;
+    }
   }
 }
 

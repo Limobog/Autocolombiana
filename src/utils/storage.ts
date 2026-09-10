@@ -156,16 +156,71 @@ function groupCategories(rows: StoredCategory[]): Partial<Record<ChampionshipId,
   return store;
 }
 
-async function loadStoredCategories(): Promise<StoredCategory[] | null> {
+let inMemoryCategories: StoredCategory[] | null = null;
+let lastCategoriesFetchTime = 0;
+const CATEGORIES_CACHE_TTL_MS = 5 * 60 * 1000;
+
+export function getCachedCategoriesSync(): StoredCategory[] | null {
+  if (inMemoryCategories?.length) return inMemoryCategories;
+  const fromLocal = readLocal<StoredCategory[]>(CONFIG.storageKeys.categories);
+  if (fromLocal?.length) {
+    inMemoryCategories = fromLocal
+      .map((c) => normalizeStoredCategory(c as unknown as Record<string, unknown>))
+      .filter((c): c is StoredCategory => c !== null);
+    return inMemoryCategories;
+  }
+  return null;
+}
+
+/**
+ * Carga las categorías configuradas (con SWR: inmediato desde localStorage y revalidación en segundo plano).
+ */
+export async function initCategories(forceRefresh = false): Promise<void> {
+  const cached = getCachedCategoriesSync();
+  if (cached && cached.length > 0) {
+    setCategoryStore(groupCategories(cached));
+    const now = Date.now();
+    if (!forceRefresh && now - lastCategoriesFetchTime < CATEGORIES_CACHE_TTL_MS) {
+      return;
+    }
+    // Revalidación en segundo plano sin demorar la renderización
+    if (isApiEnabled()) {
+      void (async () => {
+        try {
+          const data = await apiGet<{ categories: Record<string, unknown>[] }>({ action: 'categories' });
+          const rows = (data.categories ?? [])
+            .map(normalizeStoredCategory)
+            .filter((c): c is StoredCategory => c !== null);
+          if (rows.length > 0) {
+            inMemoryCategories = rows;
+            lastCategoriesFetchTime = Date.now();
+            writeLocal(CONFIG.storageKeys.categories, rows);
+            setCategoryStore(groupCategories(rows));
+          }
+        } catch {
+          /* revalidación silenciosa */
+        }
+      })();
+    }
+    return;
+  }
+
+  // Primera carga sin caché previo
   if (isApiEnabled()) {
     try {
       const data = await apiGet<{ categories: Record<string, unknown>[] }>({ action: 'categories' });
       const rows = (data.categories ?? [])
         .map(normalizeStoredCategory)
         .filter((c): c is StoredCategory => c !== null);
-      if (rows.length > 0) return rows;
+      if (rows.length > 0) {
+        inMemoryCategories = rows;
+        lastCategoriesFetchTime = Date.now();
+        writeLocal(CONFIG.storageKeys.categories, rows);
+        setCategoryStore(groupCategories(rows));
+        return;
+      }
     } catch {
-      /* fallback below */
+      /* fallback abajo */
     }
   }
 
@@ -174,19 +229,11 @@ async function loadStoredCategories(): Promise<StoredCategory[] | null> {
     const rows = fromLocal
       .map((c) => normalizeStoredCategory(c as unknown as Record<string, unknown>))
       .filter((c): c is StoredCategory => c !== null);
-    if (rows.length > 0) return rows;
+    if (rows.length > 0) {
+      inMemoryCategories = rows;
+      setCategoryStore(groupCategories(rows));
+    }
   }
-
-  return null;
-}
-
-/**
- * Carga las categorías configuradas (Sheets → localStorage) y actualiza el store global.
- * Si no hay nada guardado se mantienen las categorías por defecto del código.
- */
-export async function initCategories(): Promise<void> {
-  const rows = await loadStoredCategories();
-  if (rows) setCategoryStore(groupCategories(rows));
 }
 
 /**
@@ -194,6 +241,8 @@ export async function initCategories(): Promise<void> {
  * Devuelve true si se sincronizó con Google Sheets, false si solo quedó local.
  */
 export async function saveStoredCategories(rows: StoredCategory[]): Promise<boolean> {
+  inMemoryCategories = rows;
+  lastCategoriesFetchTime = Date.now();
   writeLocal(CONFIG.storageKeys.categories, rows);
   setCategoryStore(groupCategories(rows));
   if (isApiEnabled()) {
@@ -207,29 +256,103 @@ export async function saveStoredCategories(rows: StoredCategory[]): Promise<bool
   return false;
 }
 
-export async function loadEvents(): Promise<Event[]> {
+export interface LoadEventsOptions {
+  forceRefresh?: boolean;
+  onUpdate?: (events: Event[]) => void;
+}
+
+let inMemoryEvents: Event[] | null = null;
+let lastEventsFetchTime = 0;
+const EVENTS_CACHE_TTL_MS = 60 * 1000;
+
+export function getCachedEventsSync(): Event[] | null {
+  if (inMemoryEvents?.length) return inMemoryEvents;
+  const fromLocal = readLocal<Event[]>(CONFIG.storageKeys.events);
+  if (fromLocal?.length) {
+    inMemoryEvents = fromLocal.map((e) => normalizeEvent(e as unknown as Record<string, unknown>));
+    return inMemoryEvents;
+  }
+  return null;
+}
+
+/**
+ * Carga eventos utilizando Stale-While-Revalidate (SWR).
+ * Si hay datos en caché, los devuelve en 0 ms para visualización instantánea
+ * y comprueba en segundo plano si hay eventos nuevos o modificados.
+ */
+export async function loadEvents(options: LoadEventsOptions = {}): Promise<Event[]> {
+  const cached = getCachedEventsSync();
+  const now = Date.now();
+  const isFresh = Boolean(cached && cached.length > 0 && now - lastEventsFetchTime < EVENTS_CACHE_TTL_MS);
+
+  // 1. Si tenemos datos en caché y no se exige refresco forzado:
+  if (cached && cached.length > 0 && !options.forceRefresh) {
+    // Si superó el tiempo de frescura, consultar la API en background
+    if (!isFresh && isApiEnabled()) {
+      void (async () => {
+        try {
+          const data = await apiGet<{ events: Record<string, unknown>[] }>({ action: 'events' });
+          if (data.events) {
+            const freshEvents = data.events.map(normalizeEvent);
+            const hasChanged = JSON.stringify(freshEvents) !== JSON.stringify(cached);
+            lastEventsFetchTime = Date.now();
+            inMemoryEvents = freshEvents;
+            writeLocal(CONFIG.storageKeys.events, freshEvents);
+            if (hasChanged) {
+              if (options.onUpdate) options.onUpdate(freshEvents);
+              window.dispatchEvent(new CustomEvent('minicross:events-updated', { detail: { events: freshEvents } }));
+            }
+          }
+        } catch {
+          /* silencio en background revalidation */
+        }
+      })();
+    }
+    return cached;
+  }
+
+  // 2. Si no hay caché o se forzó refresco:
   if (isApiEnabled()) {
     try {
       const data = await apiGet<{ events: Record<string, unknown>[] }>({ action: 'events' });
-      return (data.events ?? []).map(normalizeEvent);
+      if (data.events) {
+        const freshEvents = data.events.map(normalizeEvent);
+        lastEventsFetchTime = Date.now();
+        inMemoryEvents = freshEvents;
+        writeLocal(CONFIG.storageKeys.events, freshEvents);
+        return freshEvents;
+      }
     } catch {
-      /* fallback below */
+      /* fallback abajo */
     }
   }
 
+  if (cached && cached.length > 0) return cached;
+
   const fromLocal = readLocal<Event[]>(CONFIG.storageKeys.events);
-  if (fromLocal?.length) return fromLocal.map((e) => normalizeEvent(e as unknown as Record<string, unknown>));
+  if (fromLocal?.length) {
+    const list = fromLocal.map((e) => normalizeEvent(e as unknown as Record<string, unknown>));
+    inMemoryEvents = list;
+    return list;
+  }
 
   const fromFile = await fetchJson<Event[]>(asset('data/events.json'));
-  return (fromFile ?? []).map((e) => normalizeEvent(e as unknown as Record<string, unknown>));
+  const fallbackList = (fromFile ?? []).map((e) => normalizeEvent(e as unknown as Record<string, unknown>));
+  if (fallbackList.length > 0) {
+    inMemoryEvents = fallbackList;
+    writeLocal(CONFIG.storageKeys.events, fallbackList);
+  }
+  return fallbackList;
 }
 
 export async function saveEvents(events: EventSavePayload[]): Promise<void> {
+  inMemoryEvents = null;
+  lastEventsFetchTime = 0;
+  writeLocal(CONFIG.storageKeys.events, events);
   if (isApiEnabled()) {
     await apiPost({ action: 'saveEvents', events });
     return;
   }
-  writeLocal(CONFIG.storageKeys.events, events);
 }
 
 export async function loadRegistrations(options: { throwOnError?: boolean } = {}): Promise<Registration[]> {
@@ -509,20 +632,54 @@ function stripUploadsFromResults(payload: EventResultsSavePayload): EventResults
   };
 }
 
-export async function loadEventResults(eventId: string): Promise<EventResults | null> {
+export async function loadEventResults(
+  eventId: string,
+  options: { forceRefresh?: boolean } = {}
+): Promise<EventResults | null> {
+  const map = readLocalResultsMap();
+  const cached = map[eventId] ?? null;
+
+  if (cached && !options.forceRefresh) {
+    if (isApiEnabled()) {
+      // Revalidar en segundo plano
+      void (async () => {
+        try {
+          const data = await apiGet<{ results: EventResults | null }>({
+            action: 'results',
+            eventId,
+          });
+          if (data.results) {
+            const currentMap = readLocalResultsMap();
+            currentMap[eventId] = data.results;
+            writeLocalResultsMap(currentMap);
+          }
+        } catch {
+          /* ignorar error de fondo */
+        }
+      })();
+    }
+    return cached;
+  }
+
   if (isApiEnabled()) {
     try {
       const data = await apiGet<{ results: EventResults | null }>({
         action: 'results',
         eventId,
       });
-      return data.results ?? null;
+      if (data.results) {
+        const currentMap = readLocalResultsMap();
+        currentMap[eventId] = data.results;
+        writeLocalResultsMap(currentMap);
+        return data.results;
+      }
+      return cached;
     } catch {
-      return null;
+      return cached;
     }
   }
 
-  return readLocalResultsMap()[eventId] ?? null;
+  return cached;
 }
 
 export async function loadAllPublishedResults(
