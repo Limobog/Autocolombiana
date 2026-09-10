@@ -23,6 +23,7 @@ import {
   isApiEnabled,
   allPilotNumbers,
 } from './api';
+import { parseResultsCsv, type HeatKey } from './parse-results-csv';
 
 export { allPilotNumbers };
 
@@ -632,12 +633,67 @@ function stripUploadsFromResults(payload: EventResultsSavePayload): EventResults
   };
 }
 
+export function sanitizeEventResults(results: EventResults | null): EventResults | null {
+  if (!results || !Array.isArray(results.categories)) return results;
+
+  let changed = false;
+  const categories = results.categories.map((cat) => {
+    const updatedCat = { ...cat };
+    for (const heatKey of ['manga1', 'manga2', 'manga3', 'final'] as const) {
+      const heatData = updatedCat[heatKey];
+      if (
+        !heatData ||
+        !Array.isArray(heatData.columns) ||
+        !Array.isArray(heatData.rows) ||
+        heatData.rows.length === 0
+      ) {
+        continue;
+      }
+
+      // Caso: CSV guardado previamente en 1 sola columna con delimitadores adentro (sobre-comillado de Excel)
+      if (heatData.columns.length === 1) {
+        const colName = heatData.columns[0];
+        if (colName && (colName.includes(',') || colName.includes(';') || colName.includes('\t'))) {
+          const rawLines = [
+            colName,
+            ...heatData.rows.map((r) => r[colName] ?? Object.values(r)[0] ?? ''),
+          ];
+          try {
+            const parsed = parseResultsCsv(rawLines.join('\n'), heatKey as HeatKey);
+            updatedCat[heatKey] = {
+              ...heatData,
+              columns: parsed.columns,
+              rows: parsed.rows,
+              commentColumn: parsed.commentColumn ?? heatData.commentColumn,
+            };
+            changed = true;
+          } catch {
+            // Mantener original si falla
+          }
+        }
+      }
+    }
+    return updatedCat;
+  });
+
+  if (!changed) return results;
+  return {
+    ...results,
+    categories,
+  };
+}
+
 export async function loadEventResults(
   eventId: string,
   options: { forceRefresh?: boolean } = {}
 ): Promise<EventResults | null> {
   const map = readLocalResultsMap();
-  const cached = map[eventId] ?? null;
+  const rawCached = map[eventId] ?? null;
+  const cached = sanitizeEventResults(rawCached);
+  if (cached && cached !== rawCached) {
+    map[eventId] = cached;
+    writeLocalResultsMap(map);
+  }
 
   if (cached && !options.forceRefresh) {
     if (isApiEnabled()) {
@@ -648,9 +704,10 @@ export async function loadEventResults(
             action: 'results',
             eventId,
           });
-          if (data.results) {
+          const sanitized = sanitizeEventResults(data.results);
+          if (sanitized) {
             const currentMap = readLocalResultsMap();
-            currentMap[eventId] = data.results;
+            currentMap[eventId] = sanitized;
             writeLocalResultsMap(currentMap);
           }
         } catch {
@@ -667,11 +724,12 @@ export async function loadEventResults(
         action: 'results',
         eventId,
       });
-      if (data.results) {
+      const sanitized = sanitizeEventResults(data.results);
+      if (sanitized) {
         const currentMap = readLocalResultsMap();
-        currentMap[eventId] = data.results;
+        currentMap[eventId] = sanitized;
         writeLocalResultsMap(currentMap);
-        return data.results;
+        return sanitized;
       }
       return cached;
     } catch {
