@@ -336,10 +336,10 @@ export const REGLAMENTO_SECTIONS: ReglamentoSection[] = [
       {
         title: '15.1 Premiación final del campeonato',
         bullets: [
-          'Requisito de participación: haber competido en al menos 3 de 4 válidas del campeonato.',
+          'Requisito de participación: haber competido en al menos 2 de 3 válidas del campeonato.',
           'Los ganadores serán elegidos aleatoriamente entre todos los participantes que cumplan con los requisitos.',
           'El anuncio se realizará durante la premiación de la última válida.',
-          'Bolsa de premios de $20.000.000 COP, dividida en 5 tarjetas de regalo de $4.000.000 COP cada una.',
+          'Bolsa de premios de $25.000.000 COP, dividida en 5 tarjetas de regalo de $5.000.000 COP cada una.',
           'Las tarjetas podrán usarse exclusivamente en Autocolombiana, en la compra de motos, accesorios, repuestos y merchán de las tres marcas (GASGAS, KTM, Husqvarna).',
           'No es transferible ni canjeable por dinero en efectivo.',
           'La entrega se realizará durante la última válida del campeonato.',

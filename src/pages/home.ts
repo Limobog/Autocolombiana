@@ -100,7 +100,7 @@ function renderMxHighlights(): string {
             </p>
           </div>
           <div class="card text-center md:text-left">
-            <p class="font-title text-2xl tracking-wide text-white mb-2">$20.000.000 en premios</p>
+            <p class="font-title text-2xl tracking-wide text-white mb-2">$25.000.000 en premios</p>
             <p class="text-muted text-sm leading-relaxed">
               Bolsa de premiación al final del campeonato para participantes que cumplan los requisitos del reglamento oficial.
             </p>
@@ -153,7 +153,7 @@ function renderAboutSection(champ: Championship): string {
     <p>
       Da igual de dónde vengas o con quién compitas: aquí todos suman puntos en igualdad de condiciones.
       Compite en motocross o enduro — somos el único campeonato nacional que reúne ambas disciplinas — y pelea
-      por una premiación de $20 millones al cierre de la temporada.
+      por una premiación de $25 millones al cierre de la temporada.
     </p>
     <p>
       Inscríbete en línea, consulta el calendario y sigue tus resultados desde esta misma web.
@@ -173,7 +173,7 @@ function renderAboutSection(champ: Championship): string {
     </p>`;
 
   const cardsMx = [
-    ['01', 'Tu club, tu liga', 'Lleva los colores de tu equipo a cada válida y compite por puntos en las 4 fechas. Novatos y expertos, de cualquier ciudad — todos tienen su lugar.'],
+    ['01', 'Tu club, tu liga', 'Lleva los colores de tu equipo a cada válida y compite por puntos en las 3 fechas. Novatos y expertos, de cualquier ciudad — todos tienen su lugar.'],
     ['02', 'Pura acción', 'Dos mangas que valen, clasificación el domingo y una tabla de puntos que premia la constancia. Cada salida cuenta.'],
     ['03', 'Sin complicaciones', 'Inscríbete, revisa las válidas, lee el reglamento y consulta resultados. Todo desde aquí, en pocos clics.'],
   ];
@@ -259,7 +259,7 @@ function renderQuickAccess(champ: Championship): string {
 function renderCta(champ: Championship): string {
   const text =
     champ.id === 'mx'
-      ? 'El único campeonato que une motocross y enduro en Colombia — con $20 millones en premiación al final. Inscríbete, elige tu categoría y sal a demostrar de qué estás hecho.'
+      ? 'El único campeonato que une motocross y enduro en Colombia — con $25 millones en premiación al final. Inscríbete, elige tu categoría y sal a demostrar de qué estás hecho.'
       : 'Dos ediciones y el cronómetro como único rival. Inscríbete, elige tu categoría y demuestra de qué estás hecho en el enduro.';
 
   return `

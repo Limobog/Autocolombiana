@@ -59,10 +59,10 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
     badge: 'De Clubes · MX',
     logo: 'logo-copa-mx.png',
     tagline:
-      'El motocross por clubes que reúne a pilotos de todo Colombia. Cuatro válidas, dos mangas por categoría y puntos que cuentan en cada fecha.',
-    validasCount: 4,
+      'El motocross por clubes que reúne a pilotos de todo Colombia. Tres válidas, dos mangas por categoría y puntos que cuentan en cada fecha.',
+    validasCount: 3,
     validasLabel: 'válidas',
-    extraStat: ['$20M', 'Premiación'],
+    extraStat: ['$25M', 'Premiación'],
     calendar: [],
     bankDetails: {
       bank: 'Bre-B',
