@@ -23,7 +23,7 @@ import {
   isApiEnabled,
   allPilotNumbers,
 } from './api';
-import { parseResultsCsv, type HeatKey } from './parse-results-csv';
+import { parseResultsCsv, isNumericValue, type HeatKey } from './parse-results-csv';
 
 export { allPilotNumbers };
 
@@ -728,7 +728,7 @@ export function sanitizeEventResults(results: EventResults | null): EventResults
         continue;
       }
 
-      // Caso: CSV guardado previamente en 1 sola columna con delimitadores adentro (sobre-comillado de Excel)
+      // Caso 1: CSV guardado previamente en 1 sola columna con delimitadores adentro (sobre-comillado de Excel)
       if (heatData.columns.length === 1) {
         const colName = heatData.columns[0];
         if (colName && (colName.includes(',') || colName.includes(';') || colName.includes('\t'))) {
@@ -745,9 +745,81 @@ export function sanitizeEventResults(results: EventResults | null): EventResults
               commentColumn: parsed.commentColumn ?? heatData.commentColumn,
             };
             changed = true;
+            continue;
           } catch {
             // Mantener original si falla
           }
+        }
+      }
+
+      // Caso 2: Celdas con filas de otros pilotos absorbidas (comilla abierta en fila 1 que tragó filas 2, 3...)
+      const hasConcatenatedRows = heatData.rows.some((r) =>
+        Object.values(r).some(
+          (val) =>
+            typeof val === 'string' &&
+            (/\b[2-9]\d*,\d+,[A-Za-z]/.test(val) || (val.includes('\n') && /\d+/.test(val)))
+        )
+      );
+
+      if (hasConcatenatedRows) {
+        const csvLines: string[] = [heatData.columns.join(',')];
+        for (const r of heatData.rows) {
+          const lineCells = heatData.columns.map((c) => r[c] ?? '');
+          const lineStr = lineCells.join(',');
+          const normalized = lineStr.replace(/\s+([2-9]\d*,\d+,[A-Za-z])/g, '\n$1');
+          csvLines.push(normalized);
+        }
+        try {
+          const parsed = parseResultsCsv(csvLines.join('\n'), heatKey as HeatKey);
+          if (parsed.rows.length > heatData.rows.length) {
+            updatedCat[heatKey] = {
+              ...heatData,
+              columns: parsed.columns,
+              rows: parsed.rows,
+              commentColumn: parsed.commentColumn ?? heatData.commentColumn,
+            };
+            changed = true;
+            continue;
+          }
+        } catch {
+          // Mantener si falla
+        }
+      }
+
+      // Caso 3: Filas desplazadas donde se coló el nombre de categoría en una columna de puntos (ej: Juan Castañeda en MX Novatos)
+      const currentRows = updatedCat[heatKey]?.rows ?? heatData.rows;
+      const currentCols = updatedCat[heatKey]?.columns ?? heatData.columns;
+      const totalCol = currentCols.find((c) => /total.*punto|puntos/i.test(c));
+      const m1Col = currentCols.find((c) => /^m1$|^r1$/i.test(c));
+      const m2Col = currentCols.find((c) => /^m2$|^r2$/i.test(c));
+
+      if (totalCol && m1Col) {
+        let rowsFixed = false;
+        const newRows = currentRows.map((r) => {
+          const row = { ...r };
+          const totalVal = (row[totalCol] ?? '').trim();
+          if (totalVal && !isNumericValue(totalVal) && isNumericValue(row[m1Col] ?? '')) {
+            const realTotal = Number(String(row[m1Col]).replace(',', '.'));
+            const realM1 =
+              m2Col && isNumericValue(row[m2Col] ?? '') ? Number(String(row[m2Col]).replace(',', '.')) : 0;
+            const realM2 = realTotal >= realM1 ? realTotal - realM1 : 0;
+
+            row[totalCol] = String(realTotal);
+            row[m1Col] = String(realM1);
+            if (m2Col) {
+              row[m2Col] = String(realM2);
+            }
+            rowsFixed = true;
+          }
+          return row;
+        });
+
+        if (rowsFixed) {
+          updatedCat[heatKey] = {
+            ...(updatedCat[heatKey] ?? heatData),
+            rows: newRows,
+          };
+          changed = true;
         }
       }
     }

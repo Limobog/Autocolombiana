@@ -129,6 +129,12 @@ export function detectDelimiter(text: string): string {
   return ',';
 }
 
+export function isNumericValue(str: string): boolean {
+  if (!str) return false;
+  const cleaned = str.replace(',', '.').trim();
+  return !isNaN(Number(cleaned)) && isFinite(Number(cleaned));
+}
+
 function parseRawCsv(text: string, delimiter?: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
@@ -146,11 +152,25 @@ function parseRawCsv(text: string, delimiter?: string): string[][] {
       if (ch === '"' && next === '"') {
         field += '"';
         i++;
+        continue;
       } else if (ch === '"') {
         inQuotes = false;
-      } else {
-        field += ch;
+        continue;
+      } else if (ch === '\n' || (ch === '\r' && next === '\n')) {
+        // En resultados deportivos, si la siguiente línea comienza con un número de posición (ej: "2," o 2,),
+        // el salto de línea nunca es parte de un campo de texto; es una nueva fila con comilla mal cerrada.
+        const rest = input.slice(ch === '\r' ? i + 2 : i + 1).trimStart();
+        if (/^"?\d+"?[,;\t]/.test(rest)) {
+          inQuotes = false;
+          row.push(field);
+          field = '';
+          if (row.some((cell) => cell.trim() !== '')) rows.push(row);
+          row = [];
+          if (ch === '\r') i++;
+          continue;
+        }
       }
+      field += ch;
       continue;
     }
 
@@ -275,7 +295,39 @@ export function parseResultsCsv(text: string, heat: HeatKey): ParsedResultsTable
   const preferred = heat === 'final' ? FINAL_COLUMN_ORDER : MANGA_COLUMN_ORDER;
   const columns = orderColumns(dataHeaders, preferred);
 
-  const rows = matrix.slice(1).map((cells) => {
+  const rows = matrix.slice(1).map((rawCells) => {
+    let cells = rawCells.map((c) => c.trim().replace(/^["']+|["']+$/g, ''));
+
+    // 1. Expandir celdas fusionadas (ej: "15,15" en vez de dos celdas 15 y 15 por error de comillas en el CSV)
+    if (cells.length < rawHeaders.length) {
+      const expanded: string[] = [];
+      for (const cell of cells) {
+        if (cell.includes(',') && expanded.length + (cells.length - expanded.length) <= rawHeaders.length) {
+          const sub = cell.split(',').map((s) => s.trim().replace(/^["']+|["']+$/g, ''));
+          if (sub.length > 1) {
+            expanded.push(...sub);
+            continue;
+          }
+        }
+        expanded.push(cell);
+      }
+      if (expanded.length === rawHeaders.length) {
+        cells = expanded;
+      }
+    }
+
+    // 2. Si la fila tiene una columna extra con el nombre de la categoría/clase entre el nombre y los puntos
+    // Ejemplo: [Pos, N°, Nombre, "MX Novatos", Total puntos, M1, M2] cuando rawHeaders solo tiene [Pos, N°, Nombre, Total puntos, M1, M2]
+    if (cells.length === rawHeaders.length + 1) {
+      const h3 = rawHeaders[3]?.toLowerCase() || '';
+      const isPointsHeader = h3.includes('punto') || h3.includes('total') || h3.includes('m1') || h3.includes('r1');
+      const val3 = cells[3]?.trim();
+      const val4 = cells[4]?.trim();
+      if (isPointsHeader && !isNumericValue(val3) && isNumericValue(val4)) {
+        cells.splice(3, 1);
+      }
+    }
+
     const record: Record<string, string> = {};
     rawHeaders.forEach((header, i) => {
       if (!header) return;
