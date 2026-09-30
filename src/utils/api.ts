@@ -13,7 +13,15 @@ function buildUrl(params: Record<string, string>): string {
 
 const inFlightGets = new Map<string, Promise<unknown>>();
 
-export async function apiGet<T>(params: Record<string, string> = {}, options: { timeoutMs?: number } = {}): Promise<T> {
+export interface ApiGetOptions {
+  timeoutMs?: number;
+  retries?: number;
+}
+
+export async function apiGet<T>(
+  params: Record<string, string> = {},
+  options: ApiGetOptions = {}
+): Promise<T> {
   const password = sessionStorage.getItem('minicross_admin_password');
   const finalParams = { ...params };
   if (password) {
@@ -27,11 +35,13 @@ export async function apiGet<T>(params: Record<string, string> = {}, options: { 
     return existing as Promise<T>;
   }
 
-  const timeoutMs = options.timeoutMs ?? 18000;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const timeoutMs = options.timeoutMs ?? 45000;
+  const maxRetries = options.retries ?? 1;
 
-  const fetchPromise = (async () => {
+  const executeFetch = async (attempt: number): Promise<T> => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
       const res = await fetch(url, { signal: controller.signal });
       if (!res.ok) throw new Error('No se pudo conectar con Google Sheets.');
@@ -39,12 +49,24 @@ export async function apiGet<T>(params: Record<string, string> = {}, options: { 
       if (data.success === false && data.error) throw new Error(data.error);
       return data;
     } catch (err: unknown) {
-      if (err instanceof Error && err.name === 'AbortError') {
+      const isAbort = err instanceof Error && err.name === 'AbortError';
+      if (isAbort && attempt < maxRetries) {
+        // En arranque en frío de Google Apps Script, reintentar una vez con contenedor despierto
+        return await executeFetch(attempt + 1);
+      }
+      if (isAbort) {
         throw new Error('Tiempo de espera agotado al consultar el servidor.');
       }
       throw err;
     } finally {
       clearTimeout(timer);
+    }
+  };
+
+  const fetchPromise = (async () => {
+    try {
+      return await executeFetch(0);
+    } finally {
       inFlightGets.delete(url);
     }
   })();

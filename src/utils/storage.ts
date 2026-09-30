@@ -356,13 +356,22 @@ export async function saveEvents(events: EventSavePayload[]): Promise<void> {
   }
 }
 
-export async function loadRegistrations(options: { throwOnError?: boolean } = {}): Promise<Registration[]> {
+export interface AdminData {
+  events: Event[];
+  registrations: Registration[];
+  categories: StoredCategory[];
+}
+
+export async function loadRegistrations(options: { throwOnError?: boolean; timeoutMs?: number } = {}): Promise<Registration[]> {
   if (isApiEnabled()) {
     try {
-      const data = await apiGet<{ registrations: Record<string, unknown>[] }>({
-        action: 'registrations',
-      });
-      return (data.registrations ?? []).map(normalizeRegistration);
+      const data = await apiGet<{ registrations: Record<string, unknown>[] }>(
+        { action: 'registrations' },
+        { timeoutMs: options.timeoutMs ?? 45000 }
+      );
+      const list = (data.registrations ?? []).map(normalizeRegistration);
+      writeLocal(CONFIG.storageKeys.registrations, list);
+      return list;
     } catch (err) {
       if (options.throwOnError || (err instanceof Error && err.message === 'No autorizado')) {
         throw err;
@@ -379,6 +388,75 @@ export async function loadRegistrations(options: { throwOnError?: boolean } = {}
   for (const reg of fromLocal ?? []) merged.set(reg.id, normalizeRegistration(reg as unknown as Record<string, unknown>));
 
   return Array.from(merged.values());
+}
+
+/**
+ * Carga todos los datos del panel administrativo (eventos, inscripciones y categorías)
+ * en una única petición HTTP atómica (action=all) para evitar cuellos de botella y bloqueos concurrentes.
+ */
+export async function loadAdminData(options: { forceRefresh?: boolean; throwOnError?: boolean } = {}): Promise<AdminData> {
+  if (isApiEnabled()) {
+    try {
+      const data = await apiGet<{
+        events?: Record<string, unknown>[];
+        registrations?: Record<string, unknown>[];
+        categories?: Record<string, unknown>[];
+      }>({ action: 'all' }, { timeoutMs: 50000 });
+
+      if (data.registrations && Array.isArray(data.registrations)) {
+        const freshRegs = data.registrations.map(normalizeRegistration);
+        writeLocal(CONFIG.storageKeys.registrations, freshRegs);
+
+        let freshEvents: Event[] = [];
+        if (data.events && Array.isArray(data.events)) {
+          freshEvents = data.events.map(normalizeEvent);
+          inMemoryEvents = freshEvents;
+          lastEventsFetchTime = Date.now();
+          writeLocal(CONFIG.storageKeys.events, freshEvents);
+        } else {
+          freshEvents = await loadEvents({ forceRefresh: options.forceRefresh });
+        }
+
+        let freshCategories: StoredCategory[] = [];
+        if (data.categories && Array.isArray(data.categories)) {
+          freshCategories = data.categories
+            .map(normalizeStoredCategory)
+            .filter((c): c is StoredCategory => c !== null);
+          inMemoryCategories = freshCategories;
+          lastCategoriesFetchTime = Date.now();
+          writeLocal(CONFIG.storageKeys.categories, freshCategories);
+          setCategoryStore(groupCategories(freshCategories));
+        } else {
+          const cachedCat = getCachedCategoriesSync();
+          if (cachedCat) freshCategories = cachedCat;
+        }
+
+        return {
+          events: freshEvents,
+          registrations: freshRegs,
+          categories: freshCategories,
+        };
+      }
+    } catch (err) {
+      if (options.throwOnError || (err instanceof Error && err.message === 'No autorizado')) {
+        throw err;
+      }
+    }
+  }
+
+  // Fallback si la versión del backend no devuelve registrations en action=all:
+  const [events, registrations] = await Promise.all([
+    loadEvents({ forceRefresh: options.forceRefresh }),
+    loadRegistrations({ throwOnError: options.throwOnError, timeoutMs: 45000 }),
+    initCategories(options.forceRefresh).catch(() => undefined),
+  ]);
+  const categories = getCachedCategoriesSync() || [];
+
+  return {
+    events,
+    registrations,
+    categories,
+  };
 }
 
 export async function saveRegistrations(registrations: Registration[]): Promise<void> {

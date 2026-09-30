@@ -1,9 +1,7 @@
 import { CONFIG } from '../config';
 import { renderFooter } from '../components/footer';
 import {
-  initCategories,
-  loadEvents,
-  loadRegistrations,
+  loadAdminData,
   saveEvents,
   saveStoredCategories,
   readFileAsDataUrl,
@@ -703,6 +701,38 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
     </div>`;
 }
 
+function renderAdminErrorState(errorMessage: string): void {
+  const app = document.getElementById('app');
+  if (!app) return;
+  app.innerHTML = `
+    <div class="min-h-screen flex items-center justify-center px-4 py-12">
+      <div class="card w-full max-w-lg border border-red-500/30 text-center py-10 px-6">
+        <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10 text-red-400">
+          <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+        <h2 class="font-title text-2xl text-white uppercase tracking-wider mb-2">No se pudo cargar el panel</h2>
+        <p class="text-sm text-silver mb-2">${errorMessage}</p>
+        <p class="text-xs text-muted mb-6">El servidor tardó en responder (posible arranque en frío de Apps Script o red lenta). Puedes reintentar la conexión ahora.</p>
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+          <button id="admin-retry-btn" class="btn-primary py-2.5 px-6">Reintentar conexión</button>
+          <button id="admin-logout-error-btn" class="rounded-lg border border-white/20 px-5 py-2.5 text-sm font-semibold text-silver hover:text-white hover:border-white/40">Cerrar sesión</button>
+        </div>
+      </div>
+    </div>
+    ${renderFooter()}`;
+
+  document.getElementById('admin-retry-btn')?.addEventListener('click', () => {
+    refreshAdmin(true);
+  });
+  document.getElementById('admin-logout-error-btn')?.addEventListener('click', () => {
+    sessionStorage.removeItem(CONFIG.storageKeys.adminSession);
+    sessionStorage.removeItem('minicross_admin_password');
+    initAdminPage();
+  });
+}
+
 async function refreshAdmin(showLoading = false): Promise<void> {
   const app = document.getElementById('app');
   if (!app) return;
@@ -712,13 +742,9 @@ async function refreshAdmin(showLoading = false): Promise<void> {
   }
 
   try {
-    const [events, registrations] = await Promise.all([
-      loadEvents(),
-      loadRegistrations({ throwOnError: true }),
-      initCategories().catch(() => undefined),
-    ]);
-    app.innerHTML = renderAdminPanel(events, registrations);
-    bindAdminEvents(events, registrations);
+    const adminData = await loadAdminData({ throwOnError: true, forceRefresh: true });
+    app.innerHTML = renderAdminPanel(adminData.events, adminData.registrations);
+    bindAdminEvents(adminData.events, adminData.registrations);
   } catch (err) {
     Swal.close();
     if (err instanceof Error && err.message === 'No autorizado') {
@@ -731,7 +757,7 @@ async function refreshAdmin(showLoading = false): Promise<void> {
       'Error al cargar',
       err instanceof Error ? err.message : 'No se pudieron obtener los datos del panel.'
     );
-    app.innerHTML = renderLoadingPanel();
+    renderAdminErrorState(err instanceof Error ? err.message : 'No se pudieron obtener los datos del panel.');
   }
 }
 
@@ -1117,10 +1143,11 @@ export async function initAdminPage(): Promise<void> {
 
       try {
         showSaving('Verificando credenciales...');
-        await loadRegistrations({ throwOnError: true });
+        const adminData = await loadAdminData({ throwOnError: true, forceRefresh: true });
         sessionStorage.setItem(CONFIG.storageKeys.adminSession, 'true');
         Swal.close();
-        initAdminPage();
+        app.innerHTML = renderAdminPanel(adminData.events, adminData.registrations);
+        bindAdminEvents(adminData.events, adminData.registrations);
       } catch (err) {
         sessionStorage.removeItem('minicross_admin_password');
         sessionStorage.removeItem(CONFIG.storageKeys.adminSession);
