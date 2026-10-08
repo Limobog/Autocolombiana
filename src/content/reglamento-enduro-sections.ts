@@ -57,7 +57,7 @@ export const REGLAMENTO_ENDURO_SECTIONS: ReglamentoSection[] = [
         ],
       },
       {
-        title: '2.ª Edición — Hard Scramble · 11 de octubre · La Pista Off Road',
+        title: '2.ª Edición — Hard Scramble · 22 de noviembre · La Pista Off Road',
         bullets: [
           'Competencia contra el cronómetro.',
           'Clasificación por tiempos.',

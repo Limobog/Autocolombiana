@@ -99,7 +99,7 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
       {
         edition: '2.ª Edición',
         format: 'Hard Scramble',
-        date: '11 de octubre',
+        date: '22 de noviembre',
         location: 'La Pista Off Road',
         details: ['Competencia contra el cronómetro', 'Clasificación por tiempos', 'Hard Scramble'],
       },
