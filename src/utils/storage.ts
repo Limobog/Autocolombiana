@@ -4,9 +4,12 @@ import type {
   Category,
   ChampionshipId,
   Event,
+  EventBankingInfo,
+  EventPromotion,
   EventResults,
   EventResultsSavePayload,
   EventSavePayload,
+  PromotionType,
   Registration,
   RegistrationFormData,
   StoredCategory,
@@ -63,6 +66,113 @@ function normalizeChampionshipId(raw: Record<string, unknown>): Event['champions
   return /enduro/i.test(String(raw.name ?? '')) ? 'enduro' : 'mx';
 }
 
+function parseBankingInfo(raw: unknown): EventBankingInfo | undefined {
+  if (!raw) return undefined;
+  let obj = raw;
+  if (typeof raw === 'string') {
+    try {
+      obj = JSON.parse(raw);
+    } catch {
+      return undefined;
+    }
+  }
+  if (!obj || typeof obj !== 'object') return undefined;
+  const o = obj as Record<string, unknown>;
+
+  const bankAccountRaw = o.bankAccount as Record<string, unknown> | undefined;
+  const breBRaw = o.breB as Record<string, unknown> | undefined;
+  const neobankRaw = o.neobank as Record<string, unknown> | undefined;
+
+  return {
+    bankAccount: bankAccountRaw
+      ? {
+          enabled: parseBoolField(bankAccountRaw.enabled),
+          bank: String(bankAccountRaw.bank ?? ''),
+          accountType: String(bankAccountRaw.accountType ?? 'Ahorros'),
+          accountNumber: String(bankAccountRaw.accountNumber ?? ''),
+          beneficiaryName: String(bankAccountRaw.beneficiaryName ?? ''),
+          beneficiaryDocument: String(bankAccountRaw.beneficiaryDocument ?? ''),
+        }
+      : undefined,
+    breB: breBRaw
+      ? {
+          enabled: parseBoolField(breBRaw.enabled),
+          beneficiaryName: String(breBRaw.beneficiaryName ?? ''),
+          key: String(breBRaw.key ?? ''),
+        }
+      : undefined,
+    neobank: neobankRaw
+      ? {
+          enabled: parseBoolField(neobankRaw.enabled),
+          neobank: String(neobankRaw.neobank ?? ''),
+          beneficiaryName: String(neobankRaw.beneficiaryName ?? ''),
+          accountNumber: String(neobankRaw.accountNumber ?? ''),
+        }
+      : undefined,
+  };
+}
+
+function parseCategoryPrices(raw: unknown): Record<string, number> | undefined {
+  if (!raw) return undefined;
+  let obj = raw;
+  if (typeof raw === 'string') {
+    try {
+      obj = JSON.parse(raw);
+    } catch {
+      return undefined;
+    }
+  }
+  if (!obj || typeof obj !== 'object') return undefined;
+  const result: Record<string, number> = {};
+  for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+    const num = Number(v);
+    if (Number.isFinite(num) && num >= 0) {
+      result[k] = num;
+    }
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function parsePromotions(raw: unknown): EventPromotion[] | undefined {
+  if (!raw) return undefined;
+  let list = raw;
+  if (typeof raw === 'string') {
+    try {
+      list = JSON.parse(raw);
+    } catch {
+      return undefined;
+    }
+  }
+  if (!Array.isArray(list)) return undefined;
+  const promos: EventPromotion[] = [];
+  for (const item of list) {
+    if (!item || typeof item !== 'object') continue;
+    const it = item as Record<string, unknown>;
+    const id = String(it.id || '').trim();
+    const name = String(it.name || '').trim();
+    const type = String(it.type || 'fixed_package') as PromotionType;
+    const minCategories = Number(it.minCategories) || 2;
+    const value = it.value !== undefined ? Number(it.value) : undefined;
+    const active = it.active !== undefined ? parseBoolField(it.active) : true;
+    const applicableCategoryIds = Array.isArray(it.applicableCategoryIds)
+      ? it.applicableCategoryIds.map(String).filter(Boolean)
+      : undefined;
+
+    if (id || name) {
+      promos.push({
+        id: id || `promo-${promos.length + 1}`,
+        name: name || 'Promoción',
+        type,
+        minCategories,
+        value,
+        applicableCategoryIds,
+        active,
+      });
+    }
+  }
+  return promos.length > 0 ? promos : undefined;
+}
+
 function normalizeEvent(raw: Record<string, unknown>): Event {
   return {
     id: String(raw.id ?? ''),
@@ -77,6 +187,9 @@ function normalizeEvent(raw: Record<string, unknown>): Event {
     resultadosUrl: String(raw.resultadosUrl ?? ''),
     valorInscripcion: Number(raw.valorInscripcion ?? 0) || 0,
     championshipId: normalizeChampionshipId(raw),
+    bankingInfo: parseBankingInfo(raw.bankingInfo ?? raw.bankDetails),
+    categoryPrices: parseCategoryPrices(raw.categoryPrices),
+    promotions: parsePromotions(raw.promotions),
   };
 }
 

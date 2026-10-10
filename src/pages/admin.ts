@@ -21,7 +21,17 @@ import {
   isCategoryEnabled,
   resolveCategoryId,
 } from '../types';
-import type { Category, ChampionshipId, Event, EventSavePayload, Registration, StoredCategory } from '../types';
+import type {
+  Category,
+  ChampionshipId,
+  Event,
+  EventBankingInfo,
+  EventPromotion,
+  EventSavePayload,
+  PromotionType,
+  Registration,
+  StoredCategory,
+} from '../types';
 import { CHAMPIONSHIPS } from '../championships';
 import Swal from 'sweetalert2';
 import { openResultsModal } from './admin-results-modal';
@@ -526,6 +536,232 @@ function bindCategoriesAdmin(usedIds: Set<string>): void {
   });
 }
 
+// ─── Precios por Categoría y Promociones por Evento ──────────────────────────
+
+function renderCategoryPriceRows(
+  champId: ChampionshipId,
+  customPrices: Record<string, number> = {},
+  stdPrice = 0
+): string {
+  const cats = getChampionshipCategories(champId);
+  return cats
+    .map((c) => {
+      const hasCustom = typeof customPrices[c.id] === 'number';
+      const customVal = hasCustom ? customPrices[c.id] : '';
+      return `
+        <div class="event-cat-price-row flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/25 p-2.5 hover:border-white/20 transition-colors" data-cat-id="${c.id}">
+          <label class="flex items-center gap-2.5 cursor-pointer flex-1 min-w-[200px]">
+            <input type="checkbox" class="event-cat-custom-toggle accent-white h-4 w-4 shrink-0" ${hasCustom ? 'checked' : ''} />
+            <span class="text-sm font-medium text-white">${formatCategoryOptionLabel(c)}</span>
+          </label>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="event-cat-std-label text-xs text-muted ${hasCustom ? 'hidden' : ''}">
+              (Estándar: ${stdPrice > 0 ? formatCop(stdPrice) : '$0'})
+            </span>
+            <div class="flex items-center gap-1.5 ${hasCustom ? '' : 'hidden'} event-cat-custom-box">
+              <span class="text-xs text-amber-300 font-semibold">$</span>
+              <input type="number" class="event-cat-custom-input input-field text-sm w-36 py-1.5 font-mono"
+                     min="0" step="1000" placeholder="Ej: 170000" value="${customVal}" />
+            </div>
+          </div>
+        </div>`;
+    })
+    .join('');
+}
+
+function getPromotionValueLabel(type: PromotionType): string {
+  switch (type) {
+    case 'fixed_package':
+      return 'Precio total del combo (COP)';
+    case 'unit_price_tier':
+      return 'Precio individual por categoría (COP)';
+    case 'total_discount_fixed':
+      return 'Monto a descontar (COP)';
+    case 'total_discount_percent':
+      return 'Porcentaje de descuento (%)';
+    case 'two_for_one':
+      return 'Valor (no requerido en 2x1)';
+  }
+}
+
+function getPromotionValuePlaceholder(type: PromotionType): string {
+  switch (type) {
+    case 'fixed_package':
+      return 'Ej: 400000 o 600000';
+    case 'unit_price_tier':
+      return 'Ej: 200000';
+    case 'total_discount_fixed':
+      return 'Ej: 60000';
+    case 'total_discount_percent':
+      return 'Ej: 15';
+    case 'two_for_one':
+      return '—';
+  }
+}
+
+function renderPromoCategoryCheckboxes(champId: ChampionshipId, selectedIds: string[] = []): string {
+  const cats = getChampionshipCategories(champId);
+  const selectedSet = new Set(selectedIds);
+  return cats
+    .map(
+      (c) => `
+      <label class="flex items-center gap-2 text-xs text-foreground bg-surface-raised/60 hover:bg-surface-raised px-2 py-1.5 rounded border border-white/10 cursor-pointer transition-colors">
+        <input type="checkbox" class="promo-cat-check accent-white h-3.5 w-3.5 shrink-0" value="${c.id}" ${
+          selectedSet.has(c.id) ? 'checked' : ''
+        } />
+        <span class="truncate">${formatCategoryOptionLabel(c)}</span>
+      </label>`
+    )
+    .join('');
+}
+
+function renderPromotionCard(promo: EventPromotion, champId: ChampionshipId): string {
+  const hasSpecificCats = Boolean(promo.applicableCategoryIds && promo.applicableCategoryIds.length > 0);
+  const isTwoForOne = promo.type === 'two_for_one';
+
+  return `
+    <div class="event-promo-card rounded-xl border border-white/20 bg-black/40 p-3.5 space-y-3" data-promo-id="${promo.id}">
+      <div class="flex items-center justify-between gap-3 flex-wrap border-b border-white/10 pb-2.5">
+        <div class="flex items-center gap-2 flex-1 min-w-[220px]">
+          <span class="text-base">🎁</span>
+          <input type="text" class="promo-name input-field text-sm py-1 font-semibold text-white flex-1"
+                 placeholder="Nombre de la promoción (ej: Combo 2 categorías)" value="${escapeAttr(promo.name)}" required />
+        </div>
+        <div class="flex items-center gap-3">
+          <label class="flex items-center gap-1.5 text-xs text-silver cursor-pointer select-none">
+            <input type="checkbox" class="promo-active accent-white h-4 w-4" ${promo.active !== false ? 'checked' : ''} />
+            Activa
+          </label>
+          <button type="button" class="promo-delete-btn text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10 px-2.5 py-1 rounded border border-red-500/30 transition-colors">
+            Eliminar
+          </button>
+        </div>
+      </div>
+
+      <div class="grid gap-3 sm:grid-cols-3 text-xs">
+        <div>
+          <label class="block text-muted mb-1 font-medium">Tipo de promoción</label>
+          <select class="promo-type input-field text-xs py-1.5">
+            <option value="fixed_package" ${promo.type === 'fixed_package' ? 'selected' : ''}>Combo / Precio fijo total (ej: 2 por $400.000)</option>
+            <option value="two_for_one" ${promo.type === 'two_for_one' ? 'selected' : ''}>2x1 (Por cada 2 categorías, paga 1)</option>
+            <option value="unit_price_tier" ${promo.type === 'unit_price_tier' ? 'selected' : ''}>Precio unitario por volumen (ej: cada una a $200.000)</option>
+            <option value="total_discount_fixed" ${promo.type === 'total_discount_fixed' ? 'selected' : ''}>Descuento fijo en el total (ej: -$60.000)</option>
+            <option value="total_discount_percent" ${promo.type === 'total_discount_percent' ? 'selected' : ''}>Descuento porcentual en el total (ej: 15% de descuento)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-muted mb-1 font-medium">Categorías requeridas (mínimo)</label>
+          <input type="number" class="promo-min input-field text-xs py-1.5 font-mono" min="1" max="20"
+                 value="${promo.minCategories || 2}" placeholder="Ej: 2 o 3" required />
+        </div>
+        <div class="promo-value-box ${isTwoForOne ? 'opacity-40 pointer-events-none' : ''}">
+          <label class="block text-muted mb-1 font-medium promo-value-label">${getPromotionValueLabel(promo.type)}</label>
+          <input type="number" class="promo-value input-field text-xs py-1.5 font-mono" min="0" step="1000"
+                 value="${promo.value !== undefined ? promo.value : ''}" placeholder="${getPromotionValuePlaceholder(promo.type)}" ${isTwoForOne ? 'disabled' : ''} />
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-white/5 space-y-2">
+        <div class="flex items-center justify-between text-xs flex-wrap gap-2">
+          <span class="text-muted font-medium">Categorías elegibles para esta promoción:</span>
+          <label class="flex items-center gap-1.5 text-silver cursor-pointer select-none">
+            <input type="checkbox" class="promo-specific-cats-toggle accent-white h-3.5 w-3.5" ${hasSpecificCats ? 'checked' : ''} />
+            Aplicar solo a categorías específicas
+          </label>
+        </div>
+        <div class="promo-cats-list ${hasSpecificCats ? '' : 'hidden'} grid gap-1.5 sm:grid-cols-2 max-h-40 overflow-y-auto p-2 bg-black/40 rounded-lg border border-white/10">
+          ${renderPromoCategoryCheckboxes(champId, promo.applicableCategoryIds)}
+        </div>
+      </div>
+    </div>`;
+}
+
+function initEventFormBanking(champId: ChampionshipId, info?: EventBankingInfo): void {
+  const bankAccEnabled = document.getElementById('bank-acc-enabled') as HTMLInputElement | null;
+  const breBEnabled = document.getElementById('breb-enabled') as HTMLInputElement | null;
+  const neobankEnabled = document.getElementById('neobank-enabled') as HTMLInputElement | null;
+
+  const bankAccBank = document.getElementById('bank-acc-bank') as HTMLInputElement | null;
+  const bankAccType = document.getElementById('bank-acc-type') as HTMLSelectElement | null;
+  const bankAccNumber = document.getElementById('bank-acc-number') as HTMLInputElement | null;
+  const bankAccHolder = document.getElementById('bank-acc-holder') as HTMLInputElement | null;
+  const bankAccDoc = document.getElementById('bank-acc-doc') as HTMLInputElement | null;
+
+  const breBHolder = document.getElementById('breb-holder') as HTMLInputElement | null;
+  const breBKey = document.getElementById('breb-key') as HTMLInputElement | null;
+
+  const neobankName = document.getElementById('neobank-name') as HTMLInputElement | null;
+  const neobankHolder = document.getElementById('neobank-holder') as HTMLInputElement | null;
+  const neobankNumber = document.getElementById('neobank-number') as HTMLInputElement | null;
+
+  if (!bankAccEnabled || !breBEnabled || !neobankEnabled) return;
+
+  const defaultBank = CHAMPIONSHIPS[champId].bankDetails;
+
+  if (info && (info.bankAccount?.enabled || info.breB?.enabled || info.neobank?.enabled)) {
+    bankAccEnabled.checked = Boolean(info.bankAccount?.enabled);
+    if (bankAccBank) bankAccBank.value = info.bankAccount?.bank || '';
+    if (bankAccType) bankAccType.value = info.bankAccount?.accountType || 'Ahorros';
+    if (bankAccNumber) bankAccNumber.value = info.bankAccount?.accountNumber || '';
+    if (bankAccHolder) bankAccHolder.value = info.bankAccount?.beneficiaryName || '';
+    if (bankAccDoc) bankAccDoc.value = info.bankAccount?.beneficiaryDocument || '';
+
+    breBEnabled.checked = Boolean(info.breB?.enabled);
+    if (breBHolder) breBHolder.value = info.breB?.beneficiaryName || '';
+    if (breBKey) breBKey.value = info.breB?.key || '';
+
+    neobankEnabled.checked = Boolean(info.neobank?.enabled);
+    if (neobankName) neobankName.value = info.neobank?.neobank || '';
+    if (neobankHolder) neobankHolder.value = info.neobank?.beneficiaryName || '';
+    if (neobankNumber) neobankNumber.value = info.neobank?.accountNumber || '';
+  } else {
+    const isBrebType =
+      defaultBank.accountType.toLowerCase().includes('bre-b') ||
+      defaultBank.bank.toLowerCase().includes('bre-b');
+
+    bankAccEnabled.checked = !isBrebType;
+    if (bankAccBank) bankAccBank.value = !isBrebType ? defaultBank.bank : 'Bancolombia';
+    if (bankAccType) bankAccType.value = defaultBank.accountType === 'Corriente' ? 'Corriente' : 'Ahorros';
+    if (bankAccNumber) bankAccNumber.value = !isBrebType ? defaultBank.accountNumber : '';
+    if (bankAccHolder) bankAccHolder.value = defaultBank.accountHolder;
+    if (bankAccDoc) bankAccDoc.value = defaultBank.idValue;
+
+    breBEnabled.checked = isBrebType || Boolean(defaultBank.paymentKey);
+    if (breBHolder) breBHolder.value = defaultBank.accountHolder;
+    if (breBKey) breBKey.value = defaultBank.paymentKey || defaultBank.accountNumber;
+
+    neobankEnabled.checked = false;
+    if (neobankName) neobankName.value = 'Nequi';
+    if (neobankHolder) neobankHolder.value = defaultBank.accountHolder;
+    if (neobankNumber) neobankNumber.value = defaultBank.paymentKey || '';
+  }
+
+  document.getElementById('bank-acc-fields')?.classList.toggle('hidden', !bankAccEnabled.checked);
+  document.getElementById('breb-fields')?.classList.toggle('hidden', !breBEnabled.checked);
+  document.getElementById('neobank-fields')?.classList.toggle('hidden', !neobankEnabled.checked);
+}
+
+function initEventFormCategories(
+  champId: ChampionshipId,
+  customPrices: Record<string, number> = {},
+  stdPrice = 0
+): void {
+  const container = document.getElementById('event-category-prices-list');
+  if (!container) return;
+  container.innerHTML = renderCategoryPriceRows(champId, customPrices, stdPrice);
+}
+
+function initEventFormPromotions(champId: ChampionshipId, promotions: EventPromotion[] = []): void {
+  const container = document.getElementById('event-promotions-list');
+  if (!container) return;
+  if (promotions.length === 0) {
+    container.innerHTML =
+      '<p class="text-xs text-muted py-3 text-center" id="no-promos-hint">No hay promociones configuradas para este evento. Haz clic en "+ Añadir promoción".</p>';
+    return;
+  }
+  container.innerHTML = promotions.map((p) => renderPromotionCard(p, champId)).join('');
+}
+
 function renderAdminPanel(events: Event[], registrations: Registration[]): string {
   const usedCategoryIds = getUsedCategoryIds(registrations);
   const activeEvents = events.filter((e) => e.active);
@@ -651,7 +887,7 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
               )
               .join('')}
           </div>
-          <form id="event-form" class="hidden mt-4 space-y-3 border-t border-white/20 pt-4">
+          <form id="event-form" class="hidden mt-4 space-y-5 border-t border-white/20 pt-5">
             <input type="hidden" id="event-form-id" />
             <div class="grid gap-3 sm:grid-cols-2">
               <div>
@@ -665,9 +901,12 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
               <input type="date" id="event-date" class="input-field" required />
               <input type="text" id="event-location" placeholder="Ubicacion / Pista" class="input-field" required />
               <input type="text" id="event-city" placeholder="Ciudad" class="input-field" required />
-              <input type="number" id="event-valor-inscripcion" placeholder="Valor inscripción (COP)" class="input-field" min="0" step="1000" required />
+              <div>
+                <label class="block text-xs text-muted mb-1" for="event-valor-inscripcion">Valor inscripción estándar (COP)</label>
+                <input type="number" id="event-valor-inscripcion" placeholder="Valor inscripción (COP)" class="input-field" min="0" step="1000" required />
+              </div>
             </div>
-            <textarea id="event-description" placeholder="Descripcion" class="input-field" rows="2" required></textarea>
+            <textarea id="event-description" placeholder="Descripcion del evento" class="input-field" rows="2" required></textarea>
             <div>
               <label class="block text-sm text-secondary mb-2" for="event-reglamento">Reglamento (PDF)</label>
               <input type="file" id="event-reglamento" accept=".pdf,application/pdf"
@@ -675,12 +914,129 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
               <p id="event-reglamento-preview" class="mt-2 text-xs text-muted hidden"></p>
               <p id="event-reglamento-current" class="mt-2 text-xs text-secondary hidden"></p>
             </div>
-            <label class="flex items-center gap-2 text-sm">
+
+            <!-- SECCIÓN 1: INFORMACIÓN BANCARIA PARA EL EVENTO -->
+            <div class="rounded-xl border border-white/20 bg-surface-raised p-4 space-y-4">
+              <div>
+                <h3 class="font-title text-lg text-white uppercase tracking-wider flex items-center gap-2">
+                  <span>💳</span> Información Bancaria para Inscripciones
+                </h3>
+                <p class="text-xs text-muted mt-0.5">
+                  Marca con los checkboxes qué opciones de pago estarán disponibles para los pilotos en este evento y completa sus datos.
+                </p>
+              </div>
+
+              <!-- Opción a: Cuenta Bancaria tradicional -->
+              <div class="rounded-lg border border-white/10 bg-black/25 p-3.5 space-y-3">
+                <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input type="checkbox" id="bank-acc-enabled" class="accent-white h-4 w-4" />
+                  <span class="text-sm font-bold text-white">a. Cuenta Bancaria tradicional</span>
+                </label>
+                <div id="bank-acc-fields" class="hidden grid gap-3 sm:grid-cols-2 pt-2 border-t border-white/10">
+                  <div>
+                    <label class="block text-xs text-muted mb-1" for="bank-acc-bank">Banco</label>
+                    <input type="text" id="bank-acc-bank" placeholder="Ej: Bancolombia, BBVA, etc." class="input-field text-sm" />
+                  </div>
+                  <div>
+                    <label class="block text-xs text-muted mb-1" for="bank-acc-type">Tipo de cuenta</label>
+                    <select id="bank-acc-type" class="input-field text-sm">
+                      <option value="Ahorros">Ahorros</option>
+                      <option value="Corriente">Corriente</option>
+                    </select>
+                  </div>
+                  <div class="sm:col-span-2">
+                    <label class="block text-xs text-muted mb-1" for="bank-acc-number">Número de cuenta</label>
+                    <input type="text" id="bank-acc-number" placeholder="Ej: 0021357124" class="input-field text-sm font-mono" />
+                  </div>
+                  <div>
+                    <label class="block text-xs text-muted mb-1" for="bank-acc-holder">Nombre del beneficiario o razón social</label>
+                    <input type="text" id="bank-acc-holder" placeholder="Ej: Wilman Esteban Chivata" class="input-field text-sm" />
+                  </div>
+                  <div>
+                    <label class="block text-xs text-muted mb-1" for="bank-acc-doc">Documento del beneficiario o NIT</label>
+                    <input type="text" id="bank-acc-doc" placeholder="Ej: C.C. 1010234134 o NIT" class="input-field text-sm font-mono" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Opción b: Llave Bre-B -->
+              <div class="rounded-lg border border-white/10 bg-black/25 p-3.5 space-y-3">
+                <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input type="checkbox" id="breb-enabled" class="accent-white h-4 w-4" />
+                  <span class="text-sm font-bold text-white">b. Llave Bre-B</span>
+                </label>
+                <div id="breb-fields" class="hidden grid gap-3 sm:grid-cols-2 pt-2 border-t border-white/10">
+                  <div>
+                    <label class="block text-xs text-muted mb-1" for="breb-holder">Nombre del beneficiario</label>
+                    <input type="text" id="breb-holder" placeholder="Ej: Wilman Esteban Chivata" class="input-field text-sm" />
+                  </div>
+                  <div>
+                    <label class="block text-xs text-muted mb-1" for="breb-key">Llave Bre-B</label>
+                    <input type="text" id="breb-key" placeholder="Ej: 3146105217 o @alias" class="input-field text-sm font-mono" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Opción c: Cuenta Neobanco -->
+              <div class="rounded-lg border border-white/10 bg-black/25 p-3.5 space-y-3">
+                <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input type="checkbox" id="neobank-enabled" class="accent-white h-4 w-4" />
+                  <span class="text-sm font-bold text-white">c. Cuenta Neobanco (Nu, Nequi, Daviplata, Lulo, etc.)</span>
+                </label>
+                <div id="neobank-fields" class="hidden grid gap-3 sm:grid-cols-3 pt-2 border-t border-white/10">
+                  <div>
+                    <label class="block text-xs text-muted mb-1" for="neobank-name">Neobanco</label>
+                    <input type="text" id="neobank-name" placeholder="Ej: Nequi, Daviplata, Nu, Lulo" class="input-field text-sm" />
+                  </div>
+                  <div>
+                    <label class="block text-xs text-muted mb-1" for="neobank-holder">Nombre del beneficiario</label>
+                    <input type="text" id="neobank-holder" placeholder="Ej: Wilman Esteban Chivata" class="input-field text-sm" />
+                  </div>
+                  <div>
+                    <label class="block text-xs text-muted mb-1" for="neobank-number">Número de cuenta / Celular</label>
+                    <input type="text" id="neobank-number" placeholder="Ej: 3146105217" class="input-field text-sm font-mono" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECCIÓN 2: PRECIOS POR CATEGORÍA -->
+            <div class="rounded-xl border border-white/20 bg-surface-raised p-4 space-y-3">
+              <div>
+                <h3 class="font-title text-lg text-white uppercase tracking-wider flex items-center gap-2">
+                  <span>🏷️</span> Precios por Categoría
+                </h3>
+                <p class="text-xs text-muted mt-0.5">
+                  Todas las categorías usan el precio estándar configurado arriba. Si alguna categoría tiene un precio diferente (ej: PW o Pitbike a $170.000), marca "Precio distinto" y asígnale el valor específico.
+                </p>
+              </div>
+              <div id="event-category-prices-list" class="space-y-2 max-h-72 overflow-y-auto pr-1"></div>
+            </div>
+
+            <!-- SECCIÓN 3: PROMOCIONES POR EVENTO -->
+            <div class="rounded-xl border border-white/20 bg-surface-raised p-4 space-y-3">
+              <div class="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <h3 class="font-title text-lg text-white uppercase tracking-wider flex items-center gap-2">
+                    <span>🎁</span> Promociones del Evento
+                  </h3>
+                  <p class="text-xs text-muted mt-0.5">
+                    Configura promociones automáticas para este evento (2x1, combos de 2 o 3 categorías por valor fijo, descuentos totales o precio unitario por volumen).
+                  </p>
+                </div>
+                <button type="button" id="add-promotion-btn" class="btn-outline text-xs py-1.5 px-3">
+                  + Añadir promoción
+                </button>
+              </div>
+              <div id="event-promotions-list" class="space-y-3"></div>
+            </div>
+
+            <label class="flex items-center gap-2 text-sm pt-2">
               <input type="checkbox" id="event-finished" class="accent-white" />
               Evento finalizado
             </label>
-            <div class="flex gap-2">
-              <button type="submit" class="btn-primary text-sm py-2 px-4">Guardar evento</button>
+            <div class="flex gap-2 pt-2">
+              <button type="submit" class="btn-primary text-sm py-2 px-5">Guardar evento</button>
               <button type="button" id="cancel-event-form" class="btn-outline text-sm py-2 px-4">Cancelar</button>
             </div>
           </form>
@@ -900,10 +1256,16 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
   document.getElementById('add-event-btn')?.addEventListener('click', () => {
     eventForm.classList.remove('hidden');
     (document.getElementById('event-form-id') as HTMLInputElement).value = '';
-    (document.getElementById('event-valor-inscripcion') as HTMLInputElement).value = '0';
     eventForm.reset();
+    (document.getElementById('event-valor-inscripcion') as HTMLInputElement).value = '230000';
     document.getElementById('event-reglamento-preview')?.classList.add('hidden');
     document.getElementById('event-reglamento-current')?.classList.add('hidden');
+
+    const champId =
+      ((document.getElementById('event-championship') as HTMLSelectElement)?.value as ChampionshipId) || 'mx';
+    initEventFormBanking(champId);
+    initEventFormCategories(champId, {}, 230000);
+    initEventFormPromotions(champId, []);
   });
   document.getElementById('cancel-event-form')?.addEventListener('click', () => {
     eventForm.classList.add('hidden');
@@ -940,7 +1302,143 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
         reglamentoCurrent?.classList.add('hidden');
         if (reglamentoCurrent) reglamentoCurrent.textContent = '';
       }
+
+      initEventFormBanking(event.championshipId, event.bankingInfo);
+      initEventFormCategories(event.championshipId, event.categoryPrices, event.valorInscripcion ?? 0);
+      initEventFormPromotions(event.championshipId, event.promotions ?? []);
     });
+  });
+
+  // Toggle visualización de campos bancarios según checkbox
+  document.getElementById('bank-acc-enabled')?.addEventListener('change', (e) => {
+    document.getElementById('bank-acc-fields')?.classList.toggle('hidden', !(e.target as HTMLInputElement).checked);
+  });
+  document.getElementById('breb-enabled')?.addEventListener('change', (e) => {
+    document.getElementById('breb-fields')?.classList.toggle('hidden', !(e.target as HTMLInputElement).checked);
+  });
+  document.getElementById('neobank-enabled')?.addEventListener('change', (e) => {
+    document.getElementById('neobank-fields')?.classList.toggle('hidden', !(e.target as HTMLInputElement).checked);
+  });
+
+  // Cambio de campeonato en el formulario de evento
+  document.getElementById('event-championship')?.addEventListener('change', (e) => {
+    const champId = (e.target as HTMLSelectElement).value as ChampionshipId;
+    const formId = (document.getElementById('event-form-id') as HTMLInputElement).value;
+    const existing = formId ? events.find((ev) => ev.id === formId) : undefined;
+    const stdPrice = Number((document.getElementById('event-valor-inscripcion') as HTMLInputElement).value) || 0;
+
+    if (!formId) {
+      initEventFormBanking(champId);
+    }
+    initEventFormCategories(champId, existing?.categoryPrices ?? {}, stdPrice);
+
+    // Actualizar selectores de categorías dentro de las tarjetas de promociones ya abiertas
+    document.querySelectorAll('#event-promotions-list .event-promo-card').forEach((card) => {
+      const catsList = card.querySelector('.promo-cats-list');
+      if (catsList) {
+        catsList.innerHTML = renderPromoCategoryCheckboxes(champId);
+      }
+    });
+  });
+
+  // Actualización reactiva del precio estándar de categorías
+  document.getElementById('event-valor-inscripcion')?.addEventListener('input', (e) => {
+    const stdPrice = Number((e.target as HTMLInputElement).value) || 0;
+    document.querySelectorAll('#event-category-prices-list .event-cat-price-row').forEach((row) => {
+      const stdLabel = row.querySelector('.event-cat-std-label');
+      if (stdLabel) {
+        stdLabel.textContent = `(Estándar: ${stdPrice > 0 ? formatCop(stdPrice) : '$0'})`;
+      }
+    });
+  });
+
+  // Toggle de precio distinto por categoría
+  const catPricesList = document.getElementById('event-category-prices-list');
+  catPricesList?.addEventListener('change', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.classList.contains('event-cat-custom-toggle')) {
+      const row = target.closest('.event-cat-price-row');
+      if (!row) return;
+      const isChecked = (target as HTMLInputElement).checked;
+      const customBox = row.querySelector('.event-cat-custom-box');
+      const stdLabel = row.querySelector('.event-cat-std-label');
+      const input = row.querySelector('.event-cat-custom-input') as HTMLInputElement | null;
+
+      customBox?.classList.toggle('hidden', !isChecked);
+      stdLabel?.classList.toggle('hidden', isChecked);
+      if (isChecked && input && !input.value) {
+        input.focus();
+      }
+    }
+  });
+
+  // Gestión de promociones
+  const promosList = document.getElementById('event-promotions-list');
+  document.getElementById('add-promotion-btn')?.addEventListener('click', () => {
+    const champId =
+      ((document.getElementById('event-championship') as HTMLSelectElement)?.value as ChampionshipId) || 'mx';
+    const noHint = document.getElementById('no-promos-hint');
+    if (noHint) noHint.remove();
+
+    const newPromo: EventPromotion = {
+      id: generateId(),
+      name: '',
+      type: 'fixed_package',
+      minCategories: 2,
+      value: 400000,
+      active: true,
+    };
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = renderPromotionCard(newPromo, champId);
+    const card = tempDiv.firstElementChild;
+    if (card && promosList) {
+      promosList.appendChild(card);
+      (card.querySelector('.promo-name') as HTMLInputElement | null)?.focus();
+    }
+  });
+
+  promosList?.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.classList.contains('promo-delete-btn')) {
+      const card = target.closest('.event-promo-card');
+      card?.remove();
+      if (promosList && promosList.children.length === 0) {
+        promosList.innerHTML =
+          '<p class="text-xs text-muted py-3 text-center" id="no-promos-hint">No hay promociones configuradas para este evento. Haz clic en "+ Añadir promoción".</p>';
+      }
+    }
+  });
+
+  promosList?.addEventListener('change', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.classList.contains('promo-type')) {
+      const card = target.closest('.event-promo-card');
+      if (!card) return;
+      const select = target as HTMLSelectElement;
+      const type = select.value as PromotionType;
+      const isTwoForOne = type === 'two_for_one';
+      const valueBox = card.querySelector('.promo-value-box');
+      const valueLabel = card.querySelector('.promo-value-label');
+      const valueInput = card.querySelector('.promo-value') as HTMLInputElement | null;
+
+      if (valueLabel) valueLabel.textContent = getPromotionValueLabel(type);
+      if (valueInput) {
+        valueInput.placeholder = getPromotionValuePlaceholder(type);
+        valueInput.disabled = isTwoForOne;
+        if (isTwoForOne) valueInput.value = '';
+      }
+      if (valueBox) {
+        valueBox.classList.toggle('opacity-40', isTwoForOne);
+        valueBox.classList.toggle('pointer-events-none', isTwoForOne);
+      }
+    } else if (target.classList.contains('promo-specific-cats-toggle')) {
+      const card = target.closest('.event-promo-card');
+      if (!card) return;
+      const isChecked = (target as HTMLInputElement).checked;
+      const catsList = card.querySelector('.promo-cats-list');
+      catsList?.classList.toggle('hidden', !isChecked);
+    }
   });
 
   document.querySelectorAll('.delete-event-btn').forEach((btn) => {
@@ -966,7 +1464,6 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
     });
   });
 
-
   const reglamentoInput = document.getElementById('event-reglamento') as HTMLInputElement | null;
   reglamentoInput?.addEventListener('change', async () => {
     const preview = document.getElementById('event-reglamento-preview');
@@ -989,6 +1486,88 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
     const isEdit = Boolean(formId);
     const existing = formId ? events.find((ev) => ev.id === formId) : undefined;
 
+    // Recolectar información bancaria de las 3 opciones
+    const bankAccEnabled = Boolean((document.getElementById('bank-acc-enabled') as HTMLInputElement)?.checked);
+    const breBEnabled = Boolean((document.getElementById('breb-enabled') as HTMLInputElement)?.checked);
+    const neobankEnabled = Boolean((document.getElementById('neobank-enabled') as HTMLInputElement)?.checked);
+
+    const bankingInfo: EventBankingInfo = {
+      bankAccount: {
+        enabled: bankAccEnabled,
+        bank: (document.getElementById('bank-acc-bank') as HTMLInputElement)?.value.trim() || '',
+        accountType:
+          ((document.getElementById('bank-acc-type') as HTMLSelectElement)?.value as 'Ahorros' | 'Corriente') ||
+          'Ahorros',
+        accountNumber: (document.getElementById('bank-acc-number') as HTMLInputElement)?.value.trim() || '',
+        beneficiaryName: (document.getElementById('bank-acc-holder') as HTMLInputElement)?.value.trim() || '',
+        beneficiaryDocument: (document.getElementById('bank-acc-doc') as HTMLInputElement)?.value.trim() || '',
+      },
+      breB: {
+        enabled: breBEnabled,
+        beneficiaryName: (document.getElementById('breb-holder') as HTMLInputElement)?.value.trim() || '',
+        key: (document.getElementById('breb-key') as HTMLInputElement)?.value.trim() || '',
+      },
+      neobank: {
+        enabled: neobankEnabled,
+        neobank: (document.getElementById('neobank-name') as HTMLInputElement)?.value.trim() || '',
+        beneficiaryName: (document.getElementById('neobank-holder') as HTMLInputElement)?.value.trim() || '',
+        accountNumber: (document.getElementById('neobank-number') as HTMLInputElement)?.value.trim() || '',
+      },
+    };
+
+    // Recolectar precios específicos por categoría
+    const categoryPrices: Record<string, number> = {};
+    document.querySelectorAll('#event-category-prices-list .event-cat-price-row').forEach((row) => {
+      const catId = row.getAttribute('data-cat-id');
+      const toggle = row.querySelector('.event-cat-custom-toggle') as HTMLInputElement | null;
+      const input = row.querySelector('.event-cat-custom-input') as HTMLInputElement | null;
+      if (catId && toggle?.checked && input && input.value !== '') {
+        const val = Number(input.value);
+        if (!isNaN(val) && val >= 0) {
+          categoryPrices[catId] = val;
+        }
+      }
+    });
+
+    // Recolectar promociones
+    const promotions: EventPromotion[] = [];
+    document.querySelectorAll('#event-promotions-list .event-promo-card').forEach((card) => {
+      const promoId = card.getAttribute('data-promo-id') || generateId();
+      const nameInput = card.querySelector('.promo-name') as HTMLInputElement | null;
+      const activeInput = card.querySelector('.promo-active') as HTMLInputElement | null;
+      const typeSelect = card.querySelector('.promo-type') as HTMLSelectElement | null;
+      const minInput = card.querySelector('.promo-min') as HTMLInputElement | null;
+      const valueInput = card.querySelector('.promo-value') as HTMLInputElement | null;
+      const specificToggle = card.querySelector('.promo-specific-cats-toggle') as HTMLInputElement | null;
+
+      const name = nameInput?.value.trim() || '';
+      if (!name) return; // Omitir promociones sin nombre
+
+      const pType = (typeSelect?.value as PromotionType) || 'fixed_package';
+      const minCats = Math.max(1, Number(minInput?.value) || 2);
+      const numVal = Number(valueInput?.value);
+      const pValue = pType === 'two_for_one' ? undefined : isNaN(numVal) ? 0 : numVal;
+
+      let applicableCategoryIds: string[] | undefined;
+      if (specificToggle?.checked) {
+        applicableCategoryIds = [];
+        card.querySelectorAll('.promo-cat-check:checked').forEach((chk) => {
+          const val = (chk as HTMLInputElement).value;
+          if (val) applicableCategoryIds!.push(val);
+        });
+      }
+
+      promotions.push({
+        id: promoId,
+        name,
+        type: pType,
+        minCategories: minCats,
+        value: pValue,
+        active: activeInput ? activeInput.checked : true,
+        applicableCategoryIds,
+      });
+    });
+
     const newEvent: EventSavePayload = {
       id: formId || generateId(),
       name: (document.getElementById('event-name') as HTMLInputElement).value,
@@ -1002,6 +1581,9 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
       reglamentoUrl: existing?.reglamentoUrl ?? '',
       resultadosUrl: existing?.resultadosUrl ?? '',
       championshipId: (document.getElementById('event-championship') as HTMLSelectElement).value as ChampionshipId,
+      bankingInfo,
+      categoryPrices,
+      promotions,
     };
 
     const reglamentoFile = (document.getElementById('event-reglamento') as HTMLInputElement).files?.[0];

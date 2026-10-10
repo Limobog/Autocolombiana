@@ -11,7 +11,7 @@ const SPREADSHEET_ID = '1kAlC3MP2DqH5KXkQQLVZF0SbHV6X8DY3nAyLxO81654';
 const DRIVE_FOLDER_ID = '1TQAM3BE93OjiaODNgI_2SkXLFQ2uqQqM';
 const RESULTS_FOLDER_ID = '1UuF4vADS53MfEXxakEm20aANkvyPd10R';
 
-const EVENT_HEADERS = ['id', 'name', 'date', 'location', 'city', 'description', 'active', 'reglamentoUrl', 'finished', 'valorInscripcion', 'championshipId', 'resultadosUrl'];
+const EVENT_HEADERS = ['id', 'name', 'date', 'location', 'city', 'description', 'active', 'reglamentoUrl', 'finished', 'valorInscripcion', 'championshipId', 'resultadosUrl', 'bankingInfo', 'categoryPrices', 'promotions'];
 const CATEGORY_HEADERS = ['id', 'championshipId', 'label', 'minAge', 'maxAge', 'active'];
 const REG_HEADERS = [
   'id', 'eventId', 'eventName', 'nombre', 'apellido', 'identificacion',
@@ -297,7 +297,11 @@ function updateRegistration_(ss, id, updates) {
     return { success: false, error: 'El numero de piloto ' + merged.numeroPiloto + ' ya esta en uso.' };
   }
 
-  merged.valorTotalInscripcion = computeValorTotalInscripcion_(ss, merged.eventId, merged.categoriaId);
+  if (updates.valorTotalInscripcion !== undefined && Number(updates.valorTotalInscripcion) > 0) {
+    merged.valorTotalInscripcion = Number(updates.valorTotalInscripcion);
+  } else {
+    merged.valorTotalInscripcion = computeValorTotalInscripcion_(ss, merged.eventId, merged.categoriaId);
+  }
 
   const rowNum = index + 2;
   REG_HEADERS.forEach(function (h, i) {
@@ -423,8 +427,63 @@ function getEventById_(ss, eventId) {
 
 function computeValorTotalInscripcion_(ss, eventId, categoriaId) {
   var event = getEventById_(ss, eventId);
-  var unit = event ? (Number(event.valorInscripcion) || 0) : 0;
-  return unit * countCategories_(categoriaId);
+  if (!event) return 0;
+  var catIds = String(categoriaId || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+  if (catIds.length === 0) return 0;
+
+  var subtotal = 0;
+  for (var i = 0; i < catIds.length; i++) {
+    var cId = catIds[i];
+    if (event.categoryPrices && typeof event.categoryPrices[cId] === 'number') {
+      subtotal += event.categoryPrices[cId];
+    } else {
+      subtotal += (Number(event.valorInscripcion) || 0);
+    }
+  }
+
+  if (event.promotions && Array.isArray(event.promotions) && event.promotions.length > 0) {
+    var maxDiscount = 0;
+    for (var p = 0; p < event.promotions.length; p++) {
+      var promo = event.promotions[p];
+      if (promo.active === false) continue;
+      var min = Number(promo.minCategories) || 2;
+      var eligible = [];
+      for (var k = 0; k < catIds.length; k++) {
+        if (!promo.applicableCategoryIds || promo.applicableCategoryIds.length === 0 || promo.applicableCategoryIds.indexOf(catIds[k]) !== -1) {
+          eligible.push(catIds[k]);
+        }
+      }
+      if (eligible.length < min) continue;
+
+      var eligibleBase = 0;
+      for (var e = 0; e < eligible.length; e++) {
+        var ecId = eligible[e];
+        eligibleBase += (event.categoryPrices && typeof event.categoryPrices[ecId] === 'number') ? event.categoryPrices[ecId] : (Number(event.valorInscripcion) || 0);
+      }
+
+      var disc = 0;
+      if (promo.type === 'fixed_package') {
+        var pkgVal = Number(promo.value) || 0;
+        if (pkgVal > 0) disc = Math.max(0, eligibleBase - pkgVal);
+      } else if (promo.type === 'two_for_one') {
+        var freeCount = Math.floor(eligible.length / 2);
+        var unitVal = (Number(event.valorInscripcion) || 0);
+        disc = freeCount * unitVal;
+      } else if (promo.type === 'unit_price_tier') {
+        var unitTier = Number(promo.value) || 0;
+        if (unitTier > 0) disc = Math.max(0, eligibleBase - (unitTier * eligible.length));
+      } else if (promo.type === 'total_discount_fixed') {
+        disc = Math.min(eligibleBase, Number(promo.value) || 0);
+      } else if (promo.type === 'total_discount_percent') {
+        var pct = Math.min(100, Math.max(0, Number(promo.value) || 0));
+        disc = Math.round((eligibleBase * pct) / 100);
+      }
+      if (disc > maxDiscount) maxDiscount = disc;
+    }
+    return Math.max(0, subtotal - maxDiscount);
+  }
+
+  return subtotal;
 }
 
 function prepareRegistrationRow_(ss, data) {
@@ -441,7 +500,11 @@ function prepareRegistrationRow_(ss, data) {
   if (!row.comprobantePagoUrl && data.comprobantePagoArchivo && String(data.comprobantePagoArchivo).indexOf('http') === 0) {
     row.comprobantePagoUrl = data.comprobantePagoArchivo;
   }
-  row.valorTotalInscripcion = computeValorTotalInscripcion_(ss, data.eventId, row.categoriaId);
+  if (data.valorTotalInscripcion !== undefined && Number(data.valorTotalInscripcion) > 0) {
+    row.valorTotalInscripcion = Number(data.valorTotalInscripcion);
+  } else {
+    row.valorTotalInscripcion = computeValorTotalInscripcion_(ss, data.eventId, row.categoriaId);
+  }
   return row;
 }
 
@@ -577,6 +640,15 @@ function getEvents_(ss) {
     if (!evt.resultadosUrl) evt.resultadosUrl = '';
     evt.valorInscripcion = Number(evt.valorInscripcion) || 0;
     evt.championshipId = normalizeChampionshipId_(evt.championshipId, evt.name);
+    if (evt.bankingInfo && typeof evt.bankingInfo === 'string') {
+      try { evt.bankingInfo = JSON.parse(evt.bankingInfo); } catch (e) { evt.bankingInfo = null; }
+    }
+    if (evt.categoryPrices && typeof evt.categoryPrices === 'string') {
+      try { evt.categoryPrices = JSON.parse(evt.categoryPrices); } catch (e) { evt.categoryPrices = {}; }
+    }
+    if (evt.promotions && typeof evt.promotions === 'string') {
+      try { evt.promotions = JSON.parse(evt.promotions); } catch (e) { evt.promotions = []; }
+    }
     return evt;
   });
 }
@@ -728,6 +800,15 @@ function prepareEventRow_(ss, data) {
     row.resultadosUrl = data.resultadosUrl;
   } else if (!row.resultadosUrl) {
     row.resultadosUrl = '';
+  }
+  if (row.bankingInfo && typeof row.bankingInfo === 'object') {
+    row.bankingInfo = JSON.stringify(row.bankingInfo);
+  }
+  if (row.categoryPrices && typeof row.categoryPrices === 'object') {
+    row.categoryPrices = JSON.stringify(row.categoryPrices);
+  }
+  if (row.promotions && typeof row.promotions === 'object') {
+    row.promotions = JSON.stringify(row.promotions);
   }
   return row;
 }

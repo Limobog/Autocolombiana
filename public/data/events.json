@@ -10,8 +10,50 @@
     "finished": false,
     "reglamentoUrl": "",
     "resultadosUrl": "",
-    "valorInscripcion": 0,
-    "championshipId": "mx"
+    "valorInscripcion": 230000,
+    "championshipId": "mx",
+    "bankingInfo": {
+      "bankAccount": {
+        "enabled": true,
+        "bank": "Bancolombia",
+        "accountType": "Ahorros",
+        "accountNumber": "031-461052-17",
+        "beneficiaryName": "Wilman Esteban Chivata",
+        "beneficiaryDocument": "CC 1010234134"
+      },
+      "breB": {
+        "enabled": true,
+        "beneficiaryName": "Wilman Esteban Chivata",
+        "key": "3146105217"
+      },
+      "neobank": {
+        "enabled": true,
+        "neobank": "Nequi",
+        "beneficiaryName": "Wilman Esteban Chivata",
+        "accountNumber": "3146105217"
+      }
+    },
+    "categoryPrices": {
+      "50cc-4-6": 170000
+    },
+    "promotions": [
+      {
+        "id": "promo-combo-2",
+        "name": "Combo 2 categorías ($400.000)",
+        "type": "fixed_package",
+        "minCategories": 2,
+        "value": 400000,
+        "active": true
+      },
+      {
+        "id": "promo-combo-3",
+        "name": "Combo 3 categorías ($600.000)",
+        "type": "fixed_package",
+        "minCategories": 3,
+        "value": 600000,
+        "active": true
+      }
+    ]
   },
   {
     "id": "evt-002",
@@ -24,7 +66,90 @@
     "finished": false,
     "reglamentoUrl": "",
     "resultadosUrl": "",
-    "valorInscripcion": 0,
-    "championshipId": "mx"
+    "valorInscripcion": 230000,
+    "championshipId": "mx",
+    "bankingInfo": {
+      "bankAccount": {
+        "enabled": true,
+        "bank": "Bancolombia",
+        "accountType": "Ahorros",
+        "accountNumber": "031-461052-17",
+        "beneficiaryName": "Wilman Esteban Chivata",
+        "beneficiaryDocument": "CC 1010234134"
+      },
+      "breB": {
+        "enabled": true,
+        "beneficiaryName": "Wilman Esteban Chivata",
+        "key": "3146105217"
+      },
+      "neobank": {
+        "enabled": true,
+        "neobank": "Nequi",
+        "beneficiaryName": "Wilman Esteban Chivata",
+        "accountNumber": "3146105217"
+      }
+    },
+    "categoryPrices": {
+      "50cc-4-6": 170000
+    },
+    "promotions": [
+      {
+        "id": "promo-combo-2-med",
+        "name": "Combo 2 categorías ($400.000)",
+        "type": "fixed_package",
+        "minCategories": 2,
+        "value": 400000,
+        "active": true
+      }
+    ]
+  },
+  {
+    "id": "evt-003",
+    "name": "1.ª Edición - Cogua Motopark",
+    "date": "2026-08-30",
+    "location": "Cogua Motopark",
+    "city": "Cogua, Cundinamarca",
+    "description": "Festival de Enduro Autocolombiana. Sprint Enduro con 2 pruebas especiales y Hard Scramble.",
+    "active": true,
+    "finished": false,
+    "reglamentoUrl": "",
+    "resultadosUrl": "",
+    "valorInscripcion": 230000,
+    "championshipId": "enduro",
+    "bankingInfo": {
+      "bankAccount": {
+        "enabled": true,
+        "bank": "Bancolombia",
+        "accountType": "Ahorros",
+        "accountNumber": "031-461052-17",
+        "beneficiaryName": "Wilman Esteban Chivata",
+        "beneficiaryDocument": "CC 1010234134"
+      },
+      "breB": {
+        "enabled": true,
+        "beneficiaryName": "Wilman Esteban Chivata",
+        "key": "3146105217"
+      },
+      "neobank": {
+        "enabled": true,
+        "neobank": "Nequi",
+        "beneficiaryName": "Wilman Esteban Chivata",
+        "accountNumber": "3146105217"
+      }
+    },
+    "categoryPrices": {
+      "end-e1-50-4t": 170000,
+      "end-e1-50-2t": 170000
+    },
+    "promotions": [
+      {
+        "id": "promo-enduro-combo",
+        "name": "Combo 2 categorías ($400.000)",
+        "type": "fixed_package",
+        "minCategories": 2,
+        "value": 400000,
+        "active": true
+      }
+    ]
   }
 ]

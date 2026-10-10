@@ -180,6 +180,51 @@ export function getCategoriesForAge(
   });
 }
 
+export interface EventBankAccount {
+  enabled: boolean;
+  bank: string;
+  accountType: 'Ahorros' | 'Corriente' | string;
+  accountNumber: string;
+  beneficiaryName: string;
+  beneficiaryDocument: string;
+}
+
+export interface EventBreBKey {
+  enabled: boolean;
+  beneficiaryName: string;
+  key: string;
+}
+
+export interface EventNeobankAccount {
+  enabled: boolean;
+  neobank: string;
+  beneficiaryName: string;
+  accountNumber: string;
+}
+
+export interface EventBankingInfo {
+  bankAccount?: EventBankAccount;
+  breB?: EventBreBKey;
+  neobank?: EventNeobankAccount;
+}
+
+export type PromotionType =
+  | 'fixed_package' // Precio total fijo por paquete de N categorías (ej: 2 categorías por $400.000, 3 por $600.000)
+  | 'unit_price_tier' // Por N o más categorías, cada una cuesta $Y (ej: desde 2 categorías cada una a $200.000)
+  | 'total_discount_fixed' // Descuento de un monto fijo ($) en el total si selecciona >= N categorías
+  | 'total_discount_percent' // Descuento porcentual (%) en el total si selecciona >= N categorías
+  | 'two_for_one'; // 2x1 (por cada 2 categorías, se descuenta la de menor valor)
+
+export interface EventPromotion {
+  id: string;
+  name: string;
+  type: PromotionType;
+  minCategories: number;
+  value?: number;
+  applicableCategoryIds?: string[];
+  active?: boolean;
+}
+
 export interface Event {
   id: string;
   name: string;
@@ -194,6 +239,10 @@ export interface Event {
   resultadosUrl: string;
   valorInscripcion: number;
   championshipId: ChampionshipId;
+  bankingInfo?: EventBankingInfo;
+  /** Precios personalizados por id de categoría: { '50cc-4-6': 170000 } */
+  categoryPrices?: Record<string, number>;
+  promotions?: EventPromotion[];
 }
 
 /** Campos temporales al guardar (PDF en base64, no van a la hoja). */

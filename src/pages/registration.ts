@@ -12,7 +12,12 @@ import {
 } from '../utils/storage';
 import { calculateAge, calculateAgeOnJan1, formatDate } from '../utils/age';
 import { getCategoriesForAge, formatCategoryOptionLabel, type ChampionshipId, type Event } from '../types';
-import { formatCop } from '../utils/registration-total';
+import {
+  calculateRegistrationPricing,
+  formatCop,
+  getCategoryBasePrice,
+  hasCustomCategoryPrice,
+} from '../utils/registration-total';
 import Swal from 'sweetalert2';
 
 let idFileData = '';
@@ -29,7 +34,8 @@ function getEventIdFromUrl(): string | null {
 function renderCategoryCheckboxes(
   ageOrContext: number | { birthDate: string; eventDate?: string },
   championshipId: ChampionshipId,
-  selected: string[] = []
+  selected: string[] = [],
+  event?: Event
 ): string {
   const categories = getCategoriesForAge(ageOrContext, championshipId);
   if (categories.length === 0) {
@@ -37,13 +43,31 @@ function renderCategoryCheckboxes(
   }
   return `<div class="space-y-2" id="categoria-checkboxes">
     ${categories
-      .map(
-        (c) => `
-      <label class="flex items-center gap-3 rounded-lg border border-white/20 bg-surface-raised px-4 py-3 cursor-pointer hover:border-white/50">
-        <input type="checkbox" name="categoriaIds" value="${c.id}" class="accent-white h-4 w-4" ${selected.includes(c.id) ? 'checked' : ''} />
-        <span class="text-sm font-medium">${formatCategoryOptionLabel(c)}</span>
-      </label>`
-      )
+      .map((c) => {
+        const basePrice = getCategoryBasePrice(event, c.id);
+        const isCustom = hasCustomCategoryPrice(event, c.id);
+        const priceBadge =
+          basePrice > 0
+            ? `<span class="ml-auto inline-flex items-center gap-1.5 shrink-0 rounded-md px-2 py-0.5 text-xs font-mono font-bold ${
+                isCustom
+                  ? 'bg-amber-400/15 text-amber-300 border border-amber-400/30'
+                  : 'bg-white/10 text-silver border border-white/15'
+              }">${formatCop(basePrice)}${
+                isCustom
+                  ? ' <span class="text-[9px] font-sans uppercase font-bold text-amber-200">Tarifa especial</span>'
+                  : ''
+              }</span>`
+            : '';
+
+        return `
+      <label class="flex items-center gap-3 rounded-lg border border-white/20 bg-surface-raised px-4 py-3 cursor-pointer hover:border-white/50 transition-colors">
+        <input type="checkbox" name="categoriaIds" value="${c.id}" class="accent-white h-4 w-4 shrink-0" ${
+          selected.includes(c.id) ? 'checked' : ''
+        } />
+        <span class="text-sm font-medium flex-1">${formatCategoryOptionLabel(c)}</span>
+        ${priceBadge}
+      </label>`;
+      })
       .join('')}
   </div>`;
 }
@@ -60,47 +84,180 @@ function renderPilotOptions(numbers: number[], selected?: number): string {
   );
 }
 
-function renderBankDetails(): string {
-  const bank = getActiveChampionship().bankDetails;
-  const paymentKeyRow = bank.paymentKey
-    ? `<div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5 sm:col-span-2">
-        <dt class="text-xs text-muted mb-0.5">Llave</dt>
-        <dd class="font-medium text-white font-mono text-base tracking-wide">${bank.paymentKey}</dd>
-      </div>`
-    : '';
+function renderBankDetails(event?: Event): string {
+  const bInfo = event?.bankingInfo;
+  const hasBankAccount = Boolean(bInfo?.bankAccount?.enabled && bInfo.bankAccount.accountNumber?.trim());
+  const hasBreB = Boolean(bInfo?.breB?.enabled && bInfo.breB.key?.trim());
+  const hasNeobank = Boolean(bInfo?.neobank?.enabled && bInfo.neobank.accountNumber?.trim());
+
+  // Si ninguna opción personalizada del evento está activa, fallback a los datos bancarios del campeonato
+  if (!hasBankAccount && !hasBreB && !hasNeobank) {
+    const bank = getActiveChampionship().bankDetails;
+    const paymentKeyRow = bank.paymentKey
+      ? `<div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5 sm:col-span-2">
+          <dt class="text-xs text-muted mb-0.5">Llave Bre-B</dt>
+          <dd class="font-medium text-white font-mono text-base tracking-wide flex items-center justify-between gap-2">
+            <span>${bank.paymentKey}</span>
+            <button type="button" class="copy-btn text-xs text-secondary hover:text-white px-2 py-0.5 rounded border border-white/20" data-copy="${bank.paymentKey}">Copiar</button>
+          </dd>
+        </div>`
+      : '';
+
+    return `
+      <div class="rounded-xl border border-white/25 bg-surface-raised p-4 space-y-3">
+        <p class="text-sm font-semibold text-silver uppercase tracking-wide">
+          Datos bancarios para consignar
+        </p>
+        <p class="text-xs text-muted">
+          Transfiere el total indicado a la siguiente cuenta y adjunta el comprobante más abajo.
+        </p>
+        <dl class="grid gap-2 sm:grid-cols-2 text-sm">
+          <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
+            <dt class="text-xs text-muted mb-0.5">Banco</dt>
+            <dd class="font-medium text-foreground">${bank.bank}</dd>
+          </div>
+          <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
+            <dt class="text-xs text-muted mb-0.5">A nombre de</dt>
+            <dd class="font-medium text-foreground">${bank.accountHolder}</dd>
+          </div>
+          <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
+            <dt class="text-xs text-muted mb-0.5">${bank.idLabel}</dt>
+            <dd class="font-medium text-foreground font-mono">${bank.idValue}</dd>
+          </div>
+          <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
+            <dt class="text-xs text-muted mb-0.5">Tipo de cuenta</dt>
+            <dd class="font-medium text-foreground">${bank.accountType}</dd>
+          </div>
+          <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5 sm:col-span-2">
+            <dt class="text-xs text-muted mb-0.5">Número de cuenta</dt>
+            <dd class="font-medium text-white font-mono text-base tracking-wide flex items-center justify-between gap-2">
+              <span>${bank.accountNumber}</span>
+              <button type="button" class="copy-btn text-xs text-secondary hover:text-white px-2 py-0.5 rounded border border-white/20" data-copy="${bank.accountNumber}">Copiar</button>
+            </dd>
+          </div>
+          ${paymentKeyRow}
+        </dl>
+      </div>`;
+  }
+
+  // Renderiza las opciones habilitadas para este evento
+  const sections: string[] = [];
+
+  if (hasBankAccount && bInfo?.bankAccount) {
+    const acc = bInfo.bankAccount;
+    sections.push(`
+      <div class="rounded-xl border border-white/20 bg-surface-raised p-4 space-y-3">
+        <div class="flex items-center justify-between gap-2 border-b border-white/10 pb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-base">🏦</span>
+            <h4 class="text-sm font-bold text-white uppercase tracking-wider">Cuenta Bancaria</h4>
+          </div>
+          <span class="text-[11px] font-semibold text-silver bg-white/10 px-2 py-0.5 rounded border border-white/15">${acc.accountType || 'Ahorros'}</span>
+        </div>
+        <dl class="grid gap-2.5 sm:grid-cols-2 text-sm">
+          <div class="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+            <dt class="text-xs text-muted mb-0.5">Banco</dt>
+            <dd class="font-semibold text-white">${acc.bank || 'No especificado'}</dd>
+          </div>
+          <div class="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+            <dt class="text-xs text-muted mb-0.5">Tipo de cuenta</dt>
+            <dd class="font-medium text-foreground">${acc.accountType || 'Ahorros'}</dd>
+          </div>
+          <div class="rounded-lg border border-white/10 bg-black/20 px-3 py-2 sm:col-span-2">
+            <dt class="text-xs text-muted mb-0.5">Número de cuenta</dt>
+            <dd class="font-bold text-white font-mono text-base tracking-wider flex items-center justify-between gap-2">
+              <span>${acc.accountNumber}</span>
+              <button type="button" class="copy-btn text-xs text-secondary hover:text-white px-2 py-0.5 rounded border border-white/20 transition-colors" data-copy="${acc.accountNumber}">Copiar</button>
+            </dd>
+          </div>
+          <div class="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+            <dt class="text-xs text-muted mb-0.5">Beneficiario / Razón Social</dt>
+            <dd class="font-medium text-foreground">${acc.beneficiaryName || '—'}</dd>
+          </div>
+          <div class="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+            <dt class="text-xs text-muted mb-0.5">Documento / NIT</dt>
+            <dd class="font-mono text-foreground">${acc.beneficiaryDocument || '—'}</dd>
+          </div>
+        </dl>
+      </div>
+    `);
+  }
+
+  if (hasBreB && bInfo?.breB) {
+    const breB = bInfo.breB;
+    sections.push(`
+      <div class="rounded-xl border border-white/20 bg-surface-raised p-4 space-y-3">
+        <div class="flex items-center justify-between gap-2 border-b border-white/10 pb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-base">⚡</span>
+            <h4 class="text-sm font-bold text-white uppercase tracking-wider">Llave Bre-B</h4>
+          </div>
+          <span class="text-[11px] font-semibold text-emerald-300 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30">Transferencia Inmediata</span>
+        </div>
+        <dl class="grid gap-2.5 sm:grid-cols-2 text-sm">
+          <div class="rounded-lg border border-white/10 bg-black/20 px-3 py-2 sm:col-span-2">
+            <dt class="text-xs text-muted mb-0.5">Llave Bre-B</dt>
+            <dd class="font-bold text-white font-mono text-base tracking-wider flex items-center justify-between gap-2">
+              <span>${breB.key}</span>
+              <button type="button" class="copy-btn text-xs text-secondary hover:text-white px-2 py-0.5 rounded border border-white/20 transition-colors" data-copy="${breB.key}">Copiar</button>
+            </dd>
+          </div>
+          <div class="rounded-lg border border-white/10 bg-black/20 px-3 py-2 sm:col-span-2">
+            <dt class="text-xs text-muted mb-0.5">Beneficiario</dt>
+            <dd class="font-medium text-foreground">${breB.beneficiaryName || '—'}</dd>
+          </div>
+        </dl>
+      </div>
+    `);
+  }
+
+  if (hasNeobank && bInfo?.neobank) {
+    const neo = bInfo.neobank;
+    sections.push(`
+      <div class="rounded-xl border border-white/20 bg-surface-raised p-4 space-y-3">
+        <div class="flex items-center justify-between gap-2 border-b border-white/10 pb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-base">📱</span>
+            <h4 class="text-sm font-bold text-white uppercase tracking-wider">Cuenta Neobanco (${neo.neobank || 'Billetera Digital'})</h4>
+          </div>
+          <span class="text-[11px] font-semibold text-purple-300 bg-purple-500/15 px-2 py-0.5 rounded border border-purple-500/30">${neo.neobank || 'Neobanco'}</span>
+        </div>
+        <dl class="grid gap-2.5 sm:grid-cols-2 text-sm">
+          <div class="rounded-lg border border-white/10 bg-black/20 px-3 py-2 sm:col-span-2">
+            <dt class="text-xs text-muted mb-0.5">Número de cuenta / Celular</dt>
+            <dd class="font-bold text-white font-mono text-base tracking-wider flex items-center justify-between gap-2">
+              <span>${neo.accountNumber}</span>
+              <button type="button" class="copy-btn text-xs text-secondary hover:text-white px-2 py-0.5 rounded border border-white/20 transition-colors" data-copy="${neo.accountNumber}">Copiar</button>
+            </dd>
+          </div>
+          <div class="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+            <dt class="text-xs text-muted mb-0.5">Neobanco</dt>
+            <dd class="font-semibold text-white">${neo.neobank || '—'}</dd>
+          </div>
+          <div class="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+            <dt class="text-xs text-muted mb-0.5">Beneficiario</dt>
+            <dd class="font-medium text-foreground">${neo.beneficiaryName || '—'}</dd>
+          </div>
+        </dl>
+      </div>
+    `);
+  }
 
   return `
-    <div class="rounded-xl border border-white/25 bg-surface-raised p-4 space-y-3">
-      <p class="text-sm font-semibold text-silver uppercase tracking-wide">
-        Datos bancarios para consignar
-      </p>
-      <p class="text-xs text-muted">
-        Transfiere el total indicado a la siguiente cuenta de ahorros y adjunta el comprobante más abajo.
-      </p>
-      <dl class="grid gap-2 sm:grid-cols-2 text-sm">
-        <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
-          <dt class="text-xs text-muted mb-0.5">Banco</dt>
-          <dd class="font-medium text-foreground">${bank.bank}</dd>
-        </div>
-        <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
-          <dt class="text-xs text-muted mb-0.5">A nombre de</dt>
-          <dd class="font-medium text-foreground">${bank.accountHolder}</dd>
-        </div>
-        <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
-          <dt class="text-xs text-muted mb-0.5">${bank.idLabel}</dt>
-          <dd class="font-medium text-foreground font-mono">${bank.idValue}</dd>
-        </div>
-        <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5">
-          <dt class="text-xs text-muted mb-0.5">Tipo de cuenta</dt>
-          <dd class="font-medium text-foreground">${bank.accountType}</dd>
-        </div>
-        <div class="rounded-lg border border-white/15 bg-surface-raised px-3 py-2.5 sm:col-span-2">
-          <dt class="text-xs text-muted mb-0.5">Número de cuenta</dt>
-          <dd class="font-medium text-white font-mono text-base tracking-wide">${bank.accountNumber}</dd>
-        </div>
-        ${paymentKeyRow}
-      </dl>
-    </div>`;
+    <div class="space-y-3">
+      <div>
+        <p class="text-sm font-semibold text-silver uppercase tracking-wide">
+          Datos bancarios para consignar
+        </p>
+        <p class="text-xs text-muted mt-0.5">
+          Puedes realizar la transferencia a cualquiera de los métodos habilitados a continuación y adjuntar el comprobante más abajo:
+        </p>
+      </div>
+      <div class="space-y-3">
+        ${sections.join('')}
+      </div>
+    </div>
+  `;
 }
 
 function renderLoadingPanel(): string {
@@ -201,19 +358,30 @@ function renderForm(events: Event[], selectedEventId: string | null, pilotNumber
       </div>
 
       <div id="inscription-total" class="hidden rounded-xl border border-white/20 bg-white/5 p-5 space-y-4">
+        <div id="inscription-promo-banner" class="hidden"></div>
+
         <div class="space-y-2">
+          <div id="inscription-subtotal-row" class="hidden flex items-center justify-between text-sm text-muted">
+            <span>Subtotal regular:</span>
+            <span id="inscription-subtotal-amount" class="line-through text-silver">—</span>
+          </div>
+
           <p class="text-sm text-muted">
-            Valor por categoría: <span id="inscription-unit-price" class="text-silver font-semibold">—</span>
+            Valor base por categoría: <span id="inscription-unit-price" class="text-silver font-semibold">—</span>
           </p>
+
           <p class="font-title text-2xl tracking-wide text-white">
-            Total a pagar: <span id="inscription-total-amount">—</span>
+            Total a pagar: <span id="inscription-total-amount" class="text-white font-bold">—</span>
           </p>
+
           <p class="text-xs text-muted">
             <span id="inscription-category-count">0</span> categoría(s) seleccionada(s)
           </p>
         </div>
 
-        ${renderBankDetails()}
+        <div id="bank-details-wrapper">
+          ${renderBankDetails(events.find((e) => e.id === selectedEventId) || events[0])}
+        </div>
       </div>
 
       <div id="payment-section" class="hidden">
@@ -292,7 +460,7 @@ function updateCategories(birthDate: string, events: Event[]): void {
 
   container.classList.toggle('opacity-60', categories.length === 0);
   container.classList.toggle('pointer-events-none', categories.length === 0);
-  container.innerHTML = renderCategoryCheckboxes(ageContext, championshipId, previouslySelected);
+  container.innerHTML = renderCategoryCheckboxes(ageContext, championshipId, previouslySelected, selectedEvent);
   updateInscriptionTotal(events);
 }
 
@@ -303,25 +471,62 @@ function updateInscriptionTotal(events: Event[]): void {
   const unitPriceEl = document.getElementById('inscription-unit-price');
   const totalAmountEl = document.getElementById('inscription-total-amount');
   const countEl = document.getElementById('inscription-category-count');
+  const promoEl = document.getElementById('inscription-promo-banner');
+  const subtotalRowEl = document.getElementById('inscription-subtotal-row');
+  const subtotalEl = document.getElementById('inscription-subtotal-amount');
+  const bankWrapper = document.getElementById('bank-details-wrapper');
   if (!eventSelect || !totalBlock || !unitPriceEl || !totalAmountEl || !countEl) return;
 
   const event = events.find((e) => e.id === eventSelect.value);
-  const selectedCount = getSelectedCategoryIds().length;
-  const unitPrice = event?.valorInscripcion ?? 0;
-  const total = unitPrice * selectedCount;
+  const selectedIds = getSelectedCategoryIds();
+  const pricing = calculateRegistrationPricing(event, selectedIds);
 
-  if (selectedCount > 0 && event) {
+  if (pricing.categoryCount > 0 && event) {
     totalBlock.classList.remove('hidden');
     paymentSection?.classList.remove('hidden');
-    unitPriceEl.textContent = formatCop(unitPrice);
-    totalAmountEl.textContent = formatCop(total);
-    countEl.textContent = String(selectedCount);
+
+    unitPriceEl.textContent = formatCop(event.valorInscripcion);
+    totalAmountEl.textContent = formatCop(pricing.total);
+    countEl.textContent = String(pricing.categoryCount);
+
+    if (pricing.appliedPromotion) {
+      if (promoEl) {
+        promoEl.classList.remove('hidden');
+        promoEl.innerHTML = `
+          <div class="flex items-start gap-3 rounded-lg border border-emerald-400/40 bg-emerald-500/15 p-3.5 text-emerald-100 shadow-sm">
+            <span class="text-xl">🎉</span>
+            <div class="flex-1">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <p class="text-sm font-bold text-white uppercase tracking-wide">¡${pricing.appliedPromotion.name}!</p>
+                <span class="text-xs font-bold text-emerald-300 bg-emerald-950/60 border border-emerald-400/30 px-2 py-0.5 rounded">Ahorras ${formatCop(pricing.appliedPromotion.discount)}</span>
+              </div>
+              <p class="text-xs text-emerald-200/90 mt-0.5">${pricing.appliedPromotion.description}</p>
+            </div>
+          </div>`;
+      }
+      if (subtotalRowEl && subtotalEl) {
+        subtotalRowEl.classList.remove('hidden');
+        subtotalEl.textContent = formatCop(pricing.subtotal);
+      }
+    } else {
+      if (promoEl) promoEl.classList.add('hidden');
+      if (subtotalRowEl) subtotalRowEl.classList.add('hidden');
+    }
+
+    if (bankWrapper) {
+      bankWrapper.innerHTML = renderBankDetails(event);
+    }
   } else {
     totalBlock.classList.add('hidden');
     paymentSection?.classList.add('hidden');
     unitPriceEl.textContent = '—';
     totalAmountEl.textContent = '—';
     countEl.textContent = '0';
+    if (promoEl) promoEl.classList.add('hidden');
+    if (subtotalRowEl) subtotalRowEl.classList.add('hidden');
+    if (bankWrapper && event) {
+      bankWrapper.innerHTML = renderBankDetails(event);
+    }
   }
 }
 
@@ -415,6 +620,23 @@ function bindRegistrationForm(events: Event[]): void {
         paymentFileType = '';
       }
     );
+  });
+
+  form?.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const copyBtn = target.closest<HTMLElement>('.copy-btn');
+    if (!copyBtn) return;
+    const textToCopy = copyBtn.getAttribute('data-copy');
+    if (textToCopy) {
+      void navigator.clipboard.writeText(textToCopy);
+      const originalText = copyBtn.textContent;
+      copyBtn.textContent = '¡Copiado!';
+      copyBtn.classList.add('bg-white/20', 'text-white');
+      setTimeout(() => {
+        copyBtn.textContent = originalText;
+        copyBtn.classList.remove('bg-white/20', 'text-white');
+      }, 2000);
+    }
   });
 
   form?.addEventListener('submit', async (e) => {
