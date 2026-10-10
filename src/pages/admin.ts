@@ -584,6 +584,19 @@ function getPromotionValueLabel(type: PromotionType): string {
   }
 }
 
+function getPromotionMinLabel(type: PromotionType): string {
+  switch (type) {
+    case 'fixed_package':
+      return 'Categorías incluidas en el combo';
+    case 'two_for_one':
+      return 'Categorías mínimas (2 para 2x1)';
+    case 'unit_price_tier':
+    case 'total_discount_fixed':
+    case 'total_discount_percent':
+      return 'A partir de cuántas categorías aplica';
+  }
+}
+
 function getPromotionValuePlaceholder(type: PromotionType): string {
   switch (type) {
     case 'fixed_package':
@@ -650,7 +663,7 @@ function renderPromotionCard(promo: EventPromotion, champId: ChampionshipId): st
           </select>
         </div>
         <div>
-          <label class="block text-muted mb-1 font-medium">Categorías requeridas (mínimo)</label>
+          <label class="block text-muted mb-1 font-medium promo-min-label">${getPromotionMinLabel(promo.type)}</label>
           <input type="number" class="promo-min input-field text-xs py-1.5 font-mono" min="1" max="20"
                  value="${promo.minCategories || 2}" placeholder="Ej: 2 o 3" required />
         </div>
@@ -1420,9 +1433,11 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
       const isTwoForOne = type === 'two_for_one';
       const valueBox = card.querySelector('.promo-value-box');
       const valueLabel = card.querySelector('.promo-value-label');
+      const minLabel = card.querySelector('.promo-min-label');
       const valueInput = card.querySelector('.promo-value') as HTMLInputElement | null;
 
       if (valueLabel) valueLabel.textContent = getPromotionValueLabel(type);
+      if (minLabel) minLabel.textContent = getPromotionMinLabel(type);
       if (valueInput) {
         valueInput.placeholder = getPromotionValuePlaceholder(type);
         valueInput.disabled = isTwoForOne;

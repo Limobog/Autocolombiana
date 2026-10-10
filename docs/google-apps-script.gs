@@ -464,7 +464,19 @@ function computeValorTotalInscripcion_(ss, eventId, categoriaId) {
       var disc = 0;
       if (promo.type === 'fixed_package') {
         var pkgVal = Number(promo.value) || 0;
-        if (pkgVal > 0) disc = Math.max(0, eligibleBase - pkgVal);
+        if (pkgVal > 0) {
+          var sortedEligible = eligible.slice().sort(function(a, b) {
+            var pb = (event.categoryPrices && typeof event.categoryPrices[b] === 'number') ? event.categoryPrices[b] : (Number(event.valorInscripcion) || 0);
+            var pa = (event.categoryPrices && typeof event.categoryPrices[a] === 'number') ? event.categoryPrices[a] : (Number(event.valorInscripcion) || 0);
+            return pb - pa;
+          });
+          var coveredCost = 0;
+          for (var cIdx = 0; cIdx < min; cIdx++) {
+            var cId = sortedEligible[cIdx];
+            coveredCost += (event.categoryPrices && typeof event.categoryPrices[cId] === 'number') ? event.categoryPrices[cId] : (Number(event.valorInscripcion) || 0);
+          }
+          disc = Math.max(0, coveredCost - pkgVal);
+        }
       } else if (promo.type === 'two_for_one') {
         var freeCount = Math.floor(eligible.length / 2);
         var unitVal = (Number(event.valorInscripcion) || 0);
