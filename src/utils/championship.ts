@@ -213,6 +213,82 @@ export function areFirstNamesCompatible(tokenA: string, tokenB: string): boolean
   return false;
 }
 
+// ─── CASOS AISLADOS DE UNIFICACIÓN (EXCEPCIONES CONTROLADAS) ─────────────────
+
+interface KnownRiderAliasException {
+  number: string;
+  canonicalName: string;
+  aliases: string[];
+}
+
+/**
+ * Casos aislados de pilotos que compitieron con nombres variantes (ej. omitieron primer nombre en una válida).
+ * Se restringe de forma aislada por número de piloto y patrones específicos para no alterar
+ * las reglas heurísticas generales del campeonato.
+ */
+const KNOWN_RIDER_ALIAS_EXCEPTIONS: KnownRiderAliasException[] = [
+  {
+    // Piloto #413 en Copa MX (categorías 85 A y 125):
+    // En V1 se registró como "EMILIO CAMACHO" y en V2 como "Samuel Emilio CAMACHO SAENZ".
+    number: '413',
+    canonicalName: 'Samuel Emilio CAMACHO SAENZ',
+    aliases: ['emilio camacho', 'samuel emilio camacho saenz', 'samuel emilio camacho'],
+  },
+];
+
+/**
+ * Comprueba si un par de registros corresponde a un caso aislado de alias reportado.
+ */
+export function checkKnownRiderAliasException(
+  candidate: { name: string; number: string },
+  existing: { name: string; number: string; allNumbers: string[] }
+): boolean {
+  const cleanCandNum = candidate.number.replace(/^#+/, '').trim();
+  const existHasNum = (num: string) =>
+    existing.allNumbers.some((n) => n.replace(/^#+/, '').trim() === num) ||
+    existing.number.replace(/^#+/, '').trim() === num;
+
+  const normCandName = normalizeKey(candidate.name);
+  const normExistName = normalizeKey(existing.name);
+
+  for (const exc of KNOWN_RIDER_ALIAS_EXCEPTIONS) {
+    if (cleanCandNum !== exc.number || !existHasNum(exc.number)) continue;
+
+    const candMatches = exc.aliases.some(
+      (a) => normalizeKey(a) === normCandName || normCandName.includes(normalizeKey(a)) || normalizeKey(a).includes(normCandName)
+    );
+    const existMatches = exc.aliases.some(
+      (a) => normalizeKey(a) === normExistName || normExistName.includes(normalizeKey(a)) || normalizeKey(a).includes(normExistName)
+    );
+
+    if (candMatches && existMatches) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Devuelve el nombre canónico oficial si el piloto corresponde a una excepción aislada conocida.
+ */
+export function resolveKnownRiderCanonicalName(name: string, number: string): string {
+  const cleanNum = number.replace(/^#+/, '').trim();
+  const normName = normalizeKey(name);
+
+  for (const exc of KNOWN_RIDER_ALIAS_EXCEPTIONS) {
+    if (cleanNum === exc.number) {
+      const isAlias = exc.aliases.some(
+        (a) => normalizeKey(a) === normName || normName.includes(normalizeKey(a)) || normalizeKey(a).includes(normName)
+      );
+      if (isAlias) {
+        return exc.canonicalName;
+      }
+    }
+  }
+  return name;
+}
+
 /**
  * Algoritmo inteligente de coincidencia entre dos pilotos en la misma categoría.
  * Si ambos tienen documento de identidad (DOC/EPS), se usa como identificador prioritario inequívoco.
@@ -228,6 +304,11 @@ export function areRidersSamePerson(
     if (docA && docB && docA === docB) {
       return true;
     }
+  }
+
+  // 0.1 Excepción aislada controlada para casos específicos reportados
+  if (checkKnownRiderAliasException(candidate, existing)) {
+    return true;
   }
 
   const normA = normalizeKey(candidate.name);
@@ -498,6 +579,9 @@ export function computeChampionshipStandings(
           ? (number.startsWith('#') ? number : `#${number}`)
           : '';
 
+        // Si corresponde a una excepción aislada conocida, obtener su nombre canónico oficial
+        const canonicalResolved = resolveKnownRiderCanonicalName(name, formattedNumber);
+
         // Buscar si ya existe este piloto en la categoría.
         // REGLA DE ORO FÍSICA: Dos registros en el MISMO evento son personas distintas.
         let matchedRider = catEntry.riders.find((existing) => {
@@ -505,7 +589,7 @@ export function computeChampionshipStandings(
             return false;
           }
           return areRidersSamePerson(
-            { name, number: formattedNumber, documentId },
+            { name: canonicalResolved, number: formattedNumber, documentId },
             {
               name: existing.canonicalName,
               number: existing.latestNumber,
@@ -517,7 +601,7 @@ export function computeChampionshipStandings(
 
         if (!matchedRider) {
           const newRider = {
-            canonicalName: name || 'Piloto sin nombre',
+            canonicalName: canonicalResolved || 'Piloto sin nombre',
             latestNumber: formattedNumber,
             allNumbers: new Set<string>(formattedNumber ? [formattedNumber] : []),
             latestBike: bike || '-',
@@ -545,14 +629,14 @@ export function computeChampionshipStandings(
 
         // Si el nuevo nombre es más completo y formal (ej. "Maximiliano Yepes" > "Maxi Yepes"),
         // adoptarlo como nombre canónico oficial
-        if (name) {
+        if (canonicalResolved) {
           const currentTokens = tokenizeName(matchedRider.canonicalName);
-          const newTokens = tokenizeName(name);
+          const newTokens = tokenizeName(canonicalResolved);
           if (
             newTokens.length > currentTokens.length ||
-            (newTokens.length === currentTokens.length && name.length > matchedRider.canonicalName.length)
+            (newTokens.length === currentTokens.length && canonicalResolved.length > matchedRider.canonicalName.length)
           ) {
-            matchedRider.canonicalName = name;
+            matchedRider.canonicalName = canonicalResolved;
           }
         }
       });
