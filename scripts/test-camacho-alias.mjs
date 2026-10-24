@@ -65,6 +65,11 @@ const KNOWN_RIDER_ALIAS_EXCEPTIONS = [
     canonicalName: 'Samuel Emilio CAMACHO SAENZ',
     aliases: ['emilio camacho', 'samuel emilio camacho saenz', 'samuel emilio camacho'],
   },
+  {
+    number: '169',
+    canonicalName: 'Iván Santiago Chaparro',
+    aliases: ['santiago chaparro', 'ivan santiago chaparro', 'ivan chaparro'],
+  },
 ];
 
 function checkKnownRiderAliasException(candidate, existing) {
@@ -77,7 +82,9 @@ function checkKnownRiderAliasException(candidate, existing) {
   const normExistName = normalizeKey(existing.name);
 
   for (const exc of KNOWN_RIDER_ALIAS_EXCEPTIONS) {
-    if (cleanCandNum !== exc.number || !existHasNum(exc.number)) continue;
+    const candHasNum = cleanCandNum === exc.number || !cleanCandNum;
+    const existHasNumMatch = existHasNum(exc.number) || !existing.number;
+    if (!candHasNum || !existHasNumMatch) continue;
 
     const candMatches = exc.aliases.some(
       (a) => normalizeKey(a) === normCandName || normCandName.includes(normalizeKey(a)) || normalizeKey(a).includes(normCandName)
@@ -98,7 +105,8 @@ function resolveKnownRiderCanonicalName(name, number) {
   const normName = normalizeKey(name);
 
   for (const exc of KNOWN_RIDER_ALIAS_EXCEPTIONS) {
-    if (cleanNum === exc.number) {
+    const numMatches = !cleanNum || cleanNum === exc.number;
+    if (numMatches) {
       const isAlias = exc.aliases.some(
         (a) => normalizeKey(a) === normName || normName.includes(normalizeKey(a)) || normalizeKey(a).includes(normName)
       );
@@ -151,7 +159,7 @@ function areRidersSamePerson(candidate, existing) {
   return false;
 }
 
-console.log('🧪 Iniciando prueba de unificación aislada para el piloto #413...');
+console.log('🧪 Iniciando prueba de unificación aislada para el piloto #413 y #169...');
 
 // Test 1: Comprobar que candidate "Samuel Emilio CAMACHO SAENZ" (#413) coincide con existing "EMILIO CAMACHO" (#413)
 const cand1 = { name: 'Samuel Emilio CAMACHO SAENZ', number: '#413' };
@@ -165,7 +173,7 @@ const exist2 = { name: 'Samuel Emilio CAMACHO SAENZ', number: '#413', allNumbers
 assert.strictEqual(areRidersSamePerson(cand2, exist2), true, 'Debe coincidir en orden inverso');
 console.log('✅ Prueba 2 superada: Coincidencia en orden inverso');
 
-// Test 3: resolveKnownRiderCanonicalName
+// Test 3: resolveKnownRiderCanonicalName Camacho
 assert.strictEqual(
   resolveKnownRiderCanonicalName('EMILIO CAMACHO', '#413'),
   'Samuel Emilio CAMACHO SAENZ'
@@ -174,75 +182,87 @@ assert.strictEqual(
   resolveKnownRiderCanonicalName('Samuel Emilio CAMACHO SAENZ', '#413'),
   'Samuel Emilio CAMACHO SAENZ'
 );
-console.log('✅ Prueba 3 superada: resolveKnownRiderCanonicalName devuelve el nombre canónico completo');
+console.log('✅ Prueba 3 superada: resolveKnownRiderCanonicalName Camacho devuelve el nombre canónico completo');
 
-// Test 4: Control negativo - Otros pilotos con nombres distintos NO deben unificarse
+// Test 4: Comprobar Iván Santiago Chaparro (#169) vs Santiago CHAPARRO (#169)
+const candChaparro1 = { name: 'Santiago CHAPARRO', number: '#169' };
+const existChaparro1 = { name: 'Iván Santiago Chaparro', number: '#169', allNumbers: ['#169'] };
+assert.strictEqual(areRidersSamePerson(candChaparro1, existChaparro1), true, 'Chaparro debe coincidir por excepción aislada');
+console.log('✅ Prueba 4 superada: areRidersSamePerson reconoce #169 Santiago CHAPARRO == Iván Santiago Chaparro');
+
+// Test 5: Inverso Chaparro
+const candChaparro2 = { name: 'Iván Santiago Chaparro', number: '#169' };
+const existChaparro2 = { name: 'Santiago CHAPARRO', number: '#169', allNumbers: ['#169'] };
+assert.strictEqual(areRidersSamePerson(candChaparro2, existChaparro2), true, 'Chaparro debe coincidir en orden inverso');
+console.log('✅ Prueba 5 superada: Chaparro coincidencia en orden inverso');
+
+// Test 6: resolveKnownRiderCanonicalName Chaparro
+assert.strictEqual(
+  resolveKnownRiderCanonicalName('Santiago CHAPARRO', '#169'),
+  'Iván Santiago Chaparro'
+);
+assert.strictEqual(
+  resolveKnownRiderCanonicalName('Iván Santiago Chaparro', '#169'),
+  'Iván Santiago Chaparro'
+);
+console.log('✅ Prueba 6 superada: resolveKnownRiderCanonicalName Chaparro devuelve Iván Santiago Chaparro');
+
+// Test 7: Control negativo - Otros pilotos con nombres distintos NO deben unificarse
 const candOther = { name: 'Martin Gomez', number: '#12' };
 const existOther = { name: 'Matias Gomez', number: '#12', allNumbers: ['#12'] };
 assert.strictEqual(areRidersSamePerson(candOther, existOther), false, 'Otros pilotos no deben verse afectados');
-console.log('✅ Prueba 4 superada: Control negativo - Otros pilotos no se ven afectados');
+console.log('✅ Prueba 7 superada: Control negativo - Otros pilotos no se ven afectados');
 
-// Test 5: Simulación de acumulación de puntos entre Válida 1 y Válida 2 en categorías 85cc A y 125cc
-function simulateStandingsAccumulation() {
+// Test 8: Simulación de acumulación de puntos en MX Novatos para Chaparro
+function simulateChaparroStandings() {
   const events = [
     {
       id: 'evt-001',
-      entries85A: [{ number: '413', name: 'EMILIO CAMACHO', points: 45 }],
-      entries125: [{ number: '413', name: 'EMILIO CAMACHO', points: 40 }],
+      entries: [{ number: '169', name: 'Iván Santiago Chaparro', points: 15 }],
     },
     {
       id: 'evt-002',
-      entries85A: [{ number: '413', name: 'Samuel Emilio CAMACHO SAENZ', points: 50 }],
-      entries125: [{ number: '413', name: 'Samuel Emilio CAMACHO SAENZ', points: 42 }],
+      entries: [{ number: '169', name: 'Santiago CHAPARRO', points: 21 }],
     },
   ];
 
-  const testCategory = (entriesKey) => {
-    const riders = [];
-    for (const ev of events) {
-      const entries = ev[entriesKey];
-      for (const entry of entries) {
-        const formattedNumber = `#${entry.number}`;
-        const canonicalResolved = resolveKnownRiderCanonicalName(entry.name, formattedNumber);
+  const riders = [];
+  for (const ev of events) {
+    for (const entry of ev.entries) {
+      const formattedNumber = `#${entry.number}`;
+      const canonicalResolved = resolveKnownRiderCanonicalName(entry.name, formattedNumber);
 
-        let matched = riders.find((r) =>
-          areRidersSamePerson(
-            { name: canonicalResolved, number: formattedNumber },
-            { name: r.canonicalName, number: r.latestNumber, allNumbers: Array.from(r.allNumbers) }
-          )
-        );
+      let matched = riders.find((r) =>
+        areRidersSamePerson(
+          { name: canonicalResolved, number: formattedNumber },
+          { name: r.canonicalName, number: r.latestNumber, allNumbers: Array.from(r.allNumbers) }
+        )
+      );
 
-        if (!matched) {
-          matched = {
-            canonicalName: canonicalResolved,
-            latestNumber: formattedNumber,
-            allNumbers: new Set([formattedNumber]),
-            pointsByEvent: {},
-          };
-          riders.push(matched);
-        }
+      if (!matched) {
+        matched = {
+          canonicalName: canonicalResolved,
+          latestNumber: formattedNumber,
+          allNumbers: new Set([formattedNumber]),
+          pointsByEvent: {},
+        };
+        riders.push(matched);
+      }
 
-        matched.pointsByEvent[ev.id] = entry.points;
-        if (canonicalResolved.length > matched.canonicalName.length) {
-          matched.canonicalName = canonicalResolved;
-        }
+      matched.pointsByEvent[ev.id] = entry.points;
+      if (canonicalResolved.length > matched.canonicalName.length) {
+        matched.canonicalName = canonicalResolved;
       }
     }
+  }
 
-    assert.strictEqual(riders.length, 1, 'Debe haber exactamente 1 piloto unificado en la categoría');
-    const rider = riders[0];
-    assert.strictEqual(rider.canonicalName, 'Samuel Emilio CAMACHO SAENZ');
-    const total = Object.values(rider.pointsByEvent).reduce((a, b) => a + b, 0);
-    return total;
-  };
-
-  const total85A = testCategory('entries85A');
-  assert.strictEqual(total85A, 95, '85 A debe sumar 45 + 50 = 95 puntos');
-
-  const total125 = testCategory('entries125');
-  assert.strictEqual(total125, 82, '125 debe sumar 40 + 42 = 82 puntos');
+  assert.strictEqual(riders.length, 1, 'Debe haber exactamente 1 piloto unificado para Chaparro en MX Novatos');
+  const rider = riders[0];
+  assert.strictEqual(rider.canonicalName, 'Iván Santiago Chaparro');
+  const total = Object.values(rider.pointsByEvent).reduce((a, b) => a + b, 0);
+  assert.strictEqual(total, 36, 'MX Novatos debe sumar 15 + 21 = 36 puntos');
 }
 
-simulateStandingsAccumulation();
-console.log('✅ Prueba 5 superada: Sumatoria acumulada en 85 A y 125cc unificada con éxito en 1 sola fila');
-console.log('\n🎉 ¡TODAS LAS PRUEBAS DE LA EXCEPCIÓN AISLADA PASARON CON ÉXITO!');
+simulateChaparroStandings();
+console.log('✅ Prueba 8 superada: Sumatoria acumulada de Iván Santiago Chaparro unificada con éxito en 1 sola fila');
+console.log('\n🎉 ¡TODAS LAS PRUEBAS DE LAS EXCEPCIONES AISLADAS PASARON CON ÉXITO!');

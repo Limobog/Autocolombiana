@@ -234,6 +234,13 @@ const KNOWN_RIDER_ALIAS_EXCEPTIONS: KnownRiderAliasException[] = [
     canonicalName: 'Samuel Emilio CAMACHO SAENZ',
     aliases: ['emilio camacho', 'samuel emilio camacho saenz', 'samuel emilio camacho'],
   },
+  {
+    // Piloto #169 en Copa MX (categoría MX Novatos):
+    // En una válida apareció como "Santiago CHAPARRO" y en otra como "Iván Santiago Chaparro".
+    number: '169',
+    canonicalName: 'Iván Santiago Chaparro',
+    aliases: ['santiago chaparro', 'ivan santiago chaparro', 'ivan chaparro'],
+  },
 ];
 
 /**
@@ -252,7 +259,9 @@ export function checkKnownRiderAliasException(
   const normExistName = normalizeKey(existing.name);
 
   for (const exc of KNOWN_RIDER_ALIAS_EXCEPTIONS) {
-    if (cleanCandNum !== exc.number || !existHasNum(exc.number)) continue;
+    const candHasNum = cleanCandNum === exc.number || !cleanCandNum;
+    const existHasNumMatch = existHasNum(exc.number) || !existing.number;
+    if (!candHasNum || !existHasNumMatch) continue;
 
     const candMatches = exc.aliases.some(
       (a) => normalizeKey(a) === normCandName || normCandName.includes(normalizeKey(a)) || normalizeKey(a).includes(normCandName)
@@ -277,7 +286,8 @@ export function resolveKnownRiderCanonicalName(name: string, number: string): st
   const normName = normalizeKey(name);
 
   for (const exc of KNOWN_RIDER_ALIAS_EXCEPTIONS) {
-    if (cleanNum === exc.number) {
+    const numMatches = !cleanNum || cleanNum === exc.number;
+    if (numMatches) {
       const isAlias = exc.aliases.some(
         (a) => normalizeKey(a) === normName || normName.includes(normalizeKey(a)) || normalizeKey(a).includes(normName)
       );
