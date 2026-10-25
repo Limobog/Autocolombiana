@@ -2,6 +2,7 @@ import { CONFIG } from '../config';
 import { renderFooter } from '../components/footer';
 import {
   loadAdminData,
+  loadEventResults,
   saveEvents,
   saveStoredCategories,
   readFileAsDataUrl,
@@ -11,6 +12,7 @@ import {
 } from '../utils/storage';
 import { calculateAge, formatDate, generateId, parseSheetDate } from '../utils/age';
 import { exportRegistrations, type ExportFormat } from '../utils/export-registrations';
+import { exportEventResultsToExcel } from '../utils/export-results';
 import { formatCop, resolveRegistrationTotal } from '../utils/registration-total';
 import {
   formatCategoryDisplayLabel,
@@ -894,6 +896,7 @@ function renderAdminPanel(events: Event[], registrations: Registration[]): strin
                 ${e.reglamentoUrl?.trim() ? '<a href="' + e.reglamentoUrl + '" target="_blank" rel="noopener noreferrer" class="text-secondary text-sm hover:text-white">Ver reglamento</a>' : '<span class="text-xs text-muted">Sin reglamento</span>'}
                 <button class="load-results-btn text-secondary text-sm hover:text-white" data-id="${e.id}">${e.resultadosUrl?.trim() ? 'Editar resultados' : 'Cargar resultados'}</button>
                 ${e.resultadosUrl?.trim() ? '<a href="./resultados.html?evento=' + e.id + '" target="_blank" rel="noopener noreferrer" class="text-secondary text-sm hover:text-white">Ver resultados</a>' : ''}
+                ${e.resultadosUrl?.trim() ? '<button type="button" class="export-admin-results-btn text-emerald-400 hover:text-emerald-300 text-sm inline-flex items-center gap-1 cursor-pointer" data-id="' + e.id + '" title="Descargar resultados en Excel (.xlsx)"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM13 3.5L18.5 9H13V3.5zM8.5 12h1.8l1.2 2.3 1.2-2.3h1.8l-2.1 3.5 2.2 3.5h-1.8L11.5 16.7 10.3 19H8.5l2.2-3.5-2.2-3.5z"/></svg> Excel</button>' : ''}
                 <button class="edit-event-btn text-secondary text-sm hover:text-white" data-id="${e.id}">Editar</button>
                 <button class="delete-event-btn text-silver text-sm hover:text-white" data-id="${e.id}">Eliminar</button>
               </div>`
@@ -1222,6 +1225,25 @@ function bindAdminEvents(events: Event[], registrations: Registration[]): void {
       await openResultsModal(event, async () => {
         await refreshAdmin();
       });
+    });
+  });
+
+  document.querySelectorAll('.export-admin-results-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id')!;
+      const event = events.find((e) => e.id === id);
+      if (!event) return;
+      try {
+        const results = await loadEventResults(id);
+        if (!results || !results.categories || results.categories.length === 0) {
+          void Swal.fire('Información', 'Este evento aún no tiene tablas estructuradas de resultados para exportar.', 'info');
+          return;
+        }
+        exportEventResultsToExcel(event, results);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'No se pudo exportar a Excel.';
+        void Swal.fire('Error', msg, 'error');
+      }
     });
   });
 

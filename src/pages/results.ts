@@ -11,6 +11,13 @@ import {
 } from '../utils/championship';
 import type { CategoryResults, Event, EventResults, HeatKey, ResultsTable } from '../types';
 import Swal from 'sweetalert2';
+import {
+  exportHeatResultsToExcel,
+  exportCategoryValidaResultsToExcel,
+  exportEventResultsToExcel,
+  exportGeneralCategoryToExcel,
+  exportCompleteGeneralStandingsToExcel,
+} from '../utils/export-results';
 
 type ResultsViewMode = 'general' | 'valida';
 
@@ -130,7 +137,7 @@ function renderHeatPanel(category: CategoryResults, heat: HeatKey, active: boole
   const pdfUrl = table.pdfUrl ? getDriveDirectViewUrl(table.pdfUrl) : '';
   const pdfBtn =
     heat !== 'final' && pdfUrl
-      ? `<a href="${pdfUrl}" target="_blank" rel="noopener noreferrer" class="btn-outline text-xs py-2 px-4 inline-flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Vuelta a vuelta (PDF)</a>`
+      ? `<a href="${pdfUrl}" target="_blank" rel="noopener noreferrer" class="btn-outline text-xs py-2 px-3.5 inline-flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Vuelta a vuelta (PDF)</a>`
       : heat !== 'final'
         ? '<span class="text-xs text-muted">Sin PDF adjunto</span>'
         : '';
@@ -138,8 +145,23 @@ function renderHeatPanel(category: CategoryResults, heat: HeatKey, active: boole
   return `
     <div class="heat-panel ${active ? '' : 'hidden'} space-y-4" data-heat-panel="${category.categoryId}:${heat}">
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
-        <h3 class="font-title text-2xl tracking-wider text-white">${HEAT_LABELS[heat]}</h3>
-        ${pdfBtn}
+        <div class="flex items-center gap-3">
+          <h3 class="font-title text-2xl tracking-wider text-white">${HEAT_LABELS[heat]}</h3>
+          <span class="text-xs text-muted font-medium">(${table.rows.length} ${table.rows.length === 1 ? 'piloto' : 'pilotos'})</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button"
+            class="export-heat-excel-btn btn-outline text-xs py-2 px-3.5 inline-flex items-center gap-1.5 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-white transition-all cursor-pointer font-semibold shadow-sm"
+            data-category="${category.categoryId}"
+            data-heat="${heat}"
+            title="Descargar esta tabla en Excel (.xlsx)">
+            <svg class="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM13 3.5L18.5 9H13V3.5zM8.5 12h1.8l1.2 2.3 1.2-2.3h1.8l-2.1 3.5 2.2 3.5h-1.8L11.5 16.7 10.3 19H8.5l2.2-3.5-2.2-3.5z"/>
+            </svg>
+            <span>Descargar ${HEAT_LABELS[heat]} (.xlsx)</span>
+          </button>
+          ${pdfBtn}
+        </div>
       </div>
       ${renderTable(table, heat, category.categoryId)}
     </div>`;
@@ -166,7 +188,18 @@ function renderCategoryPanel(category: CategoryResults, active: boolean): string
 
   return `
     <div class="category-panel ${active ? '' : 'hidden'} space-y-5" data-category-panel="${category.categoryId}">
-      ${heats.length > 1 ? `<div class="flex flex-wrap gap-2.5">${heatTabs}</div>` : ''}
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        ${heats.length > 1 ? `<div class="flex flex-wrap gap-2.5">${heatTabs}</div>` : '<div></div>'}
+        <button type="button"
+          class="export-category-valida-excel-btn btn-outline text-xs py-2 px-3.5 inline-flex items-center gap-1.5 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-white transition-all cursor-pointer font-semibold shadow-sm"
+          data-category="${category.categoryId}"
+          title="Descargar todas las mangas de ${escapeHtml(category.categoryLabel)} en Excel (.xlsx)">
+          <svg class="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM13 3.5L18.5 9H13V3.5zM8.5 12h1.8l1.2 2.3 1.2-2.3h1.8l-2.1 3.5 2.2 3.5h-1.8L11.5 16.7 10.3 19H8.5l2.2-3.5-2.2-3.5z"/>
+          </svg>
+          <span>Descargar Categoría (${escapeHtml(category.categoryLabel.split(' — ')[0])}) (.xlsx)</span>
+        </button>
+      </div>
       ${heats.map((heat, i) => renderHeatPanel(category, heat, i === 0)).join('')}
     </div>`;
 }
@@ -315,6 +348,25 @@ function renderGeneralCategoryPanel(catStandings: ChampionshipCategoryStandings,
     <div class="general-category-panel ${active ? '' : 'hidden'} space-y-6" data-general-category-panel="${catStandings.categoryId}">
       ${podiumHtml}
 
+      <div class="flex flex-wrap items-center justify-between gap-3 px-1">
+        <div class="flex items-center gap-2">
+          <span class="text-xs uppercase tracking-wider font-bold text-silver">Categoría:</span>
+          <span class="text-xs font-bold text-white bg-white/10 px-2.5 py-1 rounded-md border border-white/15">
+            ${escapeHtml(catStandings.categoryLabel)}
+          </span>
+          <span class="text-xs text-muted font-medium">(${riders.length} ${riders.length === 1 ? 'piloto clasificado' : 'pilotos clasificados'})</span>
+        </div>
+        <button type="button"
+          class="export-general-category-excel-btn btn-outline text-xs py-2 px-3.5 inline-flex items-center gap-1.5 hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-white transition-all cursor-pointer font-semibold shadow-sm"
+          data-general-category="${catStandings.categoryId}"
+          title="Descargar la tabla general de esta categoría en Excel (.xlsx)">
+          <svg class="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM13 3.5L18.5 9H13V3.5zM8.5 12h1.8l1.2 2.3 1.2-2.3h1.8l-2.1 3.5 2.2 3.5h-1.8L11.5 16.7 10.3 19H8.5l2.2-3.5-2.2-3.5z"/>
+          </svg>
+          <span>Descargar Esta Categoría (.xlsx)</span>
+        </button>
+      </div>
+
       <div class="rounded-2xl border border-white/15 overflow-hidden bg-surface-raised/60 shadow-card">
         <div class="overflow-x-auto">
           <table class="min-w-full text-left">
@@ -383,6 +435,15 @@ function renderGeneralView(standings: ChampionshipCategoryStandings[], champTitl
         <p class="text-xs text-muted mt-1">
           Sumatoria oficial de puntos acumulados válida a válida (clasificación final consolidada)
         </p>
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <button type="button" id="export-complete-general-excel-btn"
+            class="btn-primary text-xs sm:text-sm py-2.5 px-5 inline-flex items-center gap-2 font-bold shadow-glow cursor-pointer">
+            <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM13 3.5L18.5 9H13V3.5zM8.5 12h1.8l1.2 2.3 1.2-2.3h1.8l-2.1 3.5 2.2 3.5h-1.8L11.5 16.7 10.3 19H8.5l2.2-3.5-2.2-3.5z"/>
+            </svg>
+            <span>Descargar General Completo (.xlsx)</span>
+          </button>
+        </div>
       </div>
 
       <div class="flex flex-wrap gap-2 justify-center mb-6">
@@ -458,6 +519,16 @@ function renderSinglePdfContent(
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
           Abrir / Descargar PDF Oficial
         </a>
+        ${
+          hasCategories
+            ? `<button type="button" id="export-single-pdf-excel-btn" class="btn-outline text-sm font-semibold px-5 py-3 inline-flex items-center gap-2 cursor-pointer hover:border-emerald-400 hover:text-white">
+                <svg class="w-5 h-5 text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM13 3.5L18.5 9H13V3.5zM8.5 12h1.8l1.2 2.3 1.2-2.3h1.8l-2.1 3.5 2.2 3.5h-1.8L11.5 16.7 10.3 19H8.5l2.2-3.5-2.2-3.5z"/>
+                </svg>
+                Descargar en Excel (.xlsx)
+              </button>`
+            : ''
+        }
         <a href="${embedUrl}" target="_blank" rel="noopener noreferrer" class="btn-outline text-sm font-semibold px-5 py-3 inline-flex items-center gap-2 cursor-pointer">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
           Pestaña completa
@@ -572,6 +643,15 @@ function renderValidaView(
         <h2 class="font-title text-3xl tracking-wide text-white mb-1">${escapeHtml(event.name)}</h2>
         <p class="text-silver font-semibold text-sm">${formatDate(event.date)} · ${escapeHtml(event.city)}</p>
         <p class="text-xs text-muted mt-1">Clasificación oficial por categorías</p>
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <button type="button" id="export-event-excel-btn"
+            class="btn-primary text-xs sm:text-sm py-2.5 px-5 inline-flex items-center gap-2 font-bold shadow-glow cursor-pointer">
+            <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM13 3.5L18.5 9H13V3.5zM8.5 12h1.8l1.2 2.3 1.2-2.3h1.8l-2.1 3.5 2.2 3.5h-1.8L11.5 16.7 10.3 19H8.5l2.2-3.5-2.2-3.5z"/>
+            </svg>
+            <span>Descargar Válida Completa (.xlsx)</span>
+          </button>
+        </div>
       </div>
       <div class="flex flex-wrap gap-2 mb-6 justify-center">${categoryTabs}</div>
       ${categories.map((cat, i) => renderCategoryPanel(cat, i === 0)).join('')}
@@ -674,7 +754,7 @@ export async function initResultsPage(): Promise<void> {
 
     if (currentMode === 'general') {
       content.innerHTML = renderGeneralView(championshipStandings, champ.name);
-      bindGeneralViewUi(content);
+      bindGeneralViewUi(content, championshipStandings, champ.name);
     } else {
       if (!activeEvent) {
         content.innerHTML = `
@@ -689,7 +769,7 @@ export async function initResultsPage(): Promise<void> {
       const currentEventResults = publishedList.find((p) => p.event.id === activeEvent!.id)?.results || null;
       content.innerHTML = renderValidaView(activeEvent, currentEventResults, allPublishedEvents);
       if (currentEventResults) {
-        bindValidaViewUi(content, currentEventResults);
+        bindValidaViewUi(content, activeEvent, currentEventResults);
       }
     }
 
@@ -709,7 +789,11 @@ export async function initResultsPage(): Promise<void> {
     });
   }
 
-  function bindGeneralViewUi(container: HTMLElement): void {
+  function bindGeneralViewUi(
+    container: HTMLElement,
+    standings: ChampionshipCategoryStandings[],
+    champTitle: string
+  ): void {
     const categoryTabs = container.querySelectorAll<HTMLButtonElement>('.general-category-tab');
     const categoryPanels = container.querySelectorAll<HTMLElement>('.general-category-panel');
 
@@ -732,9 +816,34 @@ export async function initResultsPage(): Promise<void> {
         });
       });
     });
+
+    // Botón Descargar General Completo
+    container.querySelector('#export-complete-general-excel-btn')?.addEventListener('click', () => {
+      try {
+        exportCompleteGeneralStandingsToExcel(standings, champTitle);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Error al exportar a Excel.';
+        void Swal.fire('Error', msg, 'error');
+      }
+    });
+
+    // Botones Descargar Categoría Individual
+    container.querySelectorAll<HTMLButtonElement>('.export-general-category-excel-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const catId = btn.getAttribute('data-general-category');
+        const cat = standings.find((c) => c.categoryId === catId);
+        if (!cat) return;
+        try {
+          exportGeneralCategoryToExcel(cat, champTitle);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : 'Error al exportar a Excel.';
+          void Swal.fire('Error', msg, 'error');
+        }
+      });
+    });
   }
 
-  function bindValidaViewUi(container: HTMLElement, results: EventResults): void {
+  function bindValidaViewUi(container: HTMLElement, event: Event, results: EventResults): void {
     const categoryTabs = container.querySelectorAll<HTMLButtonElement>('.category-tab');
     const categoryPanels = container.querySelectorAll<HTMLElement>('.category-panel');
 
@@ -780,6 +889,59 @@ export async function initResultsPage(): Promise<void> {
             heatPanel.getAttribute('data-heat-panel') !== `${categoryId}:${heat}`
           );
         });
+      });
+    });
+
+    // Botón Descargar Válida Completa
+    container.querySelector('#export-event-excel-btn')?.addEventListener('click', () => {
+      try {
+        exportEventResultsToExcel(event, results);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Error al exportar a Excel.';
+        void Swal.fire('Error', msg, 'error');
+      }
+    });
+
+    // Botón Descargar en modo PDF único si hay categorías
+    container.querySelector('#export-single-pdf-excel-btn')?.addEventListener('click', () => {
+      try {
+        exportEventResultsToExcel(event, results);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Error al exportar a Excel.';
+        void Swal.fire('Error', msg, 'error');
+      }
+    });
+
+    // Botones Descargar Categoría individual (todas las mangas)
+    container.querySelectorAll<HTMLButtonElement>('.export-category-valida-excel-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const categoryId = btn.getAttribute('data-category');
+        const cat = results.categories.find((c) => c.categoryId === categoryId);
+        if (!cat) return;
+        try {
+          exportCategoryValidaResultsToExcel(event, cat);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : 'Error al exportar a Excel.';
+          void Swal.fire('Error', msg, 'error');
+        }
+      });
+    });
+
+    // Botones Descargar Manga / Final individual
+    container.querySelectorAll<HTMLButtonElement>('.export-heat-excel-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const categoryId = btn.getAttribute('data-category');
+        const heat = btn.getAttribute('data-heat') as HeatKey | null;
+        if (!categoryId || !heat) return;
+        const cat = results.categories.find((c) => c.categoryId === categoryId);
+        const table = cat ? cat[heat] : undefined;
+        if (!cat || !table) return;
+        try {
+          exportHeatResultsToExcel(event, cat.categoryLabel, heat, table);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : 'Error al exportar a Excel.';
+          void Swal.fire('Error', msg, 'error');
+        }
       });
     });
 
