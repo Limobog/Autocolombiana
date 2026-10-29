@@ -53,9 +53,10 @@ function renderHero(champ: Championship): string {
               ${champ.heroTitleHtml}
             </h1>
             <p class="mt-2 font-title text-2xl md:text-3xl tracking-widest text-white/80">${champ.heroSubtitle}</p>
-            <p class="mt-6 text-base md:text-lg text-muted leading-relaxed max-w-xl mx-auto lg:mx-0">
+            ${champ.heroLead ? `<p class="mt-6 text-lg md:text-xl font-bold text-white">${champ.heroLead}</p>` : ''}
+            <p class="${champ.heroLead ? 'mt-3' : 'mt-6'} text-base md:text-lg text-muted leading-relaxed max-w-xl mx-auto lg:mx-0">
               ${champ.tagline}<br/>
-              <strong class="text-white">Hay un lugar para ti en la pista.</strong>
+              <strong class="text-white">${champ.heroHighlight ?? 'Hay un lugar para ti en la pista.'}</strong>
             </p>
             <div class="mt-8 flex flex-wrap gap-4 justify-center lg:justify-start">
               <a href="./inscripcion.html" class="btn-primary text-base px-8">Inscríbete ahora</a>
@@ -136,7 +137,7 @@ function renderEnduroFormat(champ: Championship): string {
         <div class="text-center mb-10">
           <h2 class="section-title mb-3">Formato del campeonato</h2>
           <p class="text-muted max-w-2xl mx-auto">
-            Dos ediciones contra el cronómetro: Sprint Enduro con 2 pruebas especiales, y Hard Scramble.
+            Dos ediciones contra el cronómetro: Sprint Enduro con 2 pruebas especiales.
           </p>
         </div>
         <div class="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">${cards}</div>
@@ -161,12 +162,12 @@ function renderAboutSection(champ: Championship): string {
 
   const enduroBody = `
     <p>
-      El Festival de Enduro Autocolombiana llega en su primera edición con el mismo equipo organizador
-      de la Copa de Clubes MX: eventos serios, seguros y pensados para el piloto.
+      El Festival de Enduro Autocolombiana regresa en su segunda edición con el mismo equipo organizador
+      de la Copa de Clubes MX: eventos serios, seguros y pensados para el piloto y toda la familia.
     </p>
     <p>
-      Aquí no compites rueda a rueda: compites contra el cronómetro. El Sprint Enduro trae 2 pruebas especiales;
-      la segunda edición es Hard Scramble en La Pista Off Road. En ambas, tu tiempo define la clasificación.
+      Aquí no compites rueda a rueda: compites contra el cronómetro en formato Sprint Enduro con 2 pruebas especiales.
+      Este 29 de noviembre nos vemos en La Pista Off Road con DJ, food trucks, activaciones de marca y actividades para todos, incluso después de la competencia.
     </p>
     <p>
       Desde infantiles hasta expertos: hay una categoría para tu nivel. Inscríbete en línea y vive el enduro.
@@ -179,7 +180,7 @@ function renderAboutSection(champ: Championship): string {
   ];
 
   const cardsEnduro = [
-    ['01', 'Contra el reloj', '2 pruebas especiales en Sprint Enduro y un Hard Scramble: tu tiempo es tu resultado. Sin excusas — solo tú y el terreno.'],
+    ['01', 'Contra el reloj', '2 pruebas especiales con el cronómetro en Sprint Enduro: tu tiempo es tu resultado. Sin excusas — solo tú y el terreno.'],
     ['02', 'Para todos los niveles', 'De Enduro 1 Infantil a la categoría Oro: novatos, intermedios y expertos tienen su propia clasificación.'],
     ['03', 'Sin complicaciones', 'Inscríbete, revisa las ediciones, lee el reglamento y consulta resultados. Todo desde aquí, en pocos clics.'],
   ];

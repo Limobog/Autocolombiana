@@ -36,7 +36,11 @@ export interface Championship {
   badge: string;
   /** Nombre del archivo en public/ (sin ./) */
   logo: string;
+  /** Línea destacada opcional antes de la descripción del hero */
+  heroLead?: string;
   tagline: string;
+  /** Línea destacada al final de la descripción del hero */
+  heroHighlight?: string;
   validasCount: number;
   /** Cómo se llaman las fechas en este campeonato: "válidas" (MX) o "ediciones" (Festival) */
   validasLabel: string;
@@ -79,15 +83,17 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
     name: 'Festival de Enduro Autocolombiana',
     article: 'el',
     heroTitleHtml: 'FESTIVAL <span class="text-silver">ENDURO</span>',
-    heroSubtitle: 'AUTOCOLOMBIANA · 1.ª EDICIÓN',
+    heroSubtitle: 'AUTOCOLOMBIANA · 2DA EDICIÓN',
     shortLabel: 'Festival Enduro',
-    badge: 'Festival · 1.ª Edición',
+    badge: 'Festival · 2da Edición',
     logo: 'logo-enduro.png',
+    heroLead: '¡Porque ustedes lo pidieron!',
     tagline:
-      'La primera edición del Festival de Enduro Autocolombiana: competencia contra el cronómetro, 2 pruebas especiales en Sprint Enduro y un Hard Scramble que exigen todo de ti.',
+      'Vuelve el Festival de Enduro Autocolombiana: 29 de noviembre en La Pista Off Road. Competencia contra el cronómetro, DJ, food trucks, activaciones de marca y actividades para todos, incluso después de la competencia.',
+    heroHighlight: '2 especiales con el cronómetro: Sprint enduro',
     validasCount: 2,
     validasLabel: 'ediciones',
-    extraStat: ['2+1', 'Pruebas + Hard Scramble'],
+    extraStat: ['2', 'Especiales con el cronómetro: Sprint enduro'],
     calendar: [
       {
         edition: '1.ª Edición',
@@ -97,11 +103,15 @@ export const CHAMPIONSHIPS: Record<ChampionshipId, Championship> = {
         details: ['Competencia contra el cronómetro', 'Clasificación por tiempos', '2 pruebas especiales'],
       },
       {
-        edition: '2.ª Edición',
-        format: 'Hard Scramble',
-        date: '22 de noviembre',
+        edition: '2da Edición',
+        format: 'Sprint Enduro',
+        date: '29 de noviembre',
         location: 'La Pista Off Road',
-        details: ['Competencia contra el cronómetro', 'Clasificación por tiempos', 'Hard Scramble'],
+        details: [
+          'Competencia contra el cronómetro',
+          '2 especiales con el cronómetro: Sprint Enduro',
+          'DJ, food trucks, activaciones de marca y actividades para todos',
+        ],
       },
     ],
     bankDetails: {

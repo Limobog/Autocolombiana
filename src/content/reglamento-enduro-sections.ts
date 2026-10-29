@@ -9,8 +9,8 @@ export const REGLAMENTO_ENDURO_SECTIONS: ReglamentoSection[] = [
     id: 'generalidades',
     title: '1. Generalidades',
     paragraphs: [
-      'El Festival de Enduro Autocolombiana — 1.ª Edición es un campeonato privado de enduro organizado por el mismo equipo de la Copa Autocolombiana de Clubes MX, con la misma experiencia y compromiso de ofrecer eventos organizados, seguros y transparentes.',
-      'El campeonato se disputa contra el cronómetro: la clasificación se define por tiempos (2 pruebas especiales en Sprint Enduro y Hard Scramble en la segunda edición).',
+      'El Festival de Enduro Autocolombiana — 2da Edición es un campeonato privado de enduro organizado por el mismo equipo de la Copa Autocolombiana de Clubes MX, con la misma experiencia y compromiso de ofrecer eventos organizados, seguros y transparentes.',
+      'El campeonato se disputa contra el cronómetro: la clasificación se define por tiempos en formato Sprint Enduro con 2 pruebas especiales.',
       'Todos los pilotos, equipos, mecánicos, acompañantes y demás participantes aceptan el presente reglamento desde el momento en que realizan su inscripción.',
       'Este es un resumen provisional. El reglamento oficial completo será publicado próximamente en esta misma página.',
     ],
@@ -57,11 +57,12 @@ export const REGLAMENTO_ENDURO_SECTIONS: ReglamentoSection[] = [
         ],
       },
       {
-        title: '2.ª Edición — Hard Scramble · 22 de noviembre · La Pista Off Road',
+        title: '2da Edición — Sprint Enduro · 29 de noviembre · La Pista Off Road',
         bullets: [
           'Competencia contra el cronómetro.',
           'Clasificación por tiempos.',
-          'Hard Scramble.',
+          '2 especiales con el cronómetro: Sprint Enduro.',
+          'DJ, food trucks, activaciones de marca y actividades para todos, incluso después de la competencia.',
         ],
       },
     ],
